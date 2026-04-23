@@ -57,7 +57,7 @@ h1 {
     background-clip: text;
 }
 
-.back-btn, .list-btn, .login-btn, .logout-btn, .actors-btn {
+.back-btn, .list-btn, .login-btn, .logout-btn, .actors-nav-btn {
     background: rgba(124, 58, 237, 0.9);
     border: none;
     padding: 6px 12px;
@@ -69,7 +69,7 @@ h1 {
     transition: all 0.2s ease;
 }
 
-.actors-btn { background: rgba(236, 72, 153, 0.9); }
+.actors-nav-btn { background: rgba(236, 72, 153, 0.9); }
 .login-btn { background: rgba(16, 185, 129, 0.9); }
 .logout-btn { background: rgba(239, 68, 68, 0.9); }
 .user-info { 
@@ -129,6 +129,7 @@ h1 {
     padding: 20px;
     margin-bottom: 20px;
     text-align: center;
+    position: relative;
 }
 
 .actor-search-title {
@@ -142,6 +143,7 @@ h1 {
     gap: 10px;
     max-width: 500px;
     margin: 15px auto;
+    position: relative;
 }
 
 .actor-search-box input {
@@ -158,6 +160,12 @@ h1 {
     color: rgba(255,255,255,0.5);
 }
 
+.actor-search-box input:focus {
+    outline: none;
+    border: 1px solid #7c3aed;
+    background: rgba(0,0,0,0.7);
+}
+
 .actor-search-btn {
     background: #7c3aed;
     border: none;
@@ -170,6 +178,69 @@ h1 {
 
 .actor-search-btn:hover {
     background: #6d28d9;
+}
+
+/* Suggerimenti autocomplete */
+.suggestions-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(31, 27, 58, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 16px;
+    margin-top: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    border: 1px solid rgba(124, 58, 237, 0.5);
+    display: none;
+}
+
+.suggestions-container.show {
+    display: block;
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+.suggestion-item:hover {
+    background: rgba(124, 58, 237, 0.3);
+}
+
+.suggestion-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.suggestion-info {
+    flex: 1;
+    text-align: left;
+}
+
+.suggestion-name {
+    font-weight: bold;
+    font-size: 14px;
+    color: #c084fc;
+}
+
+.suggestion-known {
+    font-size: 11px;
+    color: #aaa;
+}
+
+.suggestion-year {
+    font-size: 11px;
+    color: #ffd700;
 }
 
 /* Profilo attore */
@@ -391,7 +462,7 @@ h1 {
 @media (min-width: 769px) {
     .topbar { padding: 20px 30px; }
     h1 { font-size: 28px; }
-    .back-btn, .list-btn, .login-btn, .logout-btn, .actors-btn { padding: 10px 20px; font-size: 14px; }
+    .back-btn, .list-btn, .login-btn, .logout-btn, .actors-nav-btn { padding: 10px 20px; font-size: 14px; }
     .container { padding: 30px; margin: 40px auto; }
     .actor-profile { flex-direction: row; align-items: center; text-align: left; gap: 30px; }
     .actor-photo { width: 180px; height: 180px; }
@@ -406,6 +477,19 @@ h1 {
 
 @media (min-width: 769px) and (max-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); gap: 20px; } }
 @media (min-width: 1400px) { .grid { grid-template-columns: repeat(6, 1fr); gap: 25px; } }
+
+/* Scrollbar personalizzata per i suggerimenti */
+.suggestions-container::-webkit-scrollbar {
+    width: 5px;
+}
+.suggestions-container::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+}
+.suggestions-container::-webkit-scrollbar-thumb {
+    background: #7c3aed;
+    border-radius: 10px;
+}
 </style>
 </head>
 
@@ -420,7 +504,7 @@ h1 {
     </div>
     <div class="topbar-right">
         <div id="authButtons"></div>
-        <button class="actors-btn" onclick="goToActors()">🎭 Attori</button>
+        <button class="actors-nav-btn" onclick="goToActors()">🎭 Attori</button>
         <button class="list-btn" onclick="goToList()">⭐ Lista</button>
     </div>
 </div>
@@ -428,10 +512,11 @@ h1 {
 <div class="container">
     <div class="actor-search-section">
         <h2 class="actor-search-title">🎭 Cerca un Attore</h2>
-        <p style="font-size: 13px; color: #aaa;">Trova tutti i film e le serie TV del tuo attore preferito</p>
+        <p style="font-size: 13px; color: #aaa;">Inizia a scrivere e scegli un attore dalla lista</p>
         <div class="actor-search-box">
             <input type="text" id="actorSearchInput" placeholder="es. Chris Pratt, Scarlett Johansson, Brad Pitt..." autocomplete="off">
-            <button class="actor-search-btn" onclick="searchActor()">🔍 Cerca</button>
+            <button class="actor-search-btn" onclick="searchFromInput()">🔍 Cerca</button>
+            <div id="suggestions" class="suggestions-container"></div>
         </div>
     </div>
 
@@ -497,35 +582,169 @@ let itemsPerPage = 20;
 let movieSortBy = "popularity";
 let tvSortBy = "popularity";
 
-// Funzione per leggere il parametro dall'URL
+let searchTimeout = null;
+let currentSuggestions = [];
+
 function getActorFromURL() {
     const params = new URLSearchParams(window.location.search);
     return params.get('actor');
 }
 
 window.onload = function() {
-    document.getElementById("actorSearchInput").addEventListener("keypress", function(e) {
-        if (e.key === "Enter") searchActor();
+    const input = document.getElementById("actorSearchInput");
+    
+    input.addEventListener("input", handleInputChange);
+    input.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") searchFromInput();
+    });
+    
+    // Chiudi suggerimenti cliccando fuori
+    document.addEventListener("click", function(e) {
+        const container = document.getElementById("suggestions");
+        const searchBox = document.querySelector(".actor-search-box");
+        if (!searchBox.contains(e.target)) {
+            container.classList.remove("show");
+        }
     });
     
     // Se c'è un parametro "actor" nell'URL, cerca automaticamente
     const actorName = getActorFromURL();
     if (actorName) {
-        document.getElementById("actorSearchInput").value = decodeURIComponent(actorName);
-        searchActor();
+        input.value = decodeURIComponent(actorName);
+        searchActorByName(decodeURIComponent(actorName));
     }
 };
 
-function goBack() {
-    window.history.back();
+async function handleInputChange(e) {
+    const query = e.target.value.trim();
+    
+    if (searchTimeout) clearTimeout(searchTimeout);
+    
+    if (query.length < 2) {
+        document.getElementById("suggestions").classList.remove("show");
+        return;
+    }
+    
+    searchTimeout = setTimeout(async () => {
+        await fetchSuggestions(query);
+    }, 300);
 }
 
-function goToList() {
-    window.location.href = "list.html";
+async function fetchSuggestions(query) {
+    try {
+        const url = `https://api.themoviedb.org/3/search/person?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=it-IT&page=1`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.results && data.results.length > 0) {
+            currentSuggestions = data.results.slice(0, 8);
+            displaySuggestions(currentSuggestions);
+        } else {
+            document.getElementById("suggestions").classList.remove("show");
+        }
+    } catch (error) {
+        console.error("Errore suggerimenti:", error);
+    }
 }
 
-function goToActors() {
-    window.location.href = "actors.html";
+function displaySuggestions(suggestions) {
+    const container = document.getElementById("suggestions");
+    
+    container.innerHTML = suggestions.map(actor => {
+        const photoUrl = actor.profile_path ? `https://image.tmdb.org/t/p/w92${actor.profile_path}` : "https://via.placeholder.com/40x40?text=No+Photo";
+        const birthYear = actor.birthday ? actor.birthday.split("-")[0] : "";
+        const knownFor = actor.known_for_department || "Attore";
+        
+        return `
+            <div class="suggestion-item" onclick="searchActorById(${actor.id}, '${escapeHtml(actor.name).replace(/'/g, "\\'")}')">
+                <img class="suggestion-photo" src="${photoUrl}" alt="${actor.name}">
+                <div class="suggestion-info">
+                    <div class="suggestion-name">${escapeHtml(actor.name)}</div>
+                    <div class="suggestion-known">${knownFor}</div>
+                </div>
+                ${birthYear ? `<div class="suggestion-year">📅 ${birthYear}</div>` : ''}
+            </div>
+        `;
+    }).join("");
+    
+    container.classList.add("show");
+}
+
+function searchActorById(actorId, actorName) {
+    document.getElementById("actorSearchInput").value = actorName;
+    document.getElementById("suggestions").classList.remove("show");
+    searchActorByIdOnly(actorId, actorName);
+}
+
+async function searchActorByIdOnly(actorId, actorName) {
+    const container = document.getElementById("resultsContainer");
+    container.innerHTML = '<div class="loading">⏳ Carico film e serie TV...</div>';
+    
+    try {
+        // Recupera i dettagli dell'attore
+        const personUrl = `https://api.themoviedb.org/3/person/${actorId}?api_key=${API_KEY}&language=it-IT`;
+        const personResponse = await fetch(personUrl);
+        const actorData = await personResponse.json();
+        
+        // Recupera i crediti
+        const creditsUrl = `https://api.themoviedb.org/3/person/${actorId}/combined_credits?api_key=${API_KEY}&language=it-IT`;
+        const creditsResponse = await fetch(creditsUrl);
+        const creditsData = await creditsResponse.json();
+        
+        currentActor = actorData;
+        allMovies = (creditsData.cast || []).filter(item => item.media_type === "movie");
+        allTvShows = (creditsData.cast || []).filter(item => item.media_type === "tv");
+        
+        const sortByPopularity = (a, b) => (b.popularity || 0) - (a.popularity || 0);
+        allMovies.sort(sortByPopularity);
+        allTvShows.sort(sortByPopularity);
+        
+        currentMoviePage = 1;
+        currentTvPage = 1;
+        
+        displayActorProfile(currentActor, allMovies.length, allTvShows.length);
+        displaySortSelectors();
+        displayMoviesPaginated();
+        displayTvShowsPaginated();
+        
+        // Aggiorna l'URL
+        const newUrl = `${window.location.pathname}?actor=${encodeURIComponent(actorName)}`;
+        window.history.pushState({}, "", newUrl);
+        
+    } catch (error) {
+        console.error("Errore:", error);
+        container.innerHTML = '<div class="no-results">❌ Errore nel caricamento</div>';
+    }
+}
+
+function searchActorByName(actorName) {
+    const container = document.getElementById("resultsContainer");
+    container.innerHTML = '<div class="loading">⏳ Cerco attore...</div>';
+    
+    const personUrl = `https://api.themoviedb.org/3/search/person?api_key=${API_KEY}&query=${encodeURIComponent(actorName)}&language=it-IT&page=1`;
+    fetch(personUrl)
+        .then(response => response.json())
+        .then(personData => {
+            if (!personData.results || personData.results.length === 0) {
+                container.innerHTML = '<div class="no-results">😕 Nessun attore trovato con questo nome</div>';
+                return;
+            }
+            const actor = personData.results[0];
+            searchActorByIdOnly(actor.id, actor.name);
+        })
+        .catch(error => {
+            console.error("Errore:", error);
+            container.innerHTML = '<div class="no-results">❌ Errore nel caricamento</div>';
+        });
+}
+
+function searchFromInput() {
+    const query = document.getElementById("actorSearchInput").value.trim();
+    if (!query) {
+        alert("Inserisci il nome di un attore");
+        return;
+    }
+    searchActorByName(query);
 }
 
 function sortItems(items, sortType) {
@@ -566,13 +785,7 @@ function changeMovieSort() {
     if (select) {
         movieSortBy = select.value;
         currentMoviePage = 1;
-        const section = document.getElementById("movies-section");
-        if (section) {
-            displayMoviesPaginated();
-            section.scrollIntoView({ behavior: "smooth", block: "start" });
-        } else {
-            displayMoviesPaginated();
-        }
+        displayMoviesPaginated();
     }
 }
 
@@ -581,13 +794,7 @@ function changeTvSort() {
     if (select) {
         tvSortBy = select.value;
         currentTvPage = 1;
-        const section = document.getElementById("tv-section");
-        if (section) {
-            displayTvShowsPaginated();
-            section.scrollIntoView({ behavior: "smooth", block: "start" });
-        } else {
-            displayTvShowsPaginated();
-        }
+        displayTvShowsPaginated();
     }
 }
 
@@ -606,55 +813,6 @@ function changeTvItemsPerPage() {
         itemsPerPage = parseInt(select.value);
         currentTvPage = 1;
         displayTvShowsPaginated();
-    }
-}
-
-async function searchActor() {
-    const query = document.getElementById("actorSearchInput").value.trim();
-    if (!query) {
-        alert("Inserisci il nome di un attore");
-        return;
-    }
-    
-    const container = document.getElementById("resultsContainer");
-    container.innerHTML = '<div class="loading">⏳ Cerco attore...</div>';
-    
-    try {
-        const personUrl = `https://api.themoviedb.org/3/search/person?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=it-IT&page=1`;
-        const personResponse = await fetch(personUrl);
-        const personData = await personResponse.json();
-        
-        if (!personData.results || personData.results.length === 0) {
-            container.innerHTML = '<div class="no-results">😕 Nessun attore trovato con questo nome</div>';
-            return;
-        }
-        
-        currentActor = personData.results[0];
-        const actorId = currentActor.id;
-        
-        const creditsUrl = `https://api.themoviedb.org/3/person/${actorId}/combined_credits?api_key=${API_KEY}&language=it-IT`;
-        const creditsResponse = await fetch(creditsUrl);
-        const creditsData = await creditsResponse.json();
-        
-        allMovies = (creditsData.cast || []).filter(item => item.media_type === "movie");
-        allTvShows = (creditsData.cast || []).filter(item => item.media_type === "tv");
-        
-        // Reset pagine
-        currentMoviePage = 1;
-        currentTvPage = 1;
-        
-        displayActorProfile(currentActor, allMovies.length, allTvShows.length);
-        displaySortSelectors();
-        displayMoviesPaginated();
-        displayTvShowsPaginated();
-        
-        // Aggiorna l'URL senza ricaricare la pagina
-        const newUrl = `${window.location.pathname}?actor=${encodeURIComponent(query)}`;
-        window.history.pushState({}, "", newUrl);
-        
-    } catch (error) {
-        console.error("Errore:", error);
-        container.innerHTML = '<div class="no-results">❌ Errore nel caricamento</div>';
     }
 }
 
@@ -872,6 +1030,10 @@ function openMoviePage(id) {
 function openTVPage(id) {
     window.location.href = `tv.html?id=${id}`;
 }
+
+function goBack() { window.history.back(); }
+function goToList() { window.location.href = "list.html"; }
+function goToActors() { window.location.href = "actors.html"; }
 
 function escapeHtml(text) {
     if (!text) return "";
