@@ -57,7 +57,7 @@ h1 {
     background-clip: text;
 }
 
-.list-btn, .login-btn, .logout-btn {
+.list-btn, .login-btn, .logout-btn, .actors-btn {
     background: rgba(124, 58, 237, 0.9);
     border: none;
     padding: 6px 12px;
@@ -67,6 +67,10 @@ h1 {
     font-size: 12px;
     font-weight: 500;
     transition: all 0.2s ease;
+}
+
+.actors-btn {
+    background: rgba(236, 72, 153, 0.9);
 }
 
 .login-btn { background: rgba(16, 185, 129, 0.9); }
@@ -236,7 +240,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
 @media (min-width: 769px) {
     .topbar { padding: 20px 40px; background: rgba(0,0,0,0.3); }
     h1 { font-size: 28px; }
-    .list-btn, .login-btn, .logout-btn { padding: 10px 20px; font-size: 14px; }
+    .list-btn, .login-btn, .logout-btn, .actors-btn { padding: 10px 20px; font-size: 14px; }
     .container { padding: 30px; }
     .search-section { margin-bottom: 30px; display: flex; justify-content: center; }
     .search-box { max-width: 600px; }
@@ -274,6 +278,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     </div>
     <div class="topbar-right">
         <div id="authButtons"></div>
+        <button class="actors-btn" onclick="goToActors()">🎭 Attori</button>
         <button class="list-btn" onclick="goToList()">⭐ Lista</button>
     </div>
 </div>
@@ -559,6 +564,10 @@ window.onload = function() {
     loadContent();
     document.getElementById("searchInput").addEventListener("input", handleSearch);
 };
+
+function goToActors() {
+    window.location.href = "actors.html";
+}
 
 function changeOrder(order) {
     currentOrder = order;
