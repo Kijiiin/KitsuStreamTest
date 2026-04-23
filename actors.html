@@ -300,17 +300,17 @@ h1 {
     color: #aaa;
 }
 
-/* TABS per Film e Serie TV */
-.content-tabs {
+/* TABS per Ruoli (Recitazione/Regia) */
+.role-tabs {
     display: flex;
     justify-content: center;
     gap: 15px;
-    margin: 20px 0;
+    margin: 20px 0 10px 0;
     border-bottom: 1px solid rgba(124, 58, 237, 0.3);
     padding-bottom: 0;
 }
 
-.tab-btn {
+.role-tab-btn {
     background: transparent;
     border: none;
     padding: 12px 30px;
@@ -323,11 +323,11 @@ h1 {
     border-radius: 0;
 }
 
-.tab-btn.active {
+.role-tab-btn.active {
     color: #c084fc;
 }
 
-.tab-btn.active::after {
+.role-tab-btn.active::after {
     content: '';
     position: absolute;
     bottom: -1px;
@@ -338,9 +338,51 @@ h1 {
     border-radius: 3px;
 }
 
-.tab-btn:hover:not(.active) {
+.role-tab-btn:hover:not(.active) {
     color: #c084fc;
     background: rgba(124, 58, 237, 0.1);
+}
+
+/* TABS per Media (Film/Serie TV) */
+.media-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0 0 0;
+    border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+.media-tab-btn {
+    background: transparent;
+    border: none;
+    padding: 10px 25px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #aaa;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    border-radius: 0;
+}
+
+.media-tab-btn.active {
+    color: #c084fc;
+}
+
+.media-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #a855f7, #7c3aed);
+    border-radius: 2px;
+}
+
+.media-tab-btn:hover:not(.active) {
+    color: #c084fc;
+    background: rgba(124, 58, 237, 0.05);
 }
 
 .tab-content {
@@ -392,7 +434,7 @@ h1 {
     background: #7c3aed;
 }
 
-/* Sezioni Film e Serie TV */
+/* Sezioni contenuti */
 .media-section {
     margin-top: 10px;
 }
@@ -501,6 +543,11 @@ h1 {
     margin-top: 5px;
     font-style: italic;
 }
+.card .job {
+    font-size: 9px;
+    color: #4ade80;
+    margin-top: 5px;
+}
 
 .loading, .no-results {
     text-align: center;
@@ -517,12 +564,13 @@ h1 {
     .actor-profile { flex-direction: row; align-items: center; text-align: left; gap: 30px; }
     .actor-photo { width: 180px; height: 180px; }
     .actor-name { font-size: 28px; }
-    .tab-btn { padding: 15px 40px; font-size: 18px; }
+    .role-tab-btn { padding: 15px 40px; font-size: 18px; }
+    .media-tab-btn { padding: 12px 30px; font-size: 15px; }
     .grid { grid-template-columns: repeat(5, 1fr); gap: 25px; }
     .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
     .card-content { padding: 15px; }
     .card h4 { font-size: 14px; }
-    .card p, .card .year, .card .character { font-size: 11px; }
+    .card p, .card .year, .card .character, .card .job { font-size: 11px; }
     .section-title { font-size: 20px; }
 }
 
@@ -561,10 +609,10 @@ h1 {
 
 <div class="container">
     <div class="actor-search-section">
-        <h2 class="actor-search-title">🎭 Cerca un Attore</h2>
-        <p style="font-size: 13px; color: #aaa;">Inizia a scrivere e scegli un attore dalla lista</p>
+        <h2 class="actor-search-title">🎭 Cerca un Attore/Regista</h2>
+        <p style="font-size: 13px; color: #aaa;">Inizia a scrivere e scegli un artista dalla lista</p>
         <div class="actor-search-box">
-            <input type="text" id="actorSearchInput" placeholder="es. Chris Pratt, Scarlett Johansson, Brad Pitt..." autocomplete="off">
+            <input type="text" id="actorSearchInput" placeholder="es. Christopher Nolan, Quentin Tarantino, Martin Scorsese..." autocomplete="off">
             <button class="actor-search-btn" onclick="searchFromInput()">🔍 Cerca</button>
             <div id="suggestions" class="suggestions-container"></div>
         </div>
@@ -622,22 +670,23 @@ h1 {
 const API_KEY = "7fe396e6f50677047459e8c173f2bd9d";
 const IMG_BASE = "https://image.tmdb.org/t/p/w500";
 
-let currentActor = null;
-let allMovies = [];
-let allTvShows = [];
+let currentPerson = null;
+let actingMovies = [];
+let actingTvShows = [];
+let directingMovies = [];
+let directingTvShows = [];
 
-let currentMoviePage = 1;
-let currentTvPage = 1;
+let currentPage = 1;
 let itemsPerPage = 20;
-let movieSortBy = "popularity";
-let tvSortBy = "popularity";
-let currentTab = "movies"; // 'movies' or 'tv'
+let currentSortBy = "popularity";
+let currentRoleTab = "acting"; // 'acting' or 'directing'
+let currentMediaTab = "movies"; // 'movies' or 'tv'
 
 let searchTimeout = null;
 
-function getActorFromURL() {
+function getPersonFromURL() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('actor');
+    return params.get('person');
 }
 
 window.onload = function() {
@@ -656,25 +705,84 @@ window.onload = function() {
         }
     });
     
-    const actorName = getActorFromURL();
-    if (actorName) {
-        input.value = decodeURIComponent(actorName);
-        searchActorByName(decodeURIComponent(actorName));
+    const personName = getPersonFromURL();
+    if (personName) {
+        input.value = decodeURIComponent(personName);
+        searchPersonByName(decodeURIComponent(personName));
     }
 };
 
-function switchTab(tab) {
-    currentTab = tab;
+function switchRoleTab(tab) {
+    currentRoleTab = tab;
+    currentPage = 1;
     
-    // Aggiorna stile bottoni
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.role-tab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    document.getElementById(`tab-${tab}-btn`).classList.add('active');
+    document.getElementById(`role-${tab}-btn`).classList.add('active');
     
-    // Mostra/nascondi contenuti
-    document.getElementById('movies-content').classList.toggle('active', tab === 'movies');
-    document.getElementById('tv-content').classList.toggle('active', tab === 'tv');
+    // Aggiorna contatori nelle schede
+    updateRoleCounters();
+    
+    // Ricarica i contenuti
+    if (tab === 'acting') {
+        displayActingContent();
+    } else {
+        displayDirectingContent();
+    }
+}
+
+function switchMediaTab(tab) {
+    currentMediaTab = tab;
+    currentPage = 1;
+    
+    document.querySelectorAll('.media-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(`media-${tab}-btn`).classList.add('active');
+    
+    if (currentRoleTab === 'acting') {
+        displayActingContent();
+    } else {
+        displayDirectingContent();
+    }
+}
+
+function updateRoleCounters() {
+    const actingCount = (actingMovies.length + actingTvShows.length);
+    const directingCount = (directingMovies.length + directingTvShows.length);
+    
+    const actingBtn = document.getElementById('role-acting-btn');
+    const directingBtn = document.getElementById('role-directing-btn');
+    
+    if (actingBtn) actingBtn.innerHTML = `🎭 Recitazione (${actingCount})`;
+    if (directingBtn) directingBtn.innerHTML = `🎬 Regia (${directingCount})`;
+}
+
+function changeSort() {
+    const select = document.getElementById("sortSelect");
+    if (select) {
+        currentSortBy = select.value;
+        currentPage = 1;
+        if (currentRoleTab === 'acting') {
+            displayActingContent();
+        } else {
+            displayDirectingContent();
+        }
+    }
+}
+
+function changeItemsPerPage() {
+    const select = document.getElementById("itemsPerPage");
+    if (select) {
+        itemsPerPage = parseInt(select.value);
+        currentPage = 1;
+        if (currentRoleTab === 'acting') {
+            displayActingContent();
+        } else {
+            displayDirectingContent();
+        }
+    }
 }
 
 async function handleInputChange(e) {
@@ -711,16 +819,16 @@ async function fetchSuggestions(query) {
 function displaySuggestions(suggestions) {
     const container = document.getElementById("suggestions");
     
-    container.innerHTML = suggestions.map(actor => {
-        const photoUrl = actor.profile_path ? `https://image.tmdb.org/t/p/w92${actor.profile_path}` : "https://via.placeholder.com/40x40?text=No+Photo";
-        const birthYear = actor.birthday ? actor.birthday.split("-")[0] : "";
-        const knownFor = actor.known_for_department || "Attore";
+    container.innerHTML = suggestions.map(person => {
+        const photoUrl = person.profile_path ? `https://image.tmdb.org/t/p/w92${person.profile_path}` : "https://via.placeholder.com/40x40?text=No+Photo";
+        const birthYear = person.birthday ? person.birthday.split("-")[0] : "";
+        const knownFor = person.known_for_department || "Artista";
         
         return `
-            <div class="suggestion-item" onclick="searchActorById(${actor.id}, '${escapeHtml(actor.name).replace(/'/g, "\\'")}')">
-                <img class="suggestion-photo" src="${photoUrl}" alt="${actor.name}">
+            <div class="suggestion-item" onclick="searchPersonById(${person.id}, '${escapeHtml(person.name).replace(/'/g, "\\'")}')">
+                <img class="suggestion-photo" src="${photoUrl}" alt="${person.name}">
                 <div class="suggestion-info">
-                    <div class="suggestion-name">${escapeHtml(actor.name)}</div>
+                    <div class="suggestion-name">${escapeHtml(person.name)}</div>
                     <div class="suggestion-known">${knownFor}</div>
                 </div>
                 ${birthYear ? `<div class="suggestion-year">📅 ${birthYear}</div>` : ''}
@@ -731,45 +839,55 @@ function displaySuggestions(suggestions) {
     container.classList.add("show");
 }
 
-function searchActorById(actorId, actorName) {
-    document.getElementById("actorSearchInput").value = actorName;
+function searchPersonById(personId, personName) {
+    document.getElementById("actorSearchInput").value = personName;
     document.getElementById("suggestions").classList.remove("show");
-    searchActorByIdOnly(actorId, actorName);
+    searchPersonByIdOnly(personId, personName);
 }
 
-async function searchActorByIdOnly(actorId, actorName) {
+async function searchPersonByIdOnly(personId, personName) {
     const container = document.getElementById("resultsContainer");
-    container.innerHTML = '<div class="loading">⏳ Carico film e serie TV...</div>';
+    container.innerHTML = '<div class="loading">⏳ Carico informazioni...</div>';
     
     try {
-        const personUrl = `https://api.themoviedb.org/3/person/${actorId}?api_key=${API_KEY}&language=it-IT`;
+        const personUrl = `https://api.themoviedb.org/3/person/${personId}?api_key=${API_KEY}&language=it-IT`;
         const personResponse = await fetch(personUrl);
-        const actorData = await personResponse.json();
+        const personData = await personResponse.json();
         
-        const creditsUrl = `https://api.themoviedb.org/3/person/${actorId}/combined_credits?api_key=${API_KEY}&language=it-IT`;
+        const creditsUrl = `https://api.themoviedb.org/3/person/${personId}/combined_credits?api_key=${API_KEY}&language=it-IT`;
         const creditsResponse = await fetch(creditsUrl);
         const creditsData = await creditsResponse.json();
         
-        currentActor = actorData;
-        allMovies = (creditsData.cast || []).filter(item => item.media_type === "movie");
-        allTvShows = (creditsData.cast || []).filter(item => item.media_type === "tv");
+        currentPerson = personData;
+        
+        // Separa per ruolo (attore vs regista)
+        const allCredits = creditsData.cast || [];
+        const allCrew = creditsData.crew || [];
+        
+        // Recitazione (cast)
+        actingMovies = allCredits.filter(item => item.media_type === "movie");
+        actingTvShows = allCredits.filter(item => item.media_type === "tv");
+        
+        // Regia (crew con job "Director")
+        const directingCredits = allCrew.filter(item => item.job === "Director");
+        directingMovies = directingCredits.filter(item => item.media_type === "movie");
+        directingTvShows = directingCredits.filter(item => item.media_type === "tv");
         
         const sortByPopularity = (a, b) => (b.popularity || 0) - (a.popularity || 0);
-        allMovies.sort(sortByPopularity);
-        allTvShows.sort(sortByPopularity);
+        actingMovies.sort(sortByPopularity);
+        actingTvShows.sort(sortByPopularity);
+        directingMovies.sort(sortByPopularity);
+        directingTvShows.sort(sortByPopularity);
         
-        currentMoviePage = 1;
-        currentTvPage = 1;
+        currentPage = 1;
+        currentRoleTab = "acting";
+        currentMediaTab = "movies";
         
-        displayActorProfile(currentActor, allMovies.length, allTvShows.length);
-        displayTabsAndSortSelectors();
-        displayMoviesPaginated();
-        displayTvShowsPaginated();
+        displayPersonProfile(personData, actingMovies.length + actingTvShows.length, directingMovies.length + directingTvShows.length);
+        displayTabsAndControls();
+        displayActingContent();
         
-        currentTab = "movies";
-        switchTab("movies");
-        
-        const newUrl = `${window.location.pathname}?actor=${encodeURIComponent(actorName)}`;
+        const newUrl = `${window.location.pathname}?person=${encodeURIComponent(personName)}`;
         window.history.pushState({}, "", newUrl);
         
     } catch (error) {
@@ -778,20 +896,20 @@ async function searchActorByIdOnly(actorId, actorName) {
     }
 }
 
-function searchActorByName(actorName) {
+function searchPersonByName(personName) {
     const container = document.getElementById("resultsContainer");
-    container.innerHTML = '<div class="loading">⏳ Cerco attore...</div>';
+    container.innerHTML = '<div class="loading">⏳ Cerco...</div>';
     
-    const personUrl = `https://api.themoviedb.org/3/search/person?api_key=${API_KEY}&query=${encodeURIComponent(actorName)}&language=it-IT&page=1`;
+    const personUrl = `https://api.themoviedb.org/3/search/person?api_key=${API_KEY}&query=${encodeURIComponent(personName)}&language=it-IT&page=1`;
     fetch(personUrl)
         .then(response => response.json())
         .then(personData => {
             if (!personData.results || personData.results.length === 0) {
-                container.innerHTML = '<div class="no-results">😕 Nessun attore trovato con questo nome</div>';
+                container.innerHTML = '<div class="no-results">😕 Nessun artista trovato con questo nome</div>';
                 return;
             }
-            const actor = personData.results[0];
-            searchActorByIdOnly(actor.id, actor.name);
+            const person = personData.results[0];
+            searchPersonByIdOnly(person.id, person.name);
         })
         .catch(error => {
             console.error("Errore:", error);
@@ -802,10 +920,10 @@ function searchActorByName(actorName) {
 function searchFromInput() {
     const query = document.getElementById("actorSearchInput").value.trim();
     if (!query) {
-        alert("Inserisci il nome di un attore");
+        alert("Inserisci il nome di un attore o regista");
         return;
     }
-    searchActorByName(query);
+    searchPersonByName(query);
 }
 
 function sortItems(items, sortType) {
@@ -841,69 +959,35 @@ function sortItems(items, sortType) {
     return sorted;
 }
 
-function changeMovieSort() {
-    const select = document.getElementById("movieSortSelect");
-    if (select) {
-        movieSortBy = select.value;
-        currentMoviePage = 1;
-        displayMoviesPaginated();
-    }
-}
-
-function changeTvSort() {
-    const select = document.getElementById("tvSortSelect");
-    if (select) {
-        tvSortBy = select.value;
-        currentTvPage = 1;
-        displayTvShowsPaginated();
-    }
-}
-
-function changeMovieItemsPerPage() {
-    const select = document.getElementById("movieItemsPerPage");
-    if (select) {
-        itemsPerPage = parseInt(select.value);
-        currentMoviePage = 1;
-        displayMoviesPaginated();
-    }
-}
-
-function changeTvItemsPerPage() {
-    const select = document.getElementById("tvItemsPerPage");
-    if (select) {
-        itemsPerPage = parseInt(select.value);
-        currentTvPage = 1;
-        displayTvShowsPaginated();
-    }
-}
-
-function displayActorProfile(actor, movieCount, tvCount) {
+function displayPersonProfile(person, actingCount, directingCount) {
     const container = document.getElementById("resultsContainer");
-    const photoUrl = actor.profile_path ? `https://image.tmdb.org/t/p/w500${actor.profile_path}` : "https://via.placeholder.com/300x300?text=No+Photo";
-    const birthYear = actor.birthday ? actor.birthday.split("-")[0] : "?";
-    const deathYear = actor.deathday ? ` - ${actor.deathday.split("-")[0]}` : "";
+    const photoUrl = person.profile_path ? `https://image.tmdb.org/t/p/w500${person.profile_path}` : "https://via.placeholder.com/300x300?text=No+Photo";
+    const birthYear = person.birthday ? person.birthday.split("-")[0] : "?";
+    const deathYear = person.deathday ? ` - ${person.deathday.split("-")[0]}` : "";
+    const department = person.known_for_department || "Artista";
     
     const profileHtml = `
         <div class="actor-profile">
-            <img class="actor-photo" src="${photoUrl}" alt="${actor.name}" loading="lazy">
+            <img class="actor-photo" src="${photoUrl}" alt="${person.name}" loading="lazy">
             <div>
-                <h2 class="actor-name">${escapeHtml(actor.name)}</h2>
+                <h2 class="actor-name">${escapeHtml(person.name)}</h2>
                 <div class="actor-stats">
                     <div class="actor-stat">
-                        <div class="actor-stat-value" id="moviesCount">${movieCount}</div>
-                        <div class="actor-stat-label">Film</div>
+                        <div class="actor-stat-value">${actingCount}</div>
+                        <div class="actor-stat-label">Recitazione</div>
                     </div>
                     <div class="actor-stat">
-                        <div class="actor-stat-value" id="tvCount">${tvCount}</div>
-                        <div class="actor-stat-label">Serie TV</div>
+                        <div class="actor-stat-value">${directingCount}</div>
+                        <div class="actor-stat-label">Regia</div>
                     </div>
                     <div class="actor-stat">
-                        <div class="actor-stat-value">${actor.popularity ? Math.round(actor.popularity) : "?"}</div>
+                        <div class="actor-stat-value">${person.popularity ? Math.round(person.popularity) : "?"}</div>
                         <div class="actor-stat-label">Popolarità</div>
                     </div>
                 </div>
-                ${actor.biography ? `<div class="actor-bio">${escapeHtml(actor.biography.substring(0, 300))}${actor.biography.length > 300 ? "..." : ""}</div>` : ""}
-                <div class="actor-bio" style="font-size: 12px; margin-top: 10px;">📅 ${birthYear}${deathYear} | 🌍 ${actor.place_of_birth ? escapeHtml(actor.place_of_birth) : "N/D"}</div>
+                <div class="actor-bio" style="font-size: 12px;">🎭 ${department}</div>
+                ${person.biography ? `<div class="actor-bio">${escapeHtml(person.biography.substring(0, 300))}${person.biography.length > 300 ? "..." : ""}</div>` : ""}
+                <div class="actor-bio" style="font-size: 12px; margin-top: 10px;">📅 ${birthYear}${deathYear} | 🌍 ${person.place_of_birth ? escapeHtml(person.place_of_birth) : "N/D"}</div>
             </div>
         </div>
     `;
@@ -911,77 +995,54 @@ function displayActorProfile(actor, movieCount, tvCount) {
     container.innerHTML = profileHtml;
 }
 
-function displayTabsAndSortSelectors() {
+function displayTabsAndControls() {
     const container = document.getElementById("resultsContainer");
     
-    const tabsAndSortHtml = `
-        <div class="content-tabs">
-            <button id="tab-movies-btn" class="tab-btn active" onclick="switchTab('movies')">🎬 Film <span id="moviesCountTab">(${allMovies.length})</span></button>
-            <button id="tab-tv-btn" class="tab-btn" onclick="switchTab('tv')">📺 Serie TV <span id="tvCountTab">(${allTvShows.length})</span></button>
+    const tabsHtml = `
+        <div class="role-tabs">
+            <button id="role-acting-btn" class="role-tab-btn active" onclick="switchRoleTab('acting')">🎭 Recitazione (${actingMovies.length + actingTvShows.length})</button>
+            <button id="role-directing-btn" class="role-tab-btn" onclick="switchRoleTab('directing')">🎬 Regia (${directingMovies.length + directingTvShows.length})</button>
         </div>
         
-        <div id="sort-selectors-placeholder"></div>
-        
-        <div id="movies-content" class="tab-content active">
-            <div id="movies-section" class="media-section"></div>
-        </div>
-        
-        <div id="tv-content" class="tab-content">
-            <div id="tv-section" class="media-section"></div>
-        </div>
+        <div id="role-content" class="tab-content active"></div>
     `;
     
-    container.insertAdjacentHTML("beforeend", tabsAndSortHtml);
-    
-    const sortPlaceholder = document.getElementById("sort-selectors-placeholder");
-    if (sortPlaceholder) {
-        sortPlaceholder.innerHTML = `
-            <div class="sort-selectors">
-                <div class="sort-group">
-                    <label>🎬 Film:</label>
-                    <select id="movieSortSelect" onchange="changeMovieSort()">
-                        <option value="popularity" ${movieSortBy === "popularity" ? "selected" : ""}>🔥 Più popolari</option>
-                        <option value="date_desc" ${movieSortBy === "date_desc" ? "selected" : ""}>📅 Più recenti</option>
-                        <option value="date_asc" ${movieSortBy === "date_asc" ? "selected" : ""}>📅 Più vecchi</option>
-                        <option value="rating" ${movieSortBy === "rating" ? "selected" : ""}>⭐ Miglior voto</option>
-                        <option value="title" ${movieSortBy === "title" ? "selected" : ""}>🔤 Titolo A-Z</option>
-                    </select>
-                </div>
-                <div class="sort-group">
-                    <label>📺 Serie TV:</label>
-                    <select id="tvSortSelect" onchange="changeTvSort()">
-                        <option value="popularity" ${tvSortBy === "popularity" ? "selected" : ""}>🔥 Più popolari</option>
-                        <option value="date_desc" ${tvSortBy === "date_desc" ? "selected" : ""}>📅 Più recenti</option>
-                        <option value="date_asc" ${tvSortBy === "date_asc" ? "selected" : ""}>📅 Più vecchi</option>
-                        <option value="rating" ${tvSortBy === "rating" ? "selected" : ""}>⭐ Miglior voto</option>
-                        <option value="title" ${tvSortBy === "title" ? "selected" : ""}>🔤 Titolo A-Z</option>
-                    </select>
-                </div>
-            </div>
-        `;
-    }
+    container.insertAdjacentHTML("beforeend", tabsHtml);
 }
 
-function displayMoviesPaginated() {
-    if (!allMovies.length) return;
+function displayActingContent() {
+    const roleContent = document.getElementById("role-content");
+    if (!roleContent) return;
     
-    const sortedMovies = sortItems(allMovies, movieSortBy);
-    const totalPages = Math.ceil(sortedMovies.length / itemsPerPage);
-    const start = (currentMoviePage - 1) * itemsPerPage;
-    const paginatedMovies = sortedMovies.slice(start, start + itemsPerPage);
+    const items = currentMediaTab === 'movies' ? actingMovies : actingTvShows;
+    const sortedItems = sortItems(items, currentSortBy);
+    const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    const paginatedItems = sortedItems.slice(start, start + itemsPerPage);
     
-    const section = document.getElementById("movies-section");
-    if (!section) return;
+    const mediaTypeName = currentMediaTab === 'movies' ? 'Film' : 'Serie TV';
+    const mediaIcon = currentMediaTab === 'movies' ? '🎬' : '📺';
     
-    const moviesHtml = `
-        <div class="section-header">
-            <div class="section-title">
-                🎬 Film
-                <span class="section-count">${allMovies.length}</span>
+    const contentHtml = `
+        <div class="media-tabs">
+            <button id="media-movies-btn" class="media-tab-btn ${currentMediaTab === 'movies' ? 'active' : ''}" onclick="switchMediaTab('movies')">🎬 Film (${actingMovies.length})</button>
+            <button id="media-tv-btn" class="media-tab-btn ${currentMediaTab === 'tv' ? 'active' : ''}" onclick="switchMediaTab('tv')">📺 Serie TV (${actingTvShows.length})</button>
+        </div>
+        
+        <div class="sort-selectors">
+            <div class="sort-group">
+                <label>📋 Ordina per:</label>
+                <select id="sortSelect" onchange="changeSort()">
+                    <option value="popularity" ${currentSortBy === "popularity" ? "selected" : ""}>🔥 Più popolari</option>
+                    <option value="date_desc" ${currentSortBy === "date_desc" ? "selected" : ""}>📅 Più recenti</option>
+                    <option value="date_asc" ${currentSortBy === "date_asc" ? "selected" : ""}>📅 Più vecchi</option>
+                    <option value="rating" ${currentSortBy === "rating" ? "selected" : ""}>⭐ Miglior voto</option>
+                    <option value="title" ${currentSortBy === "title" ? "selected" : ""}>🔤 Titolo A-Z</option>
+                </select>
             </div>
-            <div class="pagination-controls">
-                <span style="font-size: 12px;">Mostra:</span>
-                <select id="movieItemsPerPage" class="items-per-page" onchange="changeMovieItemsPerPage()">
+            <div class="sort-group">
+                <label>Mostra:</label>
+                <select id="itemsPerPage" onchange="changeItemsPerPage()">
                     <option value="12" ${itemsPerPage === 12 ? 'selected' : ''}>12</option>
                     <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20</option>
                     <option value="30" ${itemsPerPage === 30 ? 'selected' : ''}>30</option>
@@ -989,51 +1050,82 @@ function displayMoviesPaginated() {
                 </select>
             </div>
         </div>
-        <div class="grid">
-            ${paginatedMovies.map(movie => `
-                <div class="card" onclick="openMoviePage(${movie.id})">
-                    <img src="${movie.poster_path ? IMG_BASE + movie.poster_path : 'https://via.placeholder.com/500x750?text=No+Poster'}" alt="${movie.title}" loading="lazy">
-                    <div class="card-content">
-                        <h4>${escapeHtml(movie.title)}</h4>
-                        <p>⭐ ${movie.vote_average ? movie.vote_average.toFixed(1) : "N/A"}/10</p>
-                        <p class="year">📅 ${movie.release_date ? movie.release_date.split("-")[0] : "N/D"}</p>
-                        ${movie.character ? `<p class="character">🎭 ${escapeHtml(movie.character)}</p>` : ""}
-                    </div>
+        
+        <div class="media-section">
+            <div class="section-header">
+                <div class="section-title">
+                    ${mediaIcon} ${mediaTypeName}
+                    <span class="section-count">${items.length}</span>
                 </div>
-            `).join("")}
-        </div>
-        ${totalPages > 1 ? `
-            <div class="pagination-controls" style="justify-content: center; margin-top: 20px;">
-                <button class="pagination-btn" onclick="changeMoviePage(-1)" ${currentMoviePage === 1 ? 'disabled' : ''}>◀ Prec</button>
-                <span class="page-info">Pagina ${currentMoviePage} / ${totalPages}</span>
-                <button class="pagination-btn" onclick="changeMoviePage(1)" ${currentMoviePage === totalPages ? 'disabled' : ''}>Succ ▶</button>
             </div>
-        ` : ''}
+            ${items.length === 0 ? '<div class="no-results">😕 Nessun ${mediaTypeName.toLowerCase()} trovato</div>' : `
+                <div class="grid">
+                    ${paginatedItems.map(item => {
+                        const title = item.title || item.name;
+                        const date = item.release_date || item.first_air_date;
+                        const year = date ? date.split("-")[0] : "N/D";
+                        const posterUrl = item.poster_path ? IMG_BASE + item.poster_path : "https://via.placeholder.com/500x750?text=No+Poster";
+                        const character = item.character ? `🎭 ${escapeHtml(item.character)}` : '';
+                        return `
+                            <div class="card" onclick="openPage(${item.id}, '${currentMediaTab === 'movies' ? 'movie' : 'tv'}')">
+                                <img src="${posterUrl}" alt="${title}" loading="lazy">
+                                <div class="card-content">
+                                    <h4>${escapeHtml(title)}</h4>
+                                    <p>⭐ ${item.vote_average ? item.vote_average.toFixed(1) : "N/A"}/10</p>
+                                    <p class="year">📅 ${year}</p>
+                                    ${character ? `<p class="character">${character}</p>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+                ${totalPages > 1 ? `
+                    <div class="pagination-controls" style="justify-content: center; margin-top: 20px;">
+                        <button class="pagination-btn" onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>◀ Prec</button>
+                        <span class="page-info">Pagina ${currentPage} / ${totalPages}</span>
+                        <button class="pagination-btn" onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>Succ ▶</button>
+                    </div>
+                ` : ''}
+            `}
+        </div>
     `;
     
-    section.innerHTML = moviesHtml;
+    roleContent.innerHTML = contentHtml;
 }
 
-function displayTvShowsPaginated() {
-    if (!allTvShows.length) return;
+function displayDirectingContent() {
+    const roleContent = document.getElementById("role-content");
+    if (!roleContent) return;
     
-    const sortedTvShows = sortItems(allTvShows, tvSortBy);
-    const totalPages = Math.ceil(sortedTvShows.length / itemsPerPage);
-    const start = (currentTvPage - 1) * itemsPerPage;
-    const paginatedTvShows = sortedTvShows.slice(start, start + itemsPerPage);
+    const items = currentMediaTab === 'movies' ? directingMovies : directingTvShows;
+    const sortedItems = sortItems(items, currentSortBy);
+    const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    const paginatedItems = sortedItems.slice(start, start + itemsPerPage);
     
-    const section = document.getElementById("tv-section");
-    if (!section) return;
+    const mediaTypeName = currentMediaTab === 'movies' ? 'Film' : 'Serie TV';
+    const mediaIcon = currentMediaTab === 'movies' ? '🎬' : '📺';
     
-    const tvHtml = `
-        <div class="section-header">
-            <div class="section-title">
-                📺 Serie TV
-                <span class="section-count">${allTvShows.length}</span>
+    const contentHtml = `
+        <div class="media-tabs">
+            <button id="media-movies-btn" class="media-tab-btn ${currentMediaTab === 'movies' ? 'active' : ''}" onclick="switchMediaTab('movies')">🎬 Film Diretti (${directingMovies.length})</button>
+            <button id="media-tv-btn" class="media-tab-btn ${currentMediaTab === 'tv' ? 'active' : ''}" onclick="switchMediaTab('tv')">📺 Serie TV Dirette (${directingTvShows.length})</button>
+        </div>
+        
+        <div class="sort-selectors">
+            <div class="sort-group">
+                <label>📋 Ordina per:</label>
+                <select id="sortSelect" onchange="changeSort()">
+                    <option value="popularity" ${currentSortBy === "popularity" ? "selected" : ""}>🔥 Più popolari</option>
+                    <option value="date_desc" ${currentSortBy === "date_desc" ? "selected" : ""}>📅 Più recenti</option>
+                    <option value="date_asc" ${currentSortBy === "date_asc" ? "selected" : ""}>📅 Più vecchi</option>
+                    <option value="rating" ${currentSortBy === "rating" ? "selected" : ""}>⭐ Miglior voto</option>
+                    <option value="title" ${currentSortBy === "title" ? "selected" : ""}>🔤 Titolo A-Z</option>
+                </select>
             </div>
-            <div class="pagination-controls">
-                <span style="font-size: 12px;">Mostra:</span>
-                <select id="tvItemsPerPage" class="items-per-page" onchange="changeTvItemsPerPage()">
+            <div class="sort-group">
+                <label>Mostra:</label>
+                <select id="itemsPerPage" onchange="changeItemsPerPage()">
                     <option value="12" ${itemsPerPage === 12 ? 'selected' : ''}>12</option>
                     <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20</option>
                     <option value="30" ${itemsPerPage === 30 ? 'selected' : ''}>30</option>
@@ -1041,69 +1133,78 @@ function displayTvShowsPaginated() {
                 </select>
             </div>
         </div>
-        <div class="grid">
-            ${paginatedTvShows.map(show => `
-                <div class="card" onclick="openTVPage(${show.id})">
-                    <img src="${show.poster_path ? IMG_BASE + show.poster_path : 'https://via.placeholder.com/500x750?text=No+Poster'}" alt="${show.name}" loading="lazy">
-                    <div class="card-content">
-                        <h4>${escapeHtml(show.name)}</h4>
-                        <p>⭐ ${show.vote_average ? show.vote_average.toFixed(1) : "N/A"}/10</p>
-                        <p class="year">📅 ${show.first_air_date ? show.first_air_date.split("-")[0] : "N/D"}</p>
-                        ${show.character ? `<p class="character">🎭 ${escapeHtml(show.character)}</p>` : ""}
-                    </div>
+        
+        <div class="media-section">
+            <div class="section-header">
+                <div class="section-title">
+                    ${mediaIcon} ${mediaTypeName} Diretti
+                    <span class="section-count">${items.length}</span>
                 </div>
-            `).join("")}
-        </div>
-        ${totalPages > 1 ? `
-            <div class="pagination-controls" style="justify-content: center; margin-top: 20px;">
-                <button class="pagination-btn" onclick="changeTvPage(-1)" ${currentTvPage === 1 ? 'disabled' : ''}>◀ Prec</button>
-                <span class="page-info">Pagina ${currentTvPage} / ${totalPages}</span>
-                <button class="pagination-btn" onclick="changeTvPage(1)" ${currentTvPage === totalPages ? 'disabled' : ''}>Succ ▶</button>
             </div>
-        ` : ''}
+            ${items.length === 0 ? '<div class="no-results">😕 Nessun ${mediaTypeName.toLowerCase()} diretto trovato</div>' : `
+                <div class="grid">
+                    ${paginatedItems.map(item => {
+                        const title = item.title || item.name;
+                        const date = item.release_date || item.first_air_date;
+                        const year = date ? date.split("-")[0] : "N/D";
+                        const posterUrl = item.poster_path ? IMG_BASE + item.poster_path : "https://via.placeholder.com/500x750?text=No+Poster";
+                        return `
+                            <div class="card" onclick="openPage(${item.id}, '${currentMediaTab === 'movies' ? 'movie' : 'tv'}')">
+                                <img src="${posterUrl}" alt="${title}" loading="lazy">
+                                <div class="card-content">
+                                    <h4>${escapeHtml(title)}</h4>
+                                    <p>⭐ ${item.vote_average ? item.vote_average.toFixed(1) : "N/A"}/10</p>
+                                    <p class="year">📅 ${year}</p>
+                                    <p class="job">🎬 Regista</p>
+                                </div>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+                ${totalPages > 1 ? `
+                    <div class="pagination-controls" style="justify-content: center; margin-top: 20px;">
+                        <button class="pagination-btn" onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>◀ Prec</button>
+                        <span class="page-info">Pagina ${currentPage} / ${totalPages}</span>
+                        <button class="pagination-btn" onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>Succ ▶</button>
+                    </div>
+                ` : ''}
+            `}
+        </div>
     `;
     
-    section.innerHTML = tvHtml;
+    roleContent.innerHTML = contentHtml;
 }
 
-function changeMoviePage(direction) {
-    const sortedMovies = sortItems(allMovies, movieSortBy);
-    const totalPages = Math.ceil(sortedMovies.length / itemsPerPage);
-    const newPage = currentMoviePage + direction;
+function changePage(direction) {
+    let items = [];
+    if (currentRoleTab === 'acting') {
+        items = currentMediaTab === 'movies' ? actingMovies : actingTvShows;
+    } else {
+        items = currentMediaTab === 'movies' ? directingMovies : directingTvShows;
+    }
+    
+    const totalPages = Math.ceil(items.length / itemsPerPage);
+    const newPage = currentPage + direction;
+    
     if (newPage >= 1 && newPage <= totalPages) {
-        currentMoviePage = newPage;
-        displayMoviesPaginated();
+        currentPage = newPage;
+        if (currentRoleTab === 'acting') {
+            displayActingContent();
+        } else {
+            displayDirectingContent();
+        }
+        window.scrollTo({ top: document.querySelector(".role-tabs").offsetTop - 80, behavior: "smooth" });
     }
 }
 
-function changeTvPage(direction) {
-    const sortedTvShows = sortItems(allTvShows, tvSortBy);
-    const totalPages = Math.ceil(sortedTvShows.length / itemsPerPage);
-    const newPage = currentTvPage + direction;
-    if (newPage >= 1 && newPage <= totalPages) {
-        currentTvPage = newPage;
-        displayTvShowsPaginated();
-    }
-}
-
-function openMoviePage(id) {
-    window.location.href = `movie.html?id=${id}`;
-}
-
-function openTVPage(id) {
-    window.location.href = `tv.html?id=${id}`;
+function openPage(id, type) {
+    window.location.href = `${type}.html?id=${id}`;
 }
 
 function goBack() { window.history.back(); }
 function goToList() { window.location.href = "list.html"; }
 function goToActors() { window.location.href = "actors.html"; }
-
-function escapeHtml(text) {
-    if (!text) return "";
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
-}
+function escapeHtml(text) { if (!text) return ""; const div = document.createElement("div"); div.textContent = text; return div.innerHTML; }
 </script>
 
 </body>
