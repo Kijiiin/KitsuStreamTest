@@ -497,10 +497,23 @@ let itemsPerPage = 20;
 let movieSortBy = "popularity";
 let tvSortBy = "popularity";
 
+// Funzione per leggere il parametro dall'URL
+function getActorFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('actor');
+}
+
 window.onload = function() {
     document.getElementById("actorSearchInput").addEventListener("keypress", function(e) {
         if (e.key === "Enter") searchActor();
     });
+    
+    // Se c'è un parametro "actor" nell'URL, cerca automaticamente
+    const actorName = getActorFromURL();
+    if (actorName) {
+        document.getElementById("actorSearchInput").value = decodeURIComponent(actorName);
+        searchActor();
+    }
 };
 
 function goBack() {
@@ -553,7 +566,13 @@ function changeMovieSort() {
     if (select) {
         movieSortBy = select.value;
         currentMoviePage = 1;
-        displayMoviesPaginated();
+        const section = document.getElementById("movies-section");
+        if (section) {
+            displayMoviesPaginated();
+            section.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+            displayMoviesPaginated();
+        }
     }
 }
 
@@ -562,7 +581,13 @@ function changeTvSort() {
     if (select) {
         tvSortBy = select.value;
         currentTvPage = 1;
-        displayTvShowsPaginated();
+        const section = document.getElementById("tv-section");
+        if (section) {
+            displayTvShowsPaginated();
+            section.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+            displayTvShowsPaginated();
+        }
     }
 }
 
@@ -622,6 +647,10 @@ async function searchActor() {
         displaySortSelectors();
         displayMoviesPaginated();
         displayTvShowsPaginated();
+        
+        // Aggiorna l'URL senza ricaricare la pagina
+        const newUrl = `${window.location.pathname}?actor=${encodeURIComponent(query)}`;
+        window.history.pushState({}, "", newUrl);
         
     } catch (error) {
         console.error("Errore:", error);
