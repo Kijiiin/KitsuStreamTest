@@ -57,7 +57,7 @@ h1 {
     background-clip: text;
 }
 
-.back-btn, .list-btn, .login-btn, .logout-btn {
+.back-btn, .list-btn, .login-btn, .logout-btn, .actors-nav-btn {
     background: rgba(124, 58, 237, 0.9);
     border: none;
     padding: 6px 12px;
@@ -69,6 +69,7 @@ h1 {
     transition: all 0.2s ease;
 }
 
+.actors-nav-btn { background: rgba(236, 72, 153, 0.9); }
 .login-btn { background: rgba(16, 185, 129, 0.9); }
 .logout-btn { background: rgba(239, 68, 68, 0.9); }
 .user-info { 
@@ -164,7 +165,18 @@ h1 {
 .info-value { font-size: 12px; font-weight: bold; color: #c084fc; }
 
 .cast-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.cast-card { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px; text-align: center; }
+.cast-card { 
+    background: rgba(0,0,0,0.3); 
+    border-radius: 10px; 
+    padding: 10px; 
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.cast-card:hover {
+    background: rgba(124, 58, 237, 0.5);
+    transform: translateY(-3px);
+}
 .cast-photo { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
 .cast-name { font-size: 12px; font-weight: bold; }
 .cast-character { font-size: 10px; color: #aaa; }
@@ -226,7 +238,7 @@ h1 {
 @media (min-width: 769px) {
     .topbar { padding: 20px 30px; }
     h1 { font-size: 28px; }
-    .back-btn, .list-btn, .login-btn, .logout-btn { padding: 10px 20px; font-size: 14px; }
+    .back-btn, .list-btn, .login-btn, .logout-btn, .actors-nav-btn { padding: 10px 20px; font-size: 14px; }
     .container { padding: 30px; margin: 40px auto; }
     .tv-details { padding: 30px; margin-bottom: 40px; border-radius: 20px; }
     .tv-header { flex-direction: row; align-items: flex-start; text-align: left; gap: 30px; }
@@ -269,6 +281,7 @@ h1 {
     </div>
     <div class="topbar-right">
         <div id="authButtons"></div>
+        <button class="actors-nav-btn" onclick="goToActors()">🎭 Attori</button>
         <button class="list-btn" onclick="goToList()">⭐</button>
     </div>
 </div>
@@ -795,17 +808,23 @@ function loadSimilar(similar) {
     document.getElementById("tvDetails").insertAdjacentHTML("beforeend", similarHtml);
 }
 
+// Funzione per cercare un attore e reindirizzare alla pagina actors.html
+function searchActorByName(actorName) {
+    if (!actorName) return;
+    window.location.href = `actors.html?actor=${encodeURIComponent(actorName)}`;
+}
+
 function loadCast(credits) {
     if (!credits || !credits.cast || credits.cast.length === 0) return;
     
-    const mainCast = credits.cast.slice(0, 8);
+    const mainCast = credits.cast.slice(0, 12);
     
     const castHtml = `
         <div class="cast-section">
             <h3 class="section-title">🎭 Cast</h3>
             <div class="cast-grid">
                 ${mainCast.map(actor => `
-                    <div class="cast-card">
+                    <div class="cast-card" onclick="searchActorByName('${escapeHtml(actor.name).replace(/'/g, "\\'")}')">
                         <img class="cast-photo" src="${actor.profile_path ? IMG_BASE + actor.profile_path : 'https://via.placeholder.com/150x150?text=No+Photo'}" alt="${actor.name}" loading="lazy">
                         <div class="cast-name">${escapeHtml(actor.name)}</div>
                         <div class="cast-character">${escapeHtml(actor.character)}</div>
@@ -816,6 +835,10 @@ function loadCast(credits) {
     `;
     
     document.getElementById("tvDetails").insertAdjacentHTML("beforeend", castHtml);
+}
+
+function goToActors() {
+    window.location.href = "actors.html";
 }
 
 function openTVPage(id) {
