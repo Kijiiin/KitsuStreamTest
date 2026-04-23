@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KitsuStream - La mia lista</title>
+
+<link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+<link rel="manifest" href="favicon_io/site.webmanifest">
+
+<!-- Firebase SDK -->
+<script type="importmap">
+    {
+        "imports": {
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+            "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+        }
+    }
+</script>
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: white;
+    min-height: 100vh;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(15px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.topbar-left, .topbar-right { display: flex; gap: 8px; align-items: center; }
+.topbar-center { flex: 1; text-align: center; }
+
+h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+    background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.back-btn, .clear-all-btn, .login-btn, .logout-btn {
+    background: rgba(124, 58, 237, 0.9);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.login-btn { background: rgba(16, 185, 129, 0.9); }
+.logout-btn { background: rgba(239, 68, 68, 0.9); }
+.user-info { 
+    font-size: 12px; 
+    background: rgba(0,0,0,0.5); 
+    padding: 4px 12px; 
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.username { font-weight: bold; color: #c084fc; }
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #1e1b4b;
+    padding: 30px;
+    border-radius: 20px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.modal-content input {
+    width: 100%;
+    margin: 10px 0;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: #2d2a5e;
+    color: white;
+}
+
+.modal-content button { margin: 5px; padding: 10px 20px; }
+.error-msg { color: #f87171; font-size: 12px; margin-top: 10px; }
+.success-msg { color: #4ade80; font-size: 12px; margin-top: 10px; }
+
+.container { max-width: 1200px; margin: auto; padding: 16px; }
+
+.lista-title { text-align: center; margin-bottom: 20px; }
+.lista-title h2 { font-size: 20px; background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; }
+.lista-title p { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+.filters-bar {
+    background: rgba(31, 27, 58, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.filter-group { margin-bottom: 10px; }
+.filter-label { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 6px; display: block; }
+.sort-buttons, .type-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.sort-btn, .type-btn {
+    background: rgba(124, 58, 237, 0.4);
+    border: 1px solid rgba(124, 58, 237, 0.5);
+    padding: 5px 10px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+}
+.sort-btn.active, .type-btn.active { background: #7c3aed; border-color: #7c3aed; }
+.stats { font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 0;
+}
+
+.card {
+    background: rgba(31, 27, 58, 0.6);
+    border-radius: 12px;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    transition: transform 0.2s ease;
+}
+.card:active { transform: scale(0.98); }
+.card img {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    cursor: pointer;
+}
+.card-content { padding: 8px; }
+.card h4 { margin: 0 0 3px; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.media-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 9px; font-weight: 600; margin-bottom: 6px; }
+.badge-movie { background: #7c3aed; }
+.badge-tv { background: #ef4444; }
+.card p { font-size: 9px; color: #c084fc; margin-bottom: 3px; }
+.card button {
+    padding: 6px 0;
+    border: none;
+    border-radius: 8px;
+    background: #ef4444;
+    color: white;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 500;
+    width: 100%;
+    margin-top: 6px;
+}
+.empty-state { text-align: center; padding: 50px 20px; font-size: 13px; color: #888; }
+
+#tornaSu {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    font-size: 20px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(124,58,237,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+}
+
+@media (min-width: 769px) {
+    .topbar { padding: 20px 40px; background: rgba(0,0,0,0.3); }
+    h1 { font-size: 28px; }
+    .back-btn, .clear-all-btn, .login-btn, .logout-btn { padding: 10px 20px; font-size: 14px; }
+    .container { padding: 30px; }
+    .lista-title { margin-bottom: 30px; }
+    .lista-title h2 { font-size: 28px; }
+    .filters-bar { padding: 20px; margin-bottom: 30px; border-radius: 20px; }
+    .filter-label { font-size: 13px; }
+    .sort-btn, .type-btn { padding: 8px 16px; font-size: 13px; }
+    .stats { font-size: 13px; }
+    .grid { grid-template-columns: repeat(5, 1fr); gap: 25px; }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .card-content { padding: 15px; }
+    .card h4 { font-size: 14px; }
+    .media-badge { padding: 3px 10px; font-size: 10px; }
+    .card p { font-size: 11px; }
+    .card button { padding: 8px 12px; font-size: 12px; }
+    #tornaSu { bottom: 30px; right: 30px; width: 50px; height: 50px; font-size: 24px; }
+    #tornaSu:hover { transform: translateY(-5px); }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
+@media (min-width: 1400px) { .grid { grid-template-columns: repeat(6, 1fr); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.card { animation: fadeIn 0.3s ease; }
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <button class="back-btn" onclick="goBack()">⬅️</button>
+    </div>
+    <div class="topbar-center">
+        <h1>🎬 KitsuStream</h1>
+    </div>
+    <div class="topbar-right">
+        <div id="authButtons"></div>
+        <button class="clear-all-btn" onclick="clearAll()">🗑 Svuota</button>
+    </div>
+</div>
+
+<!-- Modale Login/Registrazione -->
+<div id="authModal" class="modal">
+    <div class="modal-content">
+        <div id="loginPanel">
+            <h2>🔐 Accedi per vedere la tua lista</h2>
+            <input type="email" id="loginEmail" placeholder="Email">
+            <input type="password" id="loginPassword" placeholder="Password">
+            <button onclick="login()">Accedi</button>
+            <button class="login-btn" onclick="showRegisterPanel()">Registrati</button>
+            <div id="loginError" class="error-msg"></div>
+        </div>
+        <div id="registerPanel" style="display:none;">
+            <h2>📝 Registrati</h2>
+            <input type="text" id="regUsername" placeholder="Nome utente" autocomplete="off">
+            <input type="email" id="regEmail" placeholder="Email">
+            <input type="password" id="regPassword" placeholder="Password (min 6)">
+            <button onclick="register()">Registrati</button>
+            <button onclick="showLoginPanel()">Torna al Login</button>
+            <div id="regError" class="error-msg"></div>
+            <div id="regSuccess" class="success-msg"></div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="lista-title">
+        <h2>⭐ La mia lista</h2>
+        <p>I tuoi film e serie TV preferiti</p>
+    </div>
+
+    <div class="filters-bar">
+        <div class="filter-group">
+            <div class="filter-label">📋 Ordina per:</div>
+            <div class="sort-buttons">
+                <button class="sort-btn active" data-sort="date" onclick="changeSort('date')">📅 Data</button>
+                <button class="sort-btn" data-sort="rating" onclick="changeSort('rating')">⭐ Voto</button>
+                <button class="sort-btn" data-sort="title" onclick="changeSort('title')">🔤 Titolo</button>
+            </div>
+        </div>
+        <div class="filter-group">
+            <div class="filter-label">🎬 Tipo:</div>
+            <div class="type-buttons">
+                <button class="type-btn active" data-type="all" onclick="filterByType('all')">Tutti</button>
+                <button class="type-btn" data-type="movie" onclick="filterByType('movie')">🎬 Film</button>
+                <button class="type-btn" data-type="tv" onclick="filterByType('tv')">📺 Serie TV</button>
+            </div>
+        </div>
+        <div class="stats" id="stats"></div>
+    </div>
+
+    <div id="listContainer"></div>
+</div>
+
+<button id="tornaSu" title="Torna su">↑</button>
+
+<script type="module">
+    // 👇 INSERISCI QUI LA TUA CONFIGURAZIONE FIREBASE 👇
+    const firebaseConfig = {
+        apiKey: "AIzaSyCeM7KVc9lZsdd8HM5b-PAfhx0usN8Aubo",
+        authDomain: "kitsustream-454e8.firebaseapp.com",
+        projectId: "kitsustream-454e8",
+        storageBucket: "kitsustream-454e8.firebasestorage.app",
+        messagingSenderId: "1008216243036",
+        appId: "1:1008216243036:web:73dfb15639862757b0df99"
+    };
+    // 👆 COPIA I DATI DALLA TUA CONSOLE FIREBASE 👆
+
+    import { initializeApp } from 'firebase/app';
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+    import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let currentList = [];
+    let currentUsername = "";
+
+    // Funzioni di autenticazione
+    window.login = async function() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorDiv = document.getElementById('loginError');
+        
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            document.getElementById('authModal').style.display = 'none';
+            errorDiv.textContent = '';
+        } catch (error) {
+            let msg = error.code === 'auth/invalid-email' ? 'Email non valida' :
+                      error.code === 'auth/user-not-found' ? 'Utente non trovato' :
+                      error.code === 'auth/wrong-password' ? 'Password errata' : error.message;
+            errorDiv.textContent = msg;
+        }
+    };
+
+    window.register = async function() {
+        const username = document.getElementById('regUsername')?.value?.trim() || "";
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+        const errorDiv = document.getElementById('regError');
+        const successDiv = document.getElementById('regSuccess');
+        
+        if (!username) {
+            errorDiv.textContent = 'Inserisci un nome utente';
+            return;
+        }
+        
+        if (username.length < 3) {
+            errorDiv.textContent = 'Il nome utente deve avere almeno 3 caratteri';
+            return;
+        }
+        
+        if (password.length < 6) {
+            errorDiv.textContent = 'La password deve essere almeno di 6 caratteri';
+            return;
+        }
+        
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            
+            await setDoc(doc(db, 'users', userCredential.user.uid), { 
+                list: [],
+                username: username,
+                email: email,
+                createdAt: new Date()
+            });
+            
+            successDiv.textContent = '✅ Registrazione completata! Ora puoi accedere.';
+            setTimeout(() => window.showLoginPanel(), 2000);
+        } catch (error) {
+            let msg = error.code === 'auth/email-already-in-use' ? 'Email già registrata' :
+                      error.code === 'auth/invalid-email' ? 'Email non valida' : error.message;
+            errorDiv.textContent = msg;
+        }
+    };
+
+    window.logout = async function() {
+        await signOut(auth);
+    };
+
+    window.showLoginPanel = function() {
+        document.getElementById('loginPanel').style.display = 'block';
+        document.getElementById('registerPanel').style.display = 'none';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('regError').textContent = '';
+        document.getElementById('regSuccess').textContent = '';
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regEmail').value = '';
+        document.getElementById('regPassword').value = '';
+    };
+
+    window.showRegisterPanel = function() {
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('registerPanel').style.display = 'block';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('regError').textContent = '';
+        document.getElementById('regSuccess').textContent = '';
+    };
+
+    window.openLoginModal = function() {
+        window.showLoginPanel();
+        document.getElementById('authModal').style.display = 'flex';
+    };
+
+    // Funzioni per la lista
+    async function loadUserList() {
+        if (!currentUser) return [];
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        return userDoc.exists() ? (userDoc.data().list || []) : [];
+    }
+
+    async function loadUserData() {
+        if (!currentUser) return null;
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        return userDoc.exists() ? userDoc.data() : null;
+    }
+
+    async function saveUserList(list) {
+        if (!currentUser) return;
+        await setDoc(doc(db, 'users', currentUser.uid), { list: list }, { merge: true });
+    }
+
+    async function removeFromCloudList(id, type) {
+        if (!currentUser) return;
+        let list = await loadUserList();
+        list = list.filter(item => !(item.id === id && item.type === type));
+        await saveUserList(list);
+        currentList = list;
+        displayList();
+    }
+
+    async function clearCloudList() {
+        if (!currentUser) return;
+        await saveUserList([]);
+        currentList = [];
+        displayList();
+    }
+
+    // Funzioni UI
+    let currentSort = "date";
+    let currentTypeFilter = "all";
+
+    window.changeSort = function(sort) {
+        currentSort = sort;
+        document.querySelectorAll(".sort-btn").forEach(btn => btn.classList.remove("active"));
+        document.querySelector(`.sort-btn[data-sort="${sort}"]`).classList.add("active");
+        displayList();
+    };
+
+    window.filterByType = function(type) {
+        currentTypeFilter = type;
+        document.querySelectorAll(".type-btn").forEach(btn => btn.classList.remove("active"));
+        document.querySelector(`.type-btn[data-type="${type}"]`).classList.add("active");
+        displayList();
+    };
+
+    function sortItems(items) {
+        const sorted = [...items];
+        switch(currentSort) {
+            case "rating":
+                sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                break;
+            case "title":
+                sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+                break;
+            case "date":
+            default:
+                sorted.sort((a, b) => (b.year || 0) - (a.year || 0));
+                break;
+        }
+        return sorted;
+    }
+
+    function filterItems(items) {
+        if (currentTypeFilter === "all") return items;
+        return items.filter(item => item.type === currentTypeFilter);
+    }
+
+    function updateStats(filteredItems, totalItems) {
+        const statsDiv = document.getElementById("stats");
+        const moviesCount = filteredItems.filter(i => i.type === "movie").length;
+        const tvCount = filteredItems.filter(i => i.type === "tv").length;
+        const avgRating = filteredItems.length > 0 
+            ? (filteredItems.reduce((sum, i) => sum + (i.rating || 0), 0) / filteredItems.length).toFixed(1)
+            : 0;
+        
+        statsDiv.innerHTML = `📊 Mostrati ${filteredItems.length} su ${totalItems} totali | 🎬 Film: ${moviesCount} | 📺 Serie: ${tvCount} | ⭐ Media voto: ${avgRating}`;
+    }
+
+    window.displayList = function() {
+        const container = document.getElementById("listContainer");
+        
+        if (!currentUser) {
+            container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
+            updateStats([], 0);
+            return;
+        }
+        
+        if (currentList.length === 0) {
+            container.innerHTML = '<div class="empty-state">📭 La tua lista è vuota<br>Aggiungi film o serie TV dalla home!</div>';
+            updateStats([], 0);
+            return;
+        }
+        
+        let filtered = filterItems(currentList);
+        const totalItems = currentList.length;
+        const sorted = sortItems(filtered);
+        
+        updateStats(filtered, totalItems);
+        
+        if (sorted.length === 0) {
+            container.innerHTML = '<div class="empty-state">😕 Nessun elemento corrisponde ai filtri selezionati</div>';
+            return;
+        }
+        
+        container.innerHTML = `
+            <div class="grid">
+                ${sorted.map(item => `
+                    <div class="card">
+                        <img src="${item.poster || 'https://via.placeholder.com/500x750'}" 
+                             alt="${item.title}" 
+                             onclick="openDetails(${item.id}, '${item.type}')"
+                             loading="lazy">
+                        <div class="card-content">
+                            <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
+                                ${item.mediaType || (item.type === 'movie' ? 'Film' : 'Serie TV')}
+                            </span>
+                            <h4>${escapeHtml(item.title)}</h4>
+                            <p>⭐ ${item.rating || "N/A"}/10</p>
+                            <p>📅 ${item.year || "N/D"}</p>
+                            ${item.seasons ? `<p>📺 ${item.seasons} stagioni</p>` : ''}
+                            <button onclick="removeFromList(${item.id}, '${item.type}')">❌ Rimuovi</button>
+                        </div>
+                    </div>
+                `).join("")}
+            </div>
+        `;
+    };
+
+    window.openDetails = function(id, type) {
+        window.location.href = `${type === 'movie' ? 'movie' : 'tv'}.html?id=${id}`;
+    };
+
+    window.removeFromList = async function(id, type) {
+        if (confirm("Rimuovere questo elemento dalla lista?")) {
+            await removeFromCloudList(id, type);
+        }
+    };
+
+    window.clearAll = async function() {
+        if (confirm("⚠️ Sei sicuro di voler svuotare tutta la lista?")) {
+            await clearCloudList();
+        }
+    };
+
+    window.goBack = function() {
+        window.history.back();
+    };
+
+    function escapeHtml(text) {
+        if (!text) return "";
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Stato autenticazione
+    onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
+        const authButtons = document.getElementById('authButtons');
+        
+        if (user) {
+            const userData = await loadUserData();
+            currentUsername = userData?.username || user.email.split('@')[0];
+            
+            authButtons.innerHTML = `
+                <div class="user-info">
+                    <span>👤</span>
+                    <span class="username">${escapeHtml(currentUsername)}</span>
+                    <button class="logout-btn" onclick="window.logout()" style="padding: 4px 10px;">🚪</button>
+                </div>
+            `;
+            currentList = await loadUserList();
+            displayList();
+        } else {
+            authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
+            currentUsername = "";
+            currentList = [];
+            displayList();
+        }
+    });
+
+    // Torna su
+    const tornaSuBtn = document.getElementById("tornaSu");
+    window.addEventListener("scroll", function() {
+        tornaSuBtn.style.display = window.scrollY > 300 ? "flex" : "none";
+    });
+    tornaSuBtn.addEventListener("click", function() {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+</script>
+
+</body>
+</html>
