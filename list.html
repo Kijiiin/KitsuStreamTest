@@ -241,14 +241,13 @@ h1 {
 
 <div class="topbar">
     <div class="topbar-left">
-        <button class="back-btn" onclick="goBack()">⬅️</button>
+        <button class="clear-all-btn" onclick="clearAll()">🗑 Svuota</button>
     </div>
     <div class="topbar-center">
-        <h1>🎬 KitsuStream</h1>
+        <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
     </div>
     <div class="topbar-right">
         <div id="authButtons"></div>
-        <button class="clear-all-btn" onclick="clearAll()">🗑 Svuota</button>
     </div>
 </div>
 
@@ -572,6 +571,8 @@ h1 {
     window.goBack = function() {
         window.history.back();
     };
+
+    function goHome() { window.location.href = "index.html"; };
 
     function escapeHtml(text) {
         if (!text) return "";
