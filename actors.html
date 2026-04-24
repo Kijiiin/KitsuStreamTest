@@ -44,45 +44,59 @@ body {
     z-index: 100;
 }
 
-.topbar-left, .topbar-right { display: flex; gap: 8px; align-items: center; }
-.topbar-center { flex: 1; text-align: center; }
+.topbar-left, .topbar-right { 
+    display: flex; 
+    gap: 6px; 
+    align-items: center; 
+    flex-wrap: nowrap;
+}
+.topbar-center { 
+    flex: 1; 
+    text-align: center; 
+    min-width: 0;
+}
 
 h1 {
     margin: 0;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
     background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    white-space: nowrap;
 }
 
 .back-btn, .list-btn, .login-btn, .logout-btn, .actors-nav-btn {
     background: rgba(124, 58, 237, 0.9);
     border: none;
-    padding: 6px 12px;
+    padding: 5px 10px;
     border-radius: 30px;
     color: white;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .actors-nav-btn { background: rgba(236, 72, 153, 0.9); }
 .login-btn { background: rgba(16, 185, 129, 0.9); }
 .logout-btn { background: rgba(239, 68, 68, 0.9); }
+
 .user-info { 
-    font-size: 12px; 
+    font-size: 11px; 
     background: rgba(0,0,0,0.5); 
-    padding: 4px 12px; 
+    padding: 4px 10px; 
     border-radius: 20px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    white-space: nowrap;
 }
 .username { font-weight: bold; color: #c084fc; }
 
+/* Modale */
 .modal {
     display: none;
     position: fixed;
@@ -130,6 +144,7 @@ h1 {
     margin-bottom: 20px;
     text-align: center;
     position: relative;
+    z-index: 10;
 }
 
 .actor-search-title {
@@ -556,10 +571,15 @@ h1 {
     color: #c084fc;
 }
 
+/* Desktop */
 @media (min-width: 769px) {
     .topbar { padding: 20px 30px; }
     h1 { font-size: 28px; }
-    .back-btn, .list-btn, .login-btn, .logout-btn, .actors-nav-btn { padding: 10px 20px; font-size: 14px; }
+    .back-btn, .list-btn, .login-btn, .logout-btn, .actors-nav-btn { 
+        padding: 10px 20px; 
+        font-size: 14px; 
+    }
+    .user-info { font-size: 14px; padding: 6px 15px; }
     .container { padding: 30px; margin: 40px auto; }
     .actor-profile { flex-direction: row; align-items: center; text-align: left; gap: 30px; }
     .actor-photo { width: 180px; height: 180px; }
@@ -574,8 +594,12 @@ h1 {
     .section-title { font-size: 20px; }
 }
 
-@media (min-width: 769px) and (max-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); gap: 20px; } }
-@media (min-width: 1400px) { .grid { grid-template-columns: repeat(6, 1fr); gap: 25px; } }
+@media (min-width: 769px) and (max-width: 1024px) { 
+    .grid { grid-template-columns: repeat(3, 1fr); gap: 20px; } 
+}
+@media (min-width: 1400px) { 
+    .grid { grid-template-columns: repeat(6, 1fr); gap: 25px; } 
+}
 
 .suggestions-container::-webkit-scrollbar {
     width: 5px;
@@ -603,7 +627,7 @@ h1 {
     <div class="topbar-right">
         <div id="authButtons"></div>
         <button class="actors-nav-btn" onclick="goToActors()">🎭 Attori</button>
-        <button class="list-btn" onclick="goToList()">⭐ Lista</button>
+        <button class="list-btn" onclick="goToList()">⭐</button>
     </div>
 </div>
 
@@ -621,8 +645,32 @@ h1 {
     <div id="resultsContainer"></div>
 </div>
 
+<!-- Modale Login -->
+<div id="authModal" class="modal">
+    <div class="modal-content">
+        <div id="loginPanel">
+            <h2>🔐 Accedi</h2>
+            <input type="email" id="loginEmail" placeholder="Email">
+            <input type="password" id="loginPassword" placeholder="Password">
+            <button onclick="login()">Accedi</button>
+            <button class="login-btn" onclick="showRegisterPanel()">Registrati</button>
+            <div id="loginError" class="error-msg"></div>
+        </div>
+        <div id="registerPanel" style="display:none;">
+            <h2>📝 Registrati</h2>
+            <input type="text" id="regUsername" placeholder="Nome utente" autocomplete="off">
+            <input type="email" id="regEmail" placeholder="Email">
+            <input type="password" id="regPassword" placeholder="Password (min 6)">
+            <button onclick="register()">Registrati</button>
+            <button onclick="showLoginPanel()">Torna al Login</button>
+            <div id="regError" class="error-msg"></div>
+            <div id="regSuccess" class="success-msg"></div>
+        </div>
+    </div>
+</div>
+
 <script type="module">
-    // Configurazione Firebase (solo autenticazione)
+    // Configurazione Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyCeM7KVc9lZsdd8HM5b-PAfhx0usN8Aubo",
         authDomain: "kitsustream-454e8.firebaseapp.com",
@@ -633,21 +681,120 @@ h1 {
     };
 
     import { initializeApp } from 'firebase/app';
-    import { getAuth, onAuthStateChanged } from 'firebase/auth';
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+    import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    onAuthStateChanged(auth, (user) => {
+    let currentUser = null;
+    let currentUsername = "";
+
+    // Funzioni di autenticazione
+    window.login = async function() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorDiv = document.getElementById('loginError');
+        
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            document.getElementById('authModal').style.display = 'none';
+            errorDiv.textContent = '';
+        } catch (error) {
+            let msg = error.code === 'auth/invalid-email' ? 'Email non valida' :
+                      error.code === 'auth/user-not-found' ? 'Utente non trovato' :
+                      error.code === 'auth/wrong-password' ? 'Password errata' : error.message;
+            errorDiv.textContent = msg;
+        }
+    };
+
+    window.register = async function() {
+        const username = document.getElementById('regUsername')?.value?.trim() || "";
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+        const errorDiv = document.getElementById('regError');
+        const successDiv = document.getElementById('regSuccess');
+        
+        if (!username) {
+            errorDiv.textContent = 'Inserisci un nome utente';
+            return;
+        }
+        
+        if (username.length < 3) {
+            errorDiv.textContent = 'Il nome utente deve avere almeno 3 caratteri';
+            return;
+        }
+        
+        if (password.length < 6) {
+            errorDiv.textContent = 'La password deve essere almeno di 6 caratteri';
+            return;
+        }
+        
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            
+            await setDoc(doc(db, 'users', userCredential.user.uid), { 
+                list: [],
+                username: username,
+                email: email,
+                createdAt: new Date()
+            });
+            
+            successDiv.textContent = '✅ Registrazione completata! Ora puoi accedere.';
+            setTimeout(() => window.showLoginPanel(), 2000);
+        } catch (error) {
+            let msg = error.code === 'auth/email-already-in-use' ? 'Email già registrata' :
+                      error.code === 'auth/invalid-email' ? 'Email non valida' : error.message;
+            errorDiv.textContent = msg;
+        }
+    };
+
+    window.logout = async function() {
+        await signOut(auth);
+        window.location.reload();
+    };
+
+    window.showLoginPanel = function() {
+        document.getElementById('loginPanel').style.display = 'block';
+        document.getElementById('registerPanel').style.display = 'none';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('regError').textContent = '';
+        document.getElementById('regSuccess').textContent = '';
+    };
+
+    window.showRegisterPanel = function() {
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('registerPanel').style.display = 'block';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('regError').textContent = '';
+        document.getElementById('regSuccess').textContent = '';
+    };
+
+    window.openLoginModal = function() {
+        window.showLoginPanel();
+        document.getElementById('authModal').style.display = 'flex';
+    };
+
+    async function loadUserData() {
+        if (!currentUser) return null;
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        return userDoc.exists() ? userDoc.data() : null;
+    }
+
+    // Aggiorna UI auth
+    onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
         const authButtons = document.getElementById('authButtons');
-        if (!authButtons) return;
         
         if (user) {
-            const emailShort = user.email.split('@')[0];
+            const userData = await loadUserData();
+            const displayName = userData?.username || user.email.split('@')[0];
+            
             authButtons.innerHTML = `
                 <div class="user-info">
                     <span>👤</span>
-                    <span class="username">${emailShort}</span>
+                    <span class="username">${escapeHtml(displayName)}</span>
                     <button class="logout-btn" onclick="window.logout()" style="padding: 4px 10px;">🚪</button>
                 </div>
             `;
@@ -656,14 +803,12 @@ h1 {
         }
     });
 
-    window.logout = async function() {
-        await auth.signOut();
-        window.location.reload();
-    };
-
-    window.openLoginModal = function() {
-        window.location.href = "index.html";
-    };
+    function escapeHtml(text) {
+        if (!text) return "";
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+    }
 </script>
 
 <script>
@@ -679,14 +824,14 @@ let directingTvShows = [];
 let currentPage = 1;
 let itemsPerPage = 20;
 let currentSortBy = "popularity";
-let currentRoleTab = "acting"; // 'acting' or 'directing'
-let currentMediaTab = "movies"; // 'movies' or 'tv'
+let currentRoleTab = "acting";
+let currentMediaTab = "movies";
 
 let searchTimeout = null;
 
 function getPersonFromURL() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('person');
+    return params.get('person') || params.get('actor');
 }
 
 window.onload = function() {
@@ -721,10 +866,8 @@ function switchRoleTab(tab) {
     });
     document.getElementById(`role-${tab}-btn`).classList.add('active');
     
-    // Aggiorna contatori nelle schede
     updateRoleCounters();
     
-    // Ricarica i contenuti
     if (tab === 'acting') {
         displayActingContent();
     } else {
@@ -860,15 +1003,12 @@ async function searchPersonByIdOnly(personId, personName) {
         
         currentPerson = personData;
         
-        // Separa per ruolo (attore vs regista)
         const allCredits = creditsData.cast || [];
         const allCrew = creditsData.crew || [];
         
-        // Recitazione (cast)
         actingMovies = allCredits.filter(item => item.media_type === "movie");
         actingTvShows = allCredits.filter(item => item.media_type === "tv");
         
-        // Regia (crew con job "Director")
         const directingCredits = allCrew.filter(item => item.job === "Director");
         directingMovies = directingCredits.filter(item => item.media_type === "movie");
         directingTvShows = directingCredits.filter(item => item.media_type === "tv");
@@ -1058,7 +1198,7 @@ function displayActingContent() {
                     <span class="section-count">${items.length}</span>
                 </div>
             </div>
-            ${items.length === 0 ? '<div class="no-results">😕 Nessun ${mediaTypeName.toLowerCase()} trovato</div>' : `
+            ${items.length === 0 ? '<div class="no-results">😕 Nessun ' + mediaTypeName.toLowerCase() + ' trovato</div>' : `
                 <div class="grid">
                     ${paginatedItems.map(item => {
                         const title = item.title || item.name;
@@ -1141,7 +1281,7 @@ function displayDirectingContent() {
                     <span class="section-count">${items.length}</span>
                 </div>
             </div>
-            ${items.length === 0 ? '<div class="no-results">😕 Nessun ${mediaTypeName.toLowerCase()} diretto trovato</div>' : `
+            ${items.length === 0 ? '<div class="no-results">😕 Nessun ' + mediaTypeName.toLowerCase() + ' diretto trovato</div>' : `
                 <div class="grid">
                     ${paginatedItems.map(item => {
                         const title = item.title || item.name;
