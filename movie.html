@@ -432,7 +432,6 @@ h1 {
         return userDoc.exists() ? userDoc.data() : null;
     }
 
-    // Funzione principale per ottenere la lista dal database
     async function loadUserList() {
         if (!currentUser) return [];
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
@@ -445,7 +444,6 @@ h1 {
             return false;
         }
         
-        // Ricarica sempre la lista più recente
         const currentList = await loadUserList();
         
         const exists = currentList.some(item => item.id === itemData.id && item.type === itemData.type);
@@ -458,6 +456,7 @@ h1 {
         }
         
         await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
+        userList = newList;
         
         return !exists;
     }
@@ -478,10 +477,8 @@ h1 {
                 </div>
             `;
             
-            // Carica la lista
             userList = await loadUserList();
             
-            // Aggiorna il bottone se i dati del film sono già caricati
             if (window.movieData && document.getElementById("listBtn")) {
                 const inList = userList.some(item => item.id === window.movieData.id && item.type === "movie");
                 const btn = document.getElementById("listBtn");
@@ -501,6 +498,8 @@ h1 {
     });
 
     window.toggleCloudList = toggleCloudList;
+    window.getCurrentUser = () => currentUser;
+    window.loadUserList = loadUserList;
     
     function escapeHtml(text) {
         if (!text) return "";
@@ -549,7 +548,6 @@ async function loadMovieDetails() {
         loadSimilar(data.similar);
         loadCast(data.credits);
         
-        // Se l'utente è loggato, aggiorna il bottone con la lista
         if (window.getCurrentUser && window.getCurrentUser()) {
             const inList = userList.some(item => item.id === movieData.id && item.type === "movie");
             const btn = document.getElementById("listBtn");
@@ -778,7 +776,6 @@ async function toggleListFromDetails() {
         btn.style.background = added ? "#ef4444" : "#7c3aed";
     }
     
-    // Ricarica la lista locale
     if (window.loadUserList) {
         userList = await window.loadUserList();
     }
