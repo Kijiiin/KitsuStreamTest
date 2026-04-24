@@ -355,7 +355,6 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     </div>
     <div class="topbar-right">
         <div id="authButtons"></div>
-        <button class="list-btn" onclick="goToList()">⭐ Lista</button>
     </div>
 </div>
 
@@ -394,6 +393,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     <div class="media-selector">
         <button class="media-btn active" data-type="movie" onclick="switchMediaType('movie')">🎬 Film</button>
         <button class="media-btn" data-type="tv" onclick="switchMediaType('tv')">📺 Serie TV</button>
+        <button class="list-btn" onclick="goToList()">❤️ Lista</button>
     </div>
 
     <div class="order-selector">
@@ -769,7 +769,7 @@ async function displayItems(items) {
                         onclick="window.toggleListGlobal(${item.id}, '${escapeHtml(title)}', '${posterUrl}', ${item.vote_average || 0}, '${year}', '${currentMediaType}', '${currentMediaType === "movie" ? "Film" : "Serie TV"}')"
                         style="background:${inList ? '#ef4444' : '#7c3aed'}"
                     >
-                        ${inList ? "❌ Rimuovi" : "⭐ Aggiungi"}
+                        ${inList ? "❌ Rimuovi" : "❤️ Aggiungi"}
                     </button>
                 </div>
             </div>
@@ -785,7 +785,7 @@ window.toggleListGlobal = async function(id, title, poster, rating, year, type, 
     
     const btn = document.getElementById(`btn-${id}`);
     if (btn) {
-        btn.innerText = added ? "❌ Rimuovi" : "⭐ Aggiungi";
+        btn.innerText = added ? "❌ Rimuovi" : "❤️ Aggiungi";
         btn.style.background = added ? "#ef4444" : "#7c3aed";
     }
 };
