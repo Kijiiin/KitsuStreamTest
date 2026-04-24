@@ -451,63 +451,75 @@ h1 {
     }
 
     async function toggleCloudList(itemData) {
-        if (!currentUser) {
-            window.openLoginModal();
-            return false;
-        }
-        
-        let list = [...userList];
-        const exists = list.some(item => item.id === itemData.id && item.type === itemData.type);
-        
-        if (exists) {
-            list = list.filter(item => !(item.id === itemData.id && item.type === itemData.type));
-        } else {
-            list.push(itemData);
-        }
-        
-        await saveUserList(list);
-        userList = list;
-        return !exists;
+    if (!currentUser) {
+        window.openLoginModal();
+        return false;
     }
+    
+    // 🔴 IMPORTANTE: Ricarica la lista PIÙ RECENTE da Firestore
+    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+    let currentList = userDoc.exists() ? (userDoc.data().list || []) : [];
+    
+    const exists = currentList.some(item => item.id === itemData.id && item.type === itemData.type);
+    
+    let newList;
+    if (exists) {
+        newList = currentList.filter(item => !(item.id === itemData.id && item.type === itemData.type));
+    } else {
+        newList = [...currentList, itemData];
+    }
+    
+    // Salva su Firestore
+    await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
+    
+    // Aggiorna la variabile locale
+    userList = newList;
+    
+    return !exists;
+}
 
     // Aggiorna UI auth
     onAuthStateChanged(auth, async (user) => {
-        currentUser = user;
-        const authButtons = document.getElementById('authButtons');
+    currentUser = user;
+    const authButtons = document.getElementById('authButtons');
+    
+    if (user) {
+        const userData = await loadUserData();
+        currentUsername = userData?.username || user.email.split('@')[0];
         
-        if (user) {
-            const userData = await loadUserData();
-            currentUsername = userData?.username || user.email.split('@')[0];
-            
-            authButtons.innerHTML = `
-                <div class="user-info">
-                    <span>👤</span>
-                    <span class="username">${escapeHtml(currentUsername)}</span>
-                    <button class="logout-btn" onclick="window.logout()" style="padding: 4px 10px;">🚪</button>
-                </div>
-            `;
-            userList = await loadUserList();
-            if (window.movieData) {
-                const inList = await isInCloudList(window.movieData.id, "movie");
-                const btn = document.getElementById("listBtn");
-                if (btn) {
-                    btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
-                    btn.style.background = inList ? "#ef4444" : "#7c3aed";
-                }
-            }
-        } else {
-            authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
-            currentUsername = "";
-            userList = [];
-            if (window.movieData) {
-                const btn = document.getElementById("listBtn");
-                if (btn) {
-                    btn.innerHTML = "❤️ Aggiungi";
-                    btn.style.background = "#7c3aed";
-                }
+        authButtons.innerHTML = `
+            <div class="user-info">
+                <span>👤</span>
+                <span class="username">${escapeHtml(currentUsername)}</span>
+                <button class="logout-btn" onclick="window.logout()" style="padding: 4px 10px;">🚪</button>
+            </div>
+        `;
+        
+        // 🔴 MODIFICA QUI: carica direttamente dal database
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        userList = userDoc.exists() ? (userDoc.data().list || []) : [];
+        
+        if (window.movieData) {
+            const inList = userList.some(item => item.id === window.movieData.id && item.type === "movie");
+            const btn = document.getElementById("listBtn");
+            if (btn) {
+                btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
+                btn.style.background = inList ? "#ef4444" : "#7c3aed";
             }
         }
-    });
+    } else {
+        authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
+        currentUsername = "";
+        userList = [];
+        if (window.movieData) {
+            const btn = document.getElementById("listBtn");
+            if (btn) {
+                btn.innerHTML = "❤️ Aggiungi";
+                btn.style.background = "#7c3aed";
+            }
+        }
+    }
+});
 
     window.toggleCloudList = toggleCloudList;
     window.isInCloudList = isInCloudList;
