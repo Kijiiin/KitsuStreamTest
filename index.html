@@ -716,15 +716,13 @@ async function loadContent() {
              if (currentOrder === 'top_rated') {
                 url = `https://api.themoviedb.org/3/${currentMediaType}/top_rated?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
         } else if (currentOrder === 'latest') {
-            if (currentMediaType === 'movie') {
-                url = `https://api.themoviedb.org/3/movie/now_playing?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
-         } else {
-            url = `https://api.themoviedb.org/3/tv/on_the_air?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
-         }
-        } else {
-            url = `https://api.themoviedb.org/3/${currentMediaType}/popular?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
-        }
+    // Ordina per data di uscita decrescente (più recenti prima)
+    let sortBy = 'release_date.desc';
+    if (currentMediaType === 'tv') {
+        sortBy = 'first_air_date.desc';
     }
+    url = `https://api.themoviedb.org/3/discover/${currentMediaType}?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=${sortBy}&vote_count.gte=100`;
+}
         
         const response = await fetch(url);
         const data = await response.json();
