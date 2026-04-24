@@ -267,6 +267,7 @@ h1 {
         <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
     </div>
     <div class="topbar-right">
+        <div id="authButtons"></div>
         <button class="list-btn" onclick="goToList()">❤️</button>
     </div>
 </div>
@@ -398,6 +399,7 @@ h1 {
 
     window.logout = async function() {
         await signOut(auth);
+        window.location.href = "index.html";
     };
 
     window.showLoginPanel = function() {
@@ -424,21 +426,17 @@ h1 {
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    async function loadUserList() {
-        if (!currentUser) return [];
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        return userDoc.exists() ? (userDoc.data().list || []) : [];
-    }
-
     async function loadUserData() {
         if (!currentUser) return null;
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
         return userDoc.exists() ? userDoc.data() : null;
     }
 
-    async function saveUserList(list) {
-        if (!currentUser) return;
-        await setDoc(doc(db, 'users', currentUser.uid), { list: list }, { merge: true });
+    // Funzione principale per ottenere la lista dal database
+    async function loadUserList() {
+        if (!currentUser) return [];
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        return userDoc.exists() ? (userDoc.data().list || []) : [];
     }
 
     async function toggleCloudList(itemData) {
@@ -447,8 +445,8 @@ h1 {
             return false;
         }
         
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        let currentList = userDoc.exists() ? (userDoc.data().list || []) : [];
+        // Ricarica sempre la lista più recente
+        const currentList = await loadUserList();
         
         const exists = currentList.some(item => item.id === itemData.id && item.type === itemData.type);
         
@@ -461,20 +459,7 @@ h1 {
         
         await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
         
-        userList = newList;
-        
         return !exists;
-    }
-
-    function updateButtonState() {
-        if (!window.movieData) return;
-        
-        const inList = userList.some(item => item.id === window.movieData.id && item.type === "movie");
-        const btn = document.getElementById("listBtn");
-        if (btn) {
-            btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
-            btn.style.background = inList ? "#ef4444" : "#7c3aed";
-        }
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -493,22 +478,24 @@ h1 {
                 </div>
             `;
             
-            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            userList = userDoc.exists() ? (userDoc.data().list || []) : [];
+            // Carica la lista
+            userList = await loadUserList();
             
-            if (window.movieData) {
-                updateButtonState();
+            // Aggiorna il bottone se i dati del film sono già caricati
+            if (window.movieData && document.getElementById("listBtn")) {
+                const inList = userList.some(item => item.id === window.movieData.id && item.type === "movie");
+                const btn = document.getElementById("listBtn");
+                btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
+                btn.style.background = inList ? "#ef4444" : "#7c3aed";
             }
         } else {
             authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
             currentUsername = "";
             userList = [];
-            if (window.movieData) {
+            if (window.movieData && document.getElementById("listBtn")) {
                 const btn = document.getElementById("listBtn");
-                if (btn) {
-                    btn.innerHTML = "❤️ Aggiungi";
-                    btn.style.background = "#7c3aed";
-                }
+                btn.innerHTML = "❤️ Aggiungi";
+                btn.style.background = "#7c3aed";
             }
         }
     });
@@ -562,9 +549,14 @@ async function loadMovieDetails() {
         loadSimilar(data.similar);
         loadCast(data.credits);
         
-        // Aggiorna il bottone se la lista è già caricata
-        if (typeof updateButtonState === 'function') {
-            updateButtonState();
+        // Se l'utente è loggato, aggiorna il bottone con la lista
+        if (window.getCurrentUser && window.getCurrentUser()) {
+            const inList = userList.some(item => item.id === movieData.id && item.type === "movie");
+            const btn = document.getElementById("listBtn");
+            if (btn) {
+                btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
+                btn.style.background = inList ? "#ef4444" : "#7c3aed";
+            }
         }
         
     } catch (error) {
@@ -577,7 +569,6 @@ async function displayMovieDetails(movie) {
     const posterUrl = movie.poster_path ? IMG_BASE + movie.poster_path : "https://via.placeholder.com/300x450?text=No+Image";
     const backdropUrl = movie.backdrop_path ? BACKDROP_BASE + movie.backdrop_path : "";
     
-    const inList = userList.some(item => item.id === movie.id && item.type === "movie");
     const link = `https://vixsrc.to/movie/${movie.id}?lang=it`;
     
     const html = `
@@ -603,7 +594,7 @@ async function displayMovieDetails(movie) {
                 <div class="watch-buttons">
                     <button class="watch-btn" onclick="openPlayer('${link}')">▶ Guarda</button>
                     <button class="list-toggle-btn" id="listBtn" onclick="toggleListFromDetails()">
-                        ${inList ? "❌ Rimuovi" : "❤️ Aggiungi"}
+                        ❤️ Aggiungi
                     </button>
                 </div>
             </div>
@@ -764,6 +755,11 @@ function goToActors() {
 async function toggleListFromDetails() {
     if (!movieData) return;
     
+    if (!window.getCurrentUser || !window.getCurrentUser()) {
+        window.openLoginModal();
+        return;
+    }
+    
     const itemData = {
         id: movieData.id,
         title: movieData.title,
@@ -781,9 +777,16 @@ async function toggleListFromDetails() {
         btn.innerHTML = added ? "❌ Rimuovi" : "❤️ Aggiungi";
         btn.style.background = added ? "#ef4444" : "#7c3aed";
     }
+    
+    // Ricarica la lista locale
+    if (window.loadUserList) {
+        userList = await window.loadUserList();
+    }
 }
 
-// Funzioni player
+function goHome() { window.location.href = "index.html"; }
+function goToList() { window.location.href = "list.html"; }
+
 function formatTime(seconds) {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -867,10 +870,6 @@ function handleOutsideClick(e) {
     const box = document.getElementById("playerBox");
     if (!box.contains(e.target)) closePlayer();
 }
-
-function goBack() { window.history.back(); }
-function goHome() { window.location.href = "index.html"; }
-function goToList() { window.location.href = "list.html"; }
 
 function escapeHtml(text) { 
     if (!text) return ""; 
