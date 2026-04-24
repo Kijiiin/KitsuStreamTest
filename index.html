@@ -521,36 +521,21 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    // ==== FUNZIONI LISTA CORRETTE ====
     async function loadUserList() {
         if (!currentUser) return [];
-        try {
-            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            return userDoc.exists() ? (userDoc.data().list || []) : [];
-        } catch (error) {
-            console.error("Errore caricamento lista:", error);
-            return [];
-        }
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        return userDoc.exists() ? (userDoc.data().list || []) : [];
     }
 
     async function loadUserData() {
         if (!currentUser) return null;
-        try {
-            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            return userDoc.exists() ? userDoc.data() : null;
-        } catch (error) {
-            console.error("Errore caricamento dati utente:", error);
-            return null;
-        }
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        return userDoc.exists() ? userDoc.data() : null;
     }
 
     async function saveUserList(list) {
         if (!currentUser) return;
-        try {
-            await setDoc(doc(db, 'users', currentUser.uid), { list: list }, { merge: true });
-        } catch (error) {
-            console.error("Errore salvataggio lista:", error);
-        }
+        await setDoc(doc(db, 'users', currentUser.uid), { list: list }, { merge: true });
     }
 
     async function isInCloudList(id, type) {
@@ -564,29 +549,18 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
             return false;
         }
         
-        let newList = [...userList];
-        const exists = newList.some(item => item.id === itemData.id && item.type === itemData.type);
+        let list = [...userList];
+        const exists = list.some(item => item.id === itemData.id && item.type === itemData.type);
         
         if (exists) {
-            newList = newList.filter(item => !(item.id === itemData.id && item.type === itemData.type));
+            list = list.filter(item => !(item.id === itemData.id && item.type === itemData.type));
         } else {
-            newList.push(itemData);
+            list.push(itemData);
         }
         
-        // Salva su Firestore
-        await saveUserList(newList);
-        
-        // Aggiorna la variabile locale
-        userList = newList;
-        
+        await saveUserList(list);
+        userList = list;
         return !exists;
-    }
-
-    // Forza l'aggiornamento della lista dal server
-    async function refreshUserList() {
-        if (!currentUser) return;
-        userList = await loadUserList();
-        if (typeof loadContent === 'function') loadContent();
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -607,7 +581,6 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
             userList = await loadUserList();
             if (typeof loadContent === 'function') loadContent();
         } else {
-            if (unsubscribeList) unsubscribeList();
             authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
             currentUsername = "";
             userList = [];
@@ -619,7 +592,6 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     window.getUserList = () => userList;
     window.toggleCloudList = toggleCloudList;
     window.isInCloudList = isInCloudList;
-    window.refreshUserList = refreshUserList;
     
     function escapeHtml(text) {
         if (!text) return "";
@@ -759,6 +731,7 @@ async function loadContent() {
             if (currentOrder === 'top_rated') {
                 url = `https://api.themoviedb.org/3/${currentMediaType}/top_rated?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
             } else if (currentOrder === 'latest') {
+                // Usa discover con ordinamento per data
                 let sortBy = currentMediaType === 'movie' ? 'release_date.desc' : 'first_air_date.desc';
                 url = `https://api.themoviedb.org/3/discover/${currentMediaType}?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=${sortBy}&vote_count.gte=50`;
             } else {
@@ -800,7 +773,8 @@ async function displayItems(items) {
         
         let inList = false;
         if (window.getCurrentUser && window.getCurrentUser()) {
-            inList = userList.some(i => i.id === item.id && i.type === currentMediaType);
+            const list = await window.getUserList();
+            inList = list.some(i => i.id === item.id && i.type === currentMediaType);
         }
         
         itemsHtml.push(`
@@ -833,11 +807,6 @@ window.toggleListGlobal = async function(id, title, poster, rating, year, type, 
     if (btn) {
         btn.innerText = added ? "❌ Rimuovi" : "❤️ Aggiungi";
         btn.style.background = added ? "#ef4444" : "#7c3aed";
-    }
-    
-    // Aggiorna la variabile userList globale
-    if (window.getCurrentUser && window.getCurrentUser()) {
-        const newList = await window.refreshUserList ? await window.refreshUserList() : null;
     }
 };
 
