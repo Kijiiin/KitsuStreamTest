@@ -811,7 +811,7 @@ function loadSimilar(similar) {
 // Funzione per cercare un attore e reindirizzare alla pagina actors.html
 function searchActorByName(actorName) {
     if (!actorName) return;
-    window.location.href = `actors.html?actor=${encodeURIComponent(actorName)}`;
+    window.location.href = `actors.html?person=${encodeURIComponent(actorName)}`;
 }
 
 function loadCast(credits) {
