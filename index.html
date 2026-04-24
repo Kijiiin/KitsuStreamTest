@@ -32,60 +32,122 @@ body {
     min-height: 100vh;
 }
 
+/* ============================================ */
+/* TOPBAR MOBILE MIGLIORATA */
+/* ============================================ */
 .topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(15px);
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(12px);
     position: sticky;
     top: 0;
     z-index: 100;
+    border-bottom: 1px solid rgba(124, 58, 237, 0.3);
 }
 
-.topbar-left, .topbar-right { display: flex; gap: 8px; align-items: center; }
-.topbar-center { flex: 1; text-align: center; }
+.topbar-left, .topbar-right {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.topbar-center {
+    flex: 1;
+    text-align: center;
+}
 
 h1 {
     margin: 0;
     font-size: 18px;
     font-weight: bold;
-    background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed);
+    background: linear-gradient(135deg, #a855f7, #c084fc, #7c3aed);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    letter-spacing: 0.5px;
 }
 
-.list-btn, .login-btn, .logout-btn, .actors-btn {
-    background: rgba(124, 58, 237, 0.9);
+/* Bottoni topbar */
+.list-btn, .actors-btn, .home-btn {
+    background: rgba(124, 58, 237, 0.85);
     border: none;
-    padding: 6px 12px;
+    padding: 7px 12px;
     border-radius: 30px;
     color: white;
     cursor: pointer;
     font-size: 12px;
     font-weight: 500;
     transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.list-btn:active, .actors-btn:active, .home-btn:active {
+    transform: scale(0.95);
+    background: rgba(124, 58, 237, 1);
 }
 
 .actors-btn {
-    background: rgba(236, 72, 153, 0.9);
+    background: linear-gradient(135deg, #ec4899, #be185d);
 }
 
-.login-btn { background: rgba(16, 185, 129, 0.9); }
-.logout-btn { background: rgba(239, 68, 68, 0.9); }
-.user-info { 
-    font-size: 12px; 
-    background: rgba(0,0,0,0.5); 
-    padding: 4px 12px; 
-    border-radius: 20px;
+.login-btn {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    padding: 7px 12px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.logout-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none;
+    padding: 7px 12px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.login-btn:active, .logout-btn:active {
+    transform: scale(0.95);
+}
+
+.user-info {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    padding: 5px 12px;
+    border-radius: 30px;
     display: flex;
     align-items: center;
     gap: 8px;
+    border: 1px solid rgba(124, 58, 237, 0.4);
 }
-.username { font-weight: bold; color: #c084fc; }
 
+.username {
+    font-weight: bold;
+    color: #c084fc;
+    font-size: 12px;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Modale */
 .modal {
     display: none;
     position: fixed;
@@ -237,10 +299,26 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
 #pageNumber { font-size: 11px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 30px; }
 .loading, .no-results { text-align: center; padding: 40px; font-size: 13px; color: #c084fc; }
 
+/* Desktop */
 @media (min-width: 769px) {
-    .topbar { padding: 20px 40px; background: rgba(0,0,0,0.3); }
-    h1 { font-size: 28px; }
-    .list-btn, .login-btn, .logout-btn, .actors-btn { padding: 10px 20px; font-size: 14px; }
+    .topbar {
+        padding: 15px 30px;
+        background: rgba(0, 0, 0, 0.5);
+    }
+    h1 {
+        font-size: 28px;
+    }
+    .list-btn, .actors-btn, .home-btn, .login-btn, .logout-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    .user-info {
+        padding: 6px 16px;
+    }
+    .username {
+        font-size: 14px;
+        max-width: 200px;
+    }
     .container { padding: 30px; }
     .search-section { margin-bottom: 30px; display: flex; justify-content: center; }
     .search-box { max-width: 600px; }
@@ -271,7 +349,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
 
 <div class="topbar">
     <div class="topbar-left">
-        <button class="list-btn" onclick="goHome()">🏠 Home</button>
+        <button class="home-btn" onclick="goHome()">🏠 Home</button>
     </div>
     <div class="topbar-center">
         <h1>🎬 KitsuStream</h1>
@@ -310,7 +388,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
 <div class="container">
     <div class="search-section">
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Ma guarda, scriv ch cazz t par" autocomplete="off">
+            <input type="text" id="searchInput" placeholder="Cerca film, serie TV..." autocomplete="off">
             <button class="clear-btn" onclick="clearSearch()">✖</button>
         </div>
     </div>
@@ -336,7 +414,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
 </div>
 
 <script type="module">
-    // 👇 INSERISCI QUI LA TUA CONFIGURAZIONE FIREBASE 👇
+    // Configurazione Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyCeM7KVc9lZsdd8HM5b-PAfhx0usN8Aubo",
         authDomain: "kitsustream-454e8.firebaseapp.com",
@@ -345,7 +423,6 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
         messagingSenderId: "1008216243036",
         appId: "1:1008216243036:web:73dfb15639862757b0df99"
     };
-    // 👆 COPIA I DATI DALLA TUA CONSOLE FIREBASE 👆
 
     import { initializeApp } from 'firebase/app';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
@@ -359,7 +436,6 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     let userList = [];
     let currentUsername = "";
 
-    // Funzioni di autenticazione
     window.login = async function() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
@@ -402,7 +478,6 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             
-            // Salva il nome utente nel database Firestore
             await setDoc(doc(db, 'users', userCredential.user.uid), { 
                 list: [],
                 username: username,
@@ -447,7 +522,6 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    // Funzioni per la lista salvata nel cloud
     async function loadUserList() {
         if (!currentUser) return [];
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
@@ -490,7 +564,6 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
         return !exists;
     }
 
-    // Aggiorna UI in base allo stato autenticazione
     onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         const authButtons = document.getElementById('authButtons');
@@ -503,7 +576,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
                 <div class="user-info">
                     <span>👤</span>
                     <span class="username">${escapeHtml(currentUsername)}</span>
-                    <button class="logout-btn" onclick="window.logout()" style="padding: 4px 10px;">🚪</button>
+                    <button class="logout-btn" onclick="window.logout()" style="padding: 6px 12px;">🚪</button>
                 </div>
             `;
             userList = await loadUserList();
@@ -516,7 +589,6 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
         }
     });
 
-    // Esponi le funzioni necessarie all'ambiente non-module
     window.getCurrentUser = () => currentUser;
     window.getUserList = () => userList;
     window.toggleCloudList = toggleCloudList;
