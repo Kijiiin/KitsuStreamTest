@@ -63,11 +63,10 @@ h1 {
     margin: 0;
     font-size: 18px;
     font-weight: bold;
-    background: linear-gradient(135deg, #a855f7, #c084fc, #7c3aed);
+    background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    letter-spacing: 0.5px;
 }
 
 /* Bottoni topbar */
@@ -349,14 +348,13 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
 
 <div class="topbar">
     <div class="topbar-left">
-        <!-- Vuoto o lasciato per eventuali future funzioni -->
+        <button class="actors-btn" onclick="goToActors()">🎭 Troupe</button>
     </div>
     <div class="topbar-center">
         <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
     </div>
     <div class="topbar-right">
         <div id="authButtons"></div>
-        <button class="actors-btn" onclick="goToActors()">🎭 Attori</button>
         <button class="list-btn" onclick="goToList()">⭐ Lista</button>
     </div>
 </div>
