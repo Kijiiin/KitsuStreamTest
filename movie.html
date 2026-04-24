@@ -500,13 +500,8 @@ h1 {
         userList = userDoc.exists() ? (userDoc.data().list || []) : [];
         
         if (window.movieData) {
-            const inList = userList.some(item => item.id === window.movieData.id && item.type === "movie");
-            const btn = document.getElementById("listBtn");
-            if (btn) {
-                btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
-                btn.style.background = inList ? "#ef4444" : "#7c3aed";
-            }
-        }
+    updateButtonState();
+}
     } else {
         authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
         currentUsername = "";
@@ -520,6 +515,17 @@ h1 {
         }
     }
 });
+
+    function updateButtonState() {
+    if (!window.movieData) return;
+    
+    const inList = userList.some(item => item.id === window.movieData.id && item.type === "movie");
+    const btn = document.getElementById("listBtn");
+    if (btn) {
+        btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
+        btn.style.background = inList ? "#ef4444" : "#7c3aed";
+    }
+}
 
     window.toggleCloudList = toggleCloudList;
     window.isInCloudList = isInCloudList;
@@ -573,6 +579,10 @@ async function loadMovieDetails() {
         await loadCollection(data);
         loadSimilar(data.similar);
         loadCast(data.credits);
+                // Se la lista è già caricata, aggiorna il bottone
+        if (userList.length > 0) {
+            updateButtonState();
+        }
         
     } catch (error) {
         console.error("Errore:", error);
@@ -879,6 +889,14 @@ function handleOutsideClick(e) {
 function goBack() { window.history.back(); }
 function goHome() { window.location.href = "index.html"; }
 function goToList() { window.location.href = "list.html"; }
+        
+        const inList = userList.some(item => item.id === window.movieData.id && item.type === "movie");
+        const btn = document.getElementById("listBtn");
+        if (btn) {
+            btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
+            btn.style.background = inList ? "#ef4444" : "#7c3aed";
+        }
+    }
 function escapeHtml(text) { if (!text) return ""; const div = document.createElement("div"); div.textContent = text; return div.innerHTML; }
 
 // Torna su
