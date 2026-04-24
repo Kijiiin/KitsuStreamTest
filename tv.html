@@ -146,10 +146,18 @@ h1 {
 .overview { margin: 16px 0; line-height: 1.5; color: #ddd; font-size: 13px; text-align: left; }
 .genres { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 16px 0; }
 .genre-tag { background: rgba(124, 58, 237, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 11px; }
-.watch-buttons { display: flex; gap: 12px; margin-top: 20px; justify-content: center; }
-.watch-btn, .list-toggle-btn { padding: 10px 20px; border: none; border-radius: 30px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.watch-buttons { display: flex; gap: 12px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
+.watch-btn, .list-toggle-btn, .reset-progress-btn { 
+    padding: 10px 20px; 
+    border: none; 
+    border-radius: 30px; 
+    font-size: 14px; 
+    font-weight: 600; 
+    cursor: pointer; 
+}
 .watch-btn { background: #ef4444; color: white; }
 .list-toggle-btn { background: #7c3aed; color: white; }
+.reset-progress-btn { background: #555; color: white; font-size: 12px; }
 
 .info-section, .collection-section, .seasons-section, .episodes-section, .similar-section, .cast-section {
     background: rgba(31, 27, 58, 0.6);
@@ -249,7 +257,8 @@ h1 {
     .overview { font-size: 16px; }
     .genres { justify-content: flex-start; }
     .watch-buttons { justify-content: flex-start; }
-    .watch-btn, .list-toggle-btn { padding: 12px 30px; font-size: 16px; }
+    .watch-btn, .list-toggle-btn, .reset-progress-btn { padding: 12px 30px; font-size: 16px; }
+    .reset-progress-btn { font-size: 14px; }
     .info-section, .collection-section, .seasons-section, .episodes-section, .similar-section, .cast-section { padding: 30px; margin-top: 30px; border-radius: 20px; }
     .section-title { font-size: 24px; }
     .info-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
@@ -545,6 +554,57 @@ function getTVIdFromURL() {
     return params.get('id');
 }
 
+// ========== FUNZIONI PER IL SALVATAGGIO DEL PROGRESSO EPISODI ==========
+function saveSeriesProgress(seasonNum, episodeNum) {
+    if (!tvData) return;
+    const key = `series_progress_${tvData.id}`;
+    localStorage.setItem(key, JSON.stringify({
+        season: seasonNum,
+        episode: episodeNum,
+        timestamp: Date.now(),
+        title: tvData.name
+    }));
+}
+
+function loadSeriesProgress() {
+    if (!tvData) return null;
+    const key = `series_progress_${tvData.id}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch(e) { return null; }
+    }
+    return null;
+}
+
+function resetSeriesProgress() {
+    if (!tvData) return;
+    if (confirm(`Resettare il progresso per "${tvData.name}"? Ricomincerai dall'inizio.`)) {
+        const key = `series_progress_${tvData.id}`;
+        localStorage.removeItem(key);
+        updateResumeButton();
+        alert("Progresso resettato!");
+    }
+}
+
+function updateResumeButton() {
+    const watchBtn = document.getElementById("watchBtn");
+    if (!watchBtn) return;
+    
+    const progress = loadSeriesProgress();
+    if (progress && progress.season && progress.episode) {
+        watchBtn.innerHTML = `▶ Riprendi S${progress.season}E${progress.episode}`;
+        watchBtn.style.background = "#f59e0b";
+        watchBtn.onclick = () => playEpisode(progress.season, progress.episode);
+    } else {
+        watchBtn.innerHTML = "▶ Guarda";
+        watchBtn.style.background = "#ef4444";
+        watchBtn.onclick = () => playFirstEpisode();
+    }
+}
+// =======================================================================
+
 async function loadTVDetails() {
     tvId = getTVIdFromURL();
     
@@ -581,6 +641,9 @@ async function loadTVDetails() {
             }
         }
         
+        // Aggiorna il bottone "Riprendi" dopo il caricamento
+        updateResumeButton();
+        
     } catch (error) {
         console.error("Errore:", error);
         document.getElementById("tvDetails").innerHTML = '<div class="loading">❌ Errore nel caricamento</div>';
@@ -591,7 +654,7 @@ async function displayTVDetails(tv) {
     const posterUrl = tv.poster_path ? IMG_BASE + tv.poster_path : "https://via.placeholder.com/300x450?text=No+Image";
     const backdropUrl = tv.backdrop_path ? BACKDROP_BASE + tv.backdrop_path : "";
     
-    const link = `https://vixsrc.to/tv/${tv.id}?lang=it`;
+    const progress = loadSeriesProgress();
     
     const html = `
         <div class="tv-header">
@@ -614,10 +677,11 @@ async function displayTVDetails(tv) {
                     ${tv.overview || "Trama non disponibile."}
                 </div>
                 <div class="watch-buttons">
-                    <button class="watch-btn" onclick="playFirstEpisode()">▶ Guarda</button>
+                    <button class="watch-btn" id="watchBtn">▶ Guarda</button>
                     <button class="list-toggle-btn" id="listBtn" onclick="toggleListFromDetails()">
                         ❤️ Aggiungi
                     </button>
+                    ${progress ? `<button class="reset-progress-btn" onclick="resetSeriesProgress()">🗑 Reset progresso</button>` : ''}
                 </div>
             </div>
         </div>
@@ -847,6 +911,7 @@ function openTVPage(id) {
 
 function playEpisode(season, episode) {
     const url = `https://vixsrc.to/tv/${tvId}/${season}/${episode}?lang=it`;
+    saveSeriesProgress(season, episode);
     openPlayer(url);
 }
 
