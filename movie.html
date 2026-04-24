@@ -267,7 +267,7 @@ h1 {
         <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
     </div>
     <div class="topbar-right">
-        <button class="list-btn" onclick="goToList()">⭐</button>
+        <button class="list-btn" onclick="goToList()">❤️</button>
     </div>
 </div>
 
@@ -491,7 +491,7 @@ h1 {
                 const inList = await isInCloudList(window.movieData.id, "movie");
                 const btn = document.getElementById("listBtn");
                 if (btn) {
-                    btn.innerHTML = inList ? "❌ Rimuovi" : "⭐ Aggiungi";
+                    btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
                     btn.style.background = inList ? "#ef4444" : "#7c3aed";
                 }
             }
@@ -502,7 +502,7 @@ h1 {
             if (window.movieData) {
                 const btn = document.getElementById("listBtn");
                 if (btn) {
-                    btn.innerHTML = "⭐ Aggiungi";
+                    btn.innerHTML = "❤️ Aggiungi";
                     btn.style.background = "#7c3aed";
                 }
             }
@@ -598,7 +598,7 @@ async function displayMovieDetails(movie) {
                 <div class="watch-buttons">
                     <button class="watch-btn" onclick="openPlayer('${link}')">▶ Guarda</button>
                     <button class="list-toggle-btn" id="listBtn" onclick="toggleListFromDetails()">
-                        ${inList ? "❌ Rimuovi" : "⭐ Aggiungi"}
+                        ${inList ? "❌ Rimuovi" : "❤️ Aggiungi"}
                     </button>
                 </div>
             </div>
@@ -774,7 +774,7 @@ async function toggleListFromDetails() {
     
     const btn = document.getElementById("listBtn");
     if (btn) {
-        btn.innerHTML = added ? "❌ Rimuovi" : "⭐ Aggiungi";
+        btn.innerHTML = added ? "❌ Rimuovi" : "❤️ Aggiungi";
         btn.style.background = added ? "#ef4444" : "#7c3aed";
     }
 }
