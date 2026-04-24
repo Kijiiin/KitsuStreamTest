@@ -289,6 +289,7 @@ h1 {
         <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
     </div>
     <div class="topbar-right">
+        <div id="authButtons"></div>
         <button class="list-btn" onclick="goToList()">❤️</button>
     </div>
 </div>
@@ -359,6 +360,17 @@ h1 {
     let currentUser = null;
     let userList = [];
     let currentUsername = "";
+    
+    // Funzione globale per aggiornare il bottone
+    window.updateTVButton = function() {
+        if (!window.tvData) return;
+        const btn = document.getElementById("listBtn");
+        if (btn) {
+            const inList = userList.some(item => item.id === window.tvData.id && item.type === "tv");
+            btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
+            btn.style.background = inList ? "#ef4444" : "#7c3aed";
+        }
+    };
 
     window.login = async function() {
         const email = document.getElementById('loginEmail').value;
@@ -479,18 +491,10 @@ h1 {
         await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
         userList = newList;
         
-        return !exists;
-    }
-
-    function updateButtonState() {
-        if (!window.tvData) return;
+        // Aggiorna il bottone
+        if (window.updateTVButton) window.updateTVButton();
         
-        const inList = userList.some(item => item.id === window.tvData.id && item.type === "tv");
-        const btn = document.getElementById("listBtn");
-        if (btn) {
-            btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
-            btn.style.background = inList ? "#ef4444" : "#7c3aed";
-        }
+        return !exists;
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -511,9 +515,8 @@ h1 {
             
             userList = await loadUserList();
             
-            if (window.tvData && document.getElementById("listBtn")) {
-                updateButtonState();
-            }
+            // Aggiorna il bottone se esiste già
+            if (window.updateTVButton) window.updateTVButton();
         } else {
             authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
             currentUsername = "";
@@ -657,13 +660,9 @@ async function loadTVDetails() {
         loadSimilar(data.similar);
         loadCast(data.credits);
         
-        if (window.getCurrentUser && window.getCurrentUser()) {
-            const inList = userList.some(item => item.id === tvData.id && item.type === "tv");
-            const btn = document.getElementById("listBtn");
-            if (btn) {
-                btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
-                btn.style.background = inList ? "#ef4444" : "#7c3aed";
-            }
+        // Aggiorna il bottone con la lista già caricata
+        if (window.updateTVButton) {
+            window.updateTVButton();
         }
         
         updateResumeButton();
@@ -679,6 +678,12 @@ async function displayTVDetails(tv) {
     const backdropUrl = tv.backdrop_path ? BACKDROP_BASE + tv.backdrop_path : "";
     
     const progress = loadSeriesProgress();
+    
+    // Determina lo stato iniziale del bottone
+    let initialInList = false;
+    if (window.userList) {
+        initialInList = window.userList.some(item => item.id === tv.id && item.type === "tv");
+    }
     
     const html = `
         <div class="tv-header">
@@ -703,7 +708,7 @@ async function displayTVDetails(tv) {
                 <div class="watch-buttons">
                     <button class="watch-btn" id="watchBtn">▶ Guarda</button>
                     <button class="list-toggle-btn" id="listBtn" onclick="toggleListFromDetails()">
-                        ❤️ Aggiungi
+                        ${initialInList ? "❌ Rimuovi" : "❤️ Aggiungi"}
                     </button>
                     ${progress ? `<button class="reset-progress-btn" onclick="resetSeriesProgress()">🗑 Reset</button>` : ''}
                 </div>
@@ -972,10 +977,6 @@ async function toggleListFromDetails() {
     if (btn) {
         btn.innerHTML = added ? "❌ Rimuovi" : "❤️ Aggiungi";
         btn.style.background = added ? "#ef4444" : "#7c3aed";
-    }
-    
-    if (window.loadUserList) {
-        userList = await window.loadUserList();
     }
 }
 
