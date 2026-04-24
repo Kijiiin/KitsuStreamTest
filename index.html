@@ -397,8 +397,9 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     </div>
 
     <div class="order-selector">
-        <button class="order-btn active" data-order="popular" onclick="changeOrder('popular')">🔥 Popolari</button>
-        <button class="order-btn" data-order="top_rated" onclick="changeOrder('top_rated')">⭐ Più votati</button>
+         <button class="order-btn active" data-order="popular" onclick="changeOrder('popular')">🔥 Popolari</button>
+         <button class="order-btn" data-order="top_rated" onclick="changeOrder('top_rated')">⭐ Più votati</button>
+         <button class="order-btn" data-order="latest" onclick="changeOrder('latest')">🆕 Ultimi usciti</button>
     </div>
 
     <div id="genresContainer" class="genres"></div>
@@ -712,12 +713,18 @@ async function loadContent() {
             let sortBy = currentOrder === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
             url = `https://api.themoviedb.org/3/discover/${currentMediaType}?api_key=${API_KEY}&with_genres=${genreQuery}&language=it-IT&page=${currentPage}&sort_by=${sortBy}`;
         } else {
-            if (currentOrder === 'top_rated') {
+             if (currentOrder === 'top_rated') {
                 url = `https://api.themoviedb.org/3/${currentMediaType}/top_rated?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
-            } else {
-                url = `https://api.themoviedb.org/3/${currentMediaType}/popular?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
-            }
+        } else if (currentOrder === 'latest') {
+            if (currentMediaType === 'movie') {
+                url = `https://api.themoviedb.org/3/movie/now_playing?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
+         } else {
+            url = `https://api.themoviedb.org/3/tv/on_the_air?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
+         }
+        } else {
+            url = `https://api.themoviedb.org/3/${currentMediaType}/popular?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
         }
+    }
         
         const response = await fetch(url);
         const data = await response.json();
