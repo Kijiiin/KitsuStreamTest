@@ -572,10 +572,6 @@ h1 {
         window.history.back();
     };
 
-    function goHome() { 
-        window.location.href = "index.html"; 
-    };
-
     function escapeHtml(text) {
         if (!text) return "";
         const div = document.createElement("div");
@@ -617,6 +613,12 @@ h1 {
     tornaSuBtn.addEventListener("click", function() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     });
+</script>
+
+<script>
+    function goHome() {
+        window.location.href = "index.html";
+    }
 </script>
 
 </body>
