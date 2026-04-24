@@ -707,22 +707,37 @@ async function loadContent() {
         
         if (searchQuery) {
             const searchType = currentMediaType === "movie" ? "movie" : "tv";
-            url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(searchQuery)}&language=it-IT&page=${currentPage}`;
-        } else if (selectedGenres.length > 0) {
+            let sortParam = "";
+            if (currentOrder === 'latest') {
+                sortParam = `&sort_by=${currentMediaType === 'movie' ? 'release_date.desc' : 'first_air_date.desc'}`;
+            } else if (currentOrder === 'top_rated') {
+                sortParam = `&sort_by=vote_average.desc`;
+            } else {
+                sortParam = `&sort_by=popularity.desc`;
+            }
+            url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(searchQuery)}&language=it-IT&page=${currentPage}${sortParam}`;
+        } 
+        else if (selectedGenres.length > 0) {
             const genreQuery = selectedGenres.join(",");
-            let sortBy = currentOrder === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
-            url = `https://api.themoviedb.org/3/discover/${currentMediaType}?api_key=${API_KEY}&with_genres=${genreQuery}&language=it-IT&page=${currentPage}&sort_by=${sortBy}`;
-        } else {
-             if (currentOrder === 'top_rated') {
+            let sortBy = 'popularity.desc';
+            if (currentOrder === 'top_rated') {
+                sortBy = 'vote_average.desc';
+            } else if (currentOrder === 'latest') {
+                sortBy = currentMediaType === 'movie' ? 'release_date.desc' : 'first_air_date.desc';
+            }
+            url = `https://api.themoviedb.org/3/discover/${currentMediaType}?api_key=${API_KEY}&with_genres=${genreQuery}&language=it-IT&page=${currentPage}&sort_by=${sortBy}&vote_count.gte=50`;
+        } 
+        else {
+            if (currentOrder === 'top_rated') {
                 url = `https://api.themoviedb.org/3/${currentMediaType}/top_rated?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
-        } else if (currentOrder === 'latest') {
-    // Ordina per data di uscita decrescente (più recenti prima)
-    let sortBy = 'release_date.desc';
-    if (currentMediaType === 'tv') {
-        sortBy = 'first_air_date.desc';
-    }
-    url = `https://api.themoviedb.org/3/discover/${currentMediaType}?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=${sortBy}&vote_count.gte=100`;
-}
+            } else if (currentOrder === 'latest') {
+                // Usa discover con ordinamento per data
+                let sortBy = currentMediaType === 'movie' ? 'release_date.desc' : 'first_air_date.desc';
+                url = `https://api.themoviedb.org/3/discover/${currentMediaType}?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=${sortBy}&vote_count.gte=50`;
+            } else {
+                url = `https://api.themoviedb.org/3/${currentMediaType}/popular?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
+            }
+        }
         
         const response = await fetch(url);
         const data = await response.json();
