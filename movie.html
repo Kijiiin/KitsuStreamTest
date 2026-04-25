@@ -350,6 +350,55 @@ h1 {
         }
     };
 
+    // ========== FUNZIONI PER IL SALVATAGGIO DEL MINUTAGGIO NEL CLOUD ==========
+    window.saveMovieProgressCloud = async function(seconds) {
+        if (!currentUser) return;
+        if (!window.movieData) return;
+        
+        try {
+            const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'movie_' + window.movieData.id);
+            await setDoc(progressRef, {
+                seconds: seconds,
+                timestamp: Date.now(),
+                title: window.movieData.title,
+                type: "movie"
+            }, { merge: true });
+            console.log("Progresso salvato nel cloud:", seconds);
+        } catch (error) {
+            console.error("Errore salvataggio cloud:", error);
+        }
+    };
+
+    window.loadMovieProgressCloud = async function() {
+        if (!currentUser) return null;
+        if (!window.movieData) return null;
+        
+        try {
+            const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'movie_' + window.movieData.id);
+            const docSnap = await getDoc(progressRef);
+            if (docSnap.exists()) {
+                return docSnap.data().seconds;
+            }
+        } catch (error) {
+            console.error("Errore caricamento cloud:", error);
+        }
+        return null;
+    };
+
+    window.resetMovieProgressCloud = async function() {
+        if (!currentUser) return;
+        if (!window.movieData) return;
+        
+        try {
+            const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'movie_' + window.movieData.id);
+            await deleteDoc(progressRef);
+            console.log("Progresso cloud rimosso");
+        } catch (error) {
+            console.error("Errore reset cloud:", error);
+        }
+    };
+    // =======================================================================
+
     window.login = async function() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
@@ -532,55 +581,6 @@ function getMovieIdFromURL() {
     const params = new URLSearchParams(window.location.search);
     return params.get('id');
 }
-
-// ========== FUNZIONI PER IL SALVATAGGIO DEL MINUTAGGIO NEL CLOUD ==========
-async function saveMovieProgressCloud(seconds) {
-    if (!window.getCurrentUser || !window.getCurrentUser()) return;
-    if (!movieData) return;
-    
-    try {
-        const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'movie_' + movieData.id);
-        await setDoc(progressRef, {
-            seconds: seconds,
-            timestamp: Date.now(),
-            title: movieData.title,
-            type: "movie"
-        }, { merge: true });
-        console.log("Progresso salvato nel cloud:", seconds);
-    } catch (error) {
-        console.error("Errore salvataggio cloud:", error);
-    }
-}
-
-async function loadMovieProgressCloud() {
-    if (!window.getCurrentUser || !window.getCurrentUser()) return null;
-    if (!movieData) return null;
-    
-    try {
-        const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'movie_' + movieData.id);
-        const docSnap = await getDoc(progressRef);
-        if (docSnap.exists()) {
-            return docSnap.data().seconds;
-        }
-    } catch (error) {
-        console.error("Errore caricamento cloud:", error);
-    }
-    return null;
-}
-
-async function resetMovieProgressCloud() {
-    if (!window.getCurrentUser || !window.getCurrentUser()) return;
-    if (!movieData) return;
-    
-    try {
-        const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'movie_' + movieData.id);
-        await deleteDoc(progressRef);
-        console.log("Progresso cloud rimosso");
-    } catch (error) {
-        console.error("Errore reset cloud:", error);
-    }
-}
-// =======================================================================
 
 async function loadMovieDetails() {
     movieId = getMovieIdFromURL();
@@ -883,8 +883,8 @@ async function saveCurrentSpot() {
     localStorage.setItem(`time_movie_${currentVideoUrl}`, result.seconds);
     
     // Salva nel cloud se l'utente è loggato
-    if (window.getCurrentUser && window.getCurrentUser()) {
-        await saveMovieProgressCloud(result.seconds);
+    if (window.saveMovieProgressCloud) {
+        await window.saveMovieProgressCloud(result.seconds);
     }
     
     const savedInfo = document.getElementById("savedInfo");
@@ -903,8 +903,8 @@ async function resetSavedSpot() {
     
     // Controlla se c'è un salvataggio
     let hasSave = false;
-    if (window.getCurrentUser && window.getCurrentUser()) {
-        const cloudSave = await loadMovieProgressCloud();
+    if (window.loadMovieProgressCloud) {
+        const cloudSave = await window.loadMovieProgressCloud();
         hasSave = cloudSave !== null;
     }
     if (!hasSave) {
@@ -915,8 +915,8 @@ async function resetSavedSpot() {
     
     if (confirm("Cancellare la posizione salvata?")) {
         // Rimuovi dal cloud
-        if (window.getCurrentUser && window.getCurrentUser()) {
-            await resetMovieProgressCloud();
+        if (window.resetMovieProgressCloud) {
+            await window.resetMovieProgressCloud();
         }
         // Rimuovi dal localStorage
         localStorage.removeItem(`time_movie_${currentVideoUrl}`);
@@ -942,8 +942,8 @@ async function openPlayer(url) {
     
     // Prova prima dal cloud (se utente loggato)
     let savedTime = null;
-    if (window.getCurrentUser && window.getCurrentUser()) {
-        savedTime = await loadMovieProgressCloud();
+    if (window.loadMovieProgressCloud) {
+        savedTime = await window.loadMovieProgressCloud();
     }
     
     // Fallback al localStorage se non c'è nel cloud
