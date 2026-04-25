@@ -692,11 +692,8 @@ async function loadTVDetails() {
 async function displayTVDetails(tv) {
     const posterUrl = tv.poster_path ? IMG_BASE + tv.poster_path : "https://via.placeholder.com/300x450?text=No+Image";
     const backdropUrl = tv.backdrop_path ? BACKDROP_BASE + tv.backdrop_path : "";
-    const progress = await loadSeriesProgress();
-    let initialInList = false;
-    if (window.userList) {
-        initialInList = window.userList.some(item => item.id === tv.id && item.type === "tv");
-    }
+    
+    // 🔴 MOSTRA UN INDICATORE DI CARICAMENTO
     const html = `
         <div class="tv-header">
             <div class="tv-poster">
@@ -718,23 +715,38 @@ async function displayTVDetails(tv) {
                     ${tv.overview || "Trama non disponibile."}
                 </div>
                 <div class="watch-buttons">
-                    <button class="watch-btn" id="watchBtn">▶ Guarda</button>
+                    <button class="watch-btn" id="watchBtn" style="background:#888;">⏳ Caricamento...</button>
                     <button class="list-toggle-btn" id="listBtn" onclick="toggleListFromDetails()">
-                        ${initialInList ? "❌ Rimuovi" : "❤️ Aggiungi"}
+                        ${window.userList?.some(item => item.id === tv.id && item.type === "tv") ? "❌ Rimuovi" : "❤️ Aggiungi"}
                     </button>
-                    ${progress ? `<button class="reset-progress-btn" onclick="resetSeriesProgress()">🗑 Reset</button>` : ''}
                 </div>
             </div>
         </div>
     `;
+    
     document.getElementById("tvDetails").innerHTML = html;
+    
     if (backdropUrl && window.innerWidth > 768) {
         document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url(${backdropUrl})`;
         document.body.style.backgroundSize = "cover";
         document.body.style.backgroundAttachment = "fixed";
     }
-    // 🔴 IMPORTANTE: Aggiorna il bottone dopo che l'HTML è stato inserito
-    await updateResumeButton();
+    
+    // 🔴 ATTENDI IL CARICAMENTO DEL CLOUD PRIMA DI AGGIORNARE IL BOTTONE
+    const progress = await loadSeriesProgress();
+    const watchBtn = document.getElementById("watchBtn");
+    if (watchBtn) {
+        if (progress) {
+            const nextEpisode = await getNextEpisode();
+            watchBtn.innerHTML = `▶ Riprendi S${nextEpisode.season}E${nextEpisode.episode}`;
+            watchBtn.style.background = "#f59e0b";
+            watchBtn.onclick = () => playEpisode(nextEpisode.season, nextEpisode.episode);
+        } else {
+            watchBtn.innerHTML = "▶ Guarda";
+            watchBtn.style.background = "#ef4444";
+            watchBtn.onclick = () => playFirstEpisode();
+        }
+    }
 }
 
 function loadAdditionalInfo(tv) {
