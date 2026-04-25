@@ -24,6 +24,7 @@
 
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
@@ -371,12 +372,8 @@ h1 {
     };
 
     window.saveTVProgressCloud = async function(seasonNum, episodeNum) {
-        if (!currentUser) {
-            console.log("Nessun utente loggato");
-            return;
-        }
+        if (!currentUser) return;
         if (!window.tvData) return;
-        
         try {
             const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'tv_' + window.tvData.id);
             await setDoc(progressRef, {
@@ -395,7 +392,6 @@ h1 {
     window.loadTVProgressCloud = async function() {
         if (!currentUser) return null;
         if (!window.tvData) return null;
-        
         try {
             const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'tv_' + window.tvData.id);
             const docSnap = await getDoc(progressRef);
@@ -413,7 +409,6 @@ h1 {
     window.resetTVProgressCloud = async function() {
         if (!currentUser) return;
         if (!window.tvData) return;
-        
         try {
             const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'tv_' + window.tvData.id);
             await deleteDoc(progressRef);
@@ -423,12 +418,80 @@ h1 {
         }
     };
 
-    window.login = async function() { ... };
-    window.register = async function() { ... };
-    window.logout = async function() { ... };
-    window.showLoginPanel = function() { ... };
-    window.showRegisterPanel = function() { ... };
-    window.openLoginModal = function() { ... };
+    window.login = async function() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorDiv = document.getElementById('loginError');
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            document.getElementById('authModal').style.display = 'none';
+            errorDiv.textContent = '';
+        } catch (error) {
+            let msg = error.code === 'auth/invalid-email' ? 'Email non valida' :
+                      error.code === 'auth/user-not-found' ? 'Utente non trovato' :
+                      error.code === 'auth/wrong-password' ? 'Password errata' : error.message;
+            errorDiv.textContent = msg;
+        }
+    };
+
+    window.register = async function() {
+        const username = document.getElementById('regUsername')?.value?.trim() || "";
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+        const errorDiv = document.getElementById('regError');
+        const successDiv = document.getElementById('regSuccess');
+        if (!username) {
+            errorDiv.textContent = 'Inserisci un nome utente';
+            return;
+        }
+        if (username.length < 3) {
+            errorDiv.textContent = 'Il nome utente deve avere almeno 3 caratteri';
+            return;
+        }
+        if (password.length < 6) {
+            errorDiv.textContent = 'La password deve essere almeno di 6 caratteri';
+            return;
+        }
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            await setDoc(doc(db, 'users', userCredential.user.uid), { list: [], username: username, email: email, createdAt: new Date() });
+            successDiv.textContent = '✅ Registrazione completata! Ora puoi accedere.';
+            setTimeout(() => window.showLoginPanel(), 2000);
+        } catch (error) {
+            let msg = error.code === 'auth/email-already-in-use' ? 'Email già registrata' :
+                      error.code === 'auth/invalid-email' ? 'Email non valida' : error.message;
+            errorDiv.textContent = msg;
+        }
+    };
+
+    window.logout = async function() {
+        await signOut(auth);
+        window.location.href = "index.html";
+    };
+
+    window.showLoginPanel = function() {
+        document.getElementById('loginPanel').style.display = 'block';
+        document.getElementById('registerPanel').style.display = 'none';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('regError').textContent = '';
+        document.getElementById('regSuccess').textContent = '';
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regEmail').value = '';
+        document.getElementById('regPassword').value = '';
+    };
+
+    window.showRegisterPanel = function() {
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('registerPanel').style.display = 'block';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('regError').textContent = '';
+        document.getElementById('regSuccess').textContent = '';
+    };
+
+    window.openLoginModal = function() {
+        window.showLoginPanel();
+        document.getElementById('authModal').style.display = 'flex';
+    };
 
     async function loadUserData() {
         if (!currentUser) return null;
@@ -447,7 +510,6 @@ h1 {
             window.openLoginModal();
             return false;
         }
-        
         const currentList = await loadUserList();
         const exists = currentList.some(item => item.id === itemData.id && item.type === itemData.type);
         let newList = exists ? currentList.filter(item => !(item.id === itemData.id && item.type === itemData.type)) : [...currentList, itemData];
@@ -460,7 +522,6 @@ h1 {
     onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         const authButtons = document.getElementById('authButtons');
-        
         if (user) {
             const userData = await loadUserData();
             currentUsername = userData?.username || user.email.split('@')[0];
@@ -568,10 +629,8 @@ async function resetSeriesProgress() {
 async function updateResumeButton() {
     const watchBtn = document.getElementById("watchBtn");
     if (!watchBtn) return;
-    
     const progress = await loadSeriesProgress();
     const nextEpisode = await getNextEpisode();
-    
     if (progress) {
         watchBtn.innerHTML = `▶ Riprendi S${nextEpisode.season}E${nextEpisode.episode}`;
         watchBtn.style.background = "#f59e0b";
@@ -589,17 +648,14 @@ async function loadTVDetails() {
         document.getElementById("tvDetails").innerHTML = '<div class="loading">❌ ID serie TV non valido</div>';
         return;
     }
-    
     try {
         document.getElementById("tvDetails").innerHTML = '<div class="loading">⏳ Caricamento...</div>';
         const response = await fetch(`https://api.themoviedb.org/3/tv/${tvId}?api_key=${API_KEY}&language=it-IT&append_to_response=credits,similar`);
         const data = await response.json();
         tvData = data;
         window.tvData = data;
-        
         const container = document.getElementById("tvDetails");
         container.innerHTML = '';
-        
         await displayTVDetails(data);
         loadAdditionalInfo(data);
         await loadCollection(data);
@@ -607,10 +663,8 @@ async function loadTVDetails() {
         loadEpisodes(1);
         loadSimilar(data.similar);
         loadCast(data.credits);
-        
         if (window.updateTVButton) window.updateTVButton();
         await updateResumeButton();
-        
     } catch (error) {
         console.error("Errore:", error);
         document.getElementById("tvDetails").innerHTML = '<div class="loading">❌ Errore nel caricamento</div>';
@@ -620,13 +674,11 @@ async function loadTVDetails() {
 async function displayTVDetails(tv) {
     const posterUrl = tv.poster_path ? IMG_BASE + tv.poster_path : "https://via.placeholder.com/300x450?text=No+Image";
     const backdropUrl = tv.backdrop_path ? BACKDROP_BASE + tv.backdrop_path : "";
-    
     const progress = await loadSeriesProgress();
     let initialInList = false;
     if (window.userList) {
         initialInList = window.userList.some(item => item.id === tv.id && item.type === "tv");
     }
-    
     const html = `
         <div class="tv-header">
             <div class="tv-poster">
@@ -657,22 +709,15 @@ async function displayTVDetails(tv) {
             </div>
         </div>
     `;
-    
     document.getElementById("tvDetails").innerHTML = html;
-    
     if (backdropUrl && window.innerWidth > 768) {
         document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url(${backdropUrl})`;
         document.body.style.backgroundSize = "cover";
         document.body.style.backgroundAttachment = "fixed";
     }
-    
     // IMPORTANTE: Aggiorna il bottone dopo che l'HTML è stato inserito
     await updateResumeButton();
 }
-
-// ... resto delle funzioni (loadAdditionalInfo, loadCollection, displayCollection, loadSeasons, loadEpisodes, displayEpisodes, selectSeason, loadSimilar, searchActorByName, loadCast, goToActors, openTVPage)
-
-// Funzioni essenziali mancanti (copiale dal file precedente)
 
 function loadAdditionalInfo(tv) {
     const infoHtml = `
@@ -712,7 +757,7 @@ function displayCollection(shows, collectionName) {
             <div class="collection-grid">
                 ${sortedShows.map(show => `
                     <div class="collection-card" onclick="openTVPage(${show.id})">
-                        <img class="collection-poster" src="${show.poster_path ? IMG_BASE + show.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}" alt="${show.name}">
+                        <img class="collection-poster" src="${show.poster_path ? IMG_BASE + show.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}">
                         <div class="collection-info"><div class="collection-title">${escapeHtml(show.name)}</div><div class="collection-year">${show.first_air_date ? show.first_air_date.split("-")[0] : "N/D"} | ⭐ ${show.vote_average ? show.vote_average.toFixed(1) : "N/A"}</div></div>
                     </div>
                 `).join("")}
@@ -730,7 +775,7 @@ function loadSeasons(seasons) {
             <div class="seasons-grid">
                 ${validSeasons.map(season => `
                     <div class="season-card" onclick="selectSeason(${season.season_number})">
-                        <img class="season-poster" src="${season.poster_path ? IMG_BASE + season.poster_path : 'https://via.placeholder.com/300x150?text=Season'}" alt="Stagione ${season.season_number}">
+                        <img class="season-poster" src="${season.poster_path ? IMG_BASE + season.poster_path : 'https://via.placeholder.com/300x150?text=Season'}">
                         <div class="season-number">Stagione ${season.season_number}</div>
                         <div class="season-episodes">📺 ${season.episode_count} episodi</div>
                     </div>
