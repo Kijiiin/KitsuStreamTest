@@ -272,6 +272,17 @@ div[id*="popup"],
 @media (min-width: 769px) and (max-width: 1024px) {
     .cast-grid, .collection-grid, .similar-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* Blocca popup visivamente ma NON interferisce con i comandi */
+iframe[src*="doubleclick"],
+iframe[src*="googlead"],
+iframe[src*="popunder"],
+iframe[src*="adserver"]:not(#videoFrame),
+div[class*="popup"]:not(.player-controls):not(.player-box),
+div[id*="popup"]:not(#playerModal),
+[style*="position: fixed"][style*="z-index: 9999"]:not(.player-modal):not(.modal):not(.player-controls) {
+    display: none !important;
+}
 </style>
 </head>
 
@@ -1046,13 +1057,29 @@ async function resetSavedSpot() {
     }
 }
 
+// Salva l'originale window.open all'inizio del file (dopo le variabili)
+const originalWindowOpen = window.open;
+
+// Funzione per bloccare popup
+function blockPopup(url, name, features) {
+    // Domini permessi (il tuo player)
+    const allowedDomains = ['vixsrc.to', 'kitsustream'];
+    
+    if (url && allowedDomains.some(domain => url.toLowerCase().includes(domain))) {
+        return originalWindowOpen.call(window, url, name, features);
+    }
+    
+    console.log('🚫 Popup bloccato:', url);
+    return null;
+}
+
 async function openPlayer(url) {
     const modal = document.getElementById("playerModal");
     const frame = document.getElementById("videoFrame");
     currentVideoUrl = url;
     
-    // Applica sandbox all'iframe (ora con permessi per i comandi)
-    frame.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-modals allow-popups-to-escape-sandbox');
+    // Attiva blocco popup SOLO durante la riproduzione
+    window.open = blockPopup;
     
     // Prova prima dal cloud (se utente loggato)
     let savedTime = null;
@@ -1083,12 +1110,15 @@ async function openPlayer(url) {
     modal.style.display = "flex";
 }
 
-function closePlayer() {
+ffunction closePlayer() {
     const frame = document.getElementById("videoFrame");
     frame.src = "";
-    frame.removeAttribute('sandbox'); // Rimuovi sandbox quando chiudi
     document.getElementById("playerModal").style.display = "none";
     currentVideoUrl = "";
+    
+    // Ripristina window.open originale quando chiudi il player
+    window.open = originalWindowOpen;
+    
     if (document.fullscreenElement) document.exitFullscreen();
 }
 
