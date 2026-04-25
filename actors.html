@@ -612,12 +612,15 @@ h1 {
     background: #7c3aed;
     border-radius: 10px;
 }
+
+/* Animazione per la biografia */
 .bio-full {
     transition: all 0.3s ease;
 }
 .bio-toggle-btn:hover {
     background: rgba(124, 58, 237, 0.8) !important;
     transform: scale(1.02);
+    transition: all 0.2s ease;
 }
 </style>
 </head>
@@ -631,6 +634,7 @@ h1 {
         <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
     </div>
     <div class="topbar-right">
+        <div id="authButtons"></div>
         <button class="list-btn" onclick="goToList()">❤️</button>
     </div>
 </div>
@@ -686,7 +690,7 @@ h1 {
 
     import { initializeApp } from 'firebase/app';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-    import { getFirestore, doc, getDoc } from 'firebase/firestore';
+    import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -1109,59 +1113,6 @@ function displayPersonProfile(person, actingCount, directingCount) {
     const birthYear = person.birthday ? person.birthday.split("-")[0] : "?";
     const deathYear = person.deathday ? ` - ${person.deathday.split("-")[0]}` : "";
     const department = person.known_for_department || "Artista";
-    
-    const profileHtml = `
-        <div class="actor-profile">
-            <img class="actor-photo" src="${photoUrl}" alt="${person.name}" loading="lazy">
-            <div>
-                <h2 class="actor-name">${escapeHtml(person.name)}</h2>
-                <div class="actor-stats">
-                    <div class="actor-stat">
-                        <div class="actor-stat-value">${actingCount}</div>
-                        <div class="actor-stat-label">Recitazione</div>
-                    </div>
-                    <div class="actor-stat">
-                        <div class="actor-stat-value">${directingCount}</div>
-                        <div class="actor-stat-label">Regia</div>
-                    </div>
-                    <div class="actor-stat">
-                        <div class="actor-stat-value">${person.popularity ? Math.round(person.popularity) : "?"}</div>
-                        <div class="actor-stat-label">Popolarità</div>
-                    </div>
-                </div>
-                <div class="actor-bio" style="font-size: 12px;">🎭 ${department}</div>
-                ${person.biography ? `<div class="actor-bio">${escapeHtml(person.biography.substring(0, 300))}${person.biography.length > 300 ? "..." : ""}</div>` : ""}
-                <div class="actor-bio" style="font-size: 12px; margin-top: 10px;">📅 ${birthYear}${deathYear} | 🌍 ${person.place_of_birth ? escapeHtml(person.place_of_birth) : "N/D"}</div>
-            </div>
-        </div>
-    `;
-    
-    container.innerHTML = profileHtml;
-}
-
-function displayTabsAndControls() {
-    const container = document.getElementById("resultsContainer");
-    
-    const tabsHtml = `
-        <div class="role-tabs">
-            <button id="role-acting-btn" class="role-tab-btn active" onclick="switchRoleTab('acting')">🎭 Recitazione (${actingMovies.length + actingTvShows.length})</button>
-            <button id="role-directing-btn" class="role-tab-btn" onclick="switchRoleTab('directing')">🎬 Regia (${directingMovies.length + directingTvShows.length})</button>
-        </div>
-        
-        <div id="role-content" class="tab-content active"></div>
-    `;
-    
-    container.insertAdjacentHTML("beforeend", tabsHtml);
-}
-
-function displayPersonProfile(person, actingCount, directingCount) {
-    const container = document.getElementById("resultsContainer");
-    const photoUrl = person.profile_path ? `https://image.tmdb.org/t/p/w500${person.profile_path}` : "https://via.placeholder.com/300x300?text=No+Photo";
-    const birthYear = person.birthday ? person.birthday.split("-")[0] : "?";
-    const deathYear = person.deathday ? ` - ${person.deathday.split("-")[0]}` : "";
-    const department = person.known_for_department || "Artista";
-    
-    // Gestione biografia (tagliata o intera)
     const bioFull = person.biography || "";
     const bioPreview = bioFull.substring(0, 300);
     const hasMore = bioFull.length > 300;
@@ -1212,16 +1163,112 @@ function toggleBio(bioId) {
     if (!preview || !full) return;
     
     if (full.style.display === 'none') {
-        // Passa a "Mostra meno"
         preview.style.display = 'none';
         full.style.display = 'inline';
         btn.innerHTML = '📖 Mostra meno';
     } else {
-        // Passa a "Mostra altro"
         preview.style.display = 'inline';
         full.style.display = 'none';
         btn.innerHTML = '📖 Mostra altro';
     }
+}
+
+function displayTabsAndControls() {
+    const container = document.getElementById("resultsContainer");
+    
+    const tabsHtml = `
+        <div class="role-tabs">
+            <button id="role-acting-btn" class="role-tab-btn active" onclick="switchRoleTab('acting')">🎭 Recitazione (${actingMovies.length + actingTvShows.length})</button>
+            <button id="role-directing-btn" class="role-tab-btn" onclick="switchRoleTab('directing')">🎬 Regia (${directingMovies.length + directingTvShows.length})</button>
+        </div>
+        
+        <div id="role-content" class="tab-content active"></div>
+    `;
+    
+    container.insertAdjacentHTML("beforeend", tabsHtml);
+}
+
+function displayActingContent() {
+    const roleContent = document.getElementById("role-content");
+    if (!roleContent) return;
+    
+    const items = currentMediaTab === 'movies' ? actingMovies : actingTvShows;
+    const sortedItems = sortItems(items, currentSortBy);
+    const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    const paginatedItems = sortedItems.slice(start, start + itemsPerPage);
+    
+    const mediaTypeName = currentMediaTab === 'movies' ? 'Film' : 'Serie TV';
+    const mediaIcon = currentMediaTab === 'movies' ? '🎬' : '📺';
+    
+    const contentHtml = `
+        <div class="media-tabs">
+            <button id="media-movies-btn" class="media-tab-btn ${currentMediaTab === 'movies' ? 'active' : ''}" onclick="switchMediaTab('movies')">🎬 Film (${actingMovies.length})</button>
+            <button id="media-tv-btn" class="media-tab-btn ${currentMediaTab === 'tv' ? 'active' : ''}" onclick="switchMediaTab('tv')">📺 Serie TV (${actingTvShows.length})</button>
+        </div>
+        
+        <div class="sort-selectors">
+            <div class="sort-group">
+                <label>📋 Ordina per:</label>
+                <select id="sortSelect" onchange="changeSort()">
+                    <option value="popularity" ${currentSortBy === "popularity" ? "selected" : ""}>🔥 Più popolari</option>
+                    <option value="date_desc" ${currentSortBy === "date_desc" ? "selected" : ""}>📅 Più recenti</option>
+                    <option value="date_asc" ${currentSortBy === "date_asc" ? "selected" : ""}>📅 Più vecchi</option>
+                    <option value="rating" ${currentSortBy === "rating" ? "selected" : ""}>⭐ Miglior voto</option>
+                    <option value="title" ${currentSortBy === "title" ? "selected" : ""}>🔤 Titolo A-Z</option>
+                </select>
+            </div>
+            <div class="sort-group">
+                <label>Mostra:</label>
+                <select id="itemsPerPage" onchange="changeItemsPerPage()">
+                    <option value="12" ${itemsPerPage === 12 ? 'selected' : ''}>12</option>
+                    <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20</option>
+                    <option value="30" ${itemsPerPage === 30 ? 'selected' : ''}>30</option>
+                    <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="media-section">
+            <div class="section-header">
+                <div class="section-title">
+                    ${mediaIcon} ${mediaTypeName}
+                    <span class="section-count">${items.length}</span>
+                </div>
+            </div>
+            ${items.length === 0 ? '<div class="no-results">😕 Nessun ' + mediaTypeName.toLowerCase() + ' trovato</div>' : `
+                <div class="grid">
+                    ${paginatedItems.map(item => {
+                        const title = item.title || item.name;
+                        const date = item.release_date || item.first_air_date;
+                        const year = date ? date.split("-")[0] : "N/D";
+                        const posterUrl = item.poster_path ? IMG_BASE + item.poster_path : "https://via.placeholder.com/500x750?text=No+Poster";
+                        const character = item.character ? `🎭 ${escapeHtml(item.character)}` : '';
+                        return `
+                            <div class="card" onclick="openPage(${item.id}, '${currentMediaTab === 'movies' ? 'movie' : 'tv'}')">
+                                <img src="${posterUrl}" alt="${title}" loading="lazy">
+                                <div class="card-content">
+                                    <h4>${escapeHtml(title)}</h4>
+                                    <p>⭐ ${item.vote_average ? item.vote_average.toFixed(1) : "N/A"}/10</p>
+                                    <p class="year">📅 ${year}</p>
+                                    ${character ? `<p class="character">${character}</p>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+                ${totalPages > 1 ? `
+                    <div class="pagination-controls" style="justify-content: center; margin-top: 20px;">
+                        <button class="pagination-btn" onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>◀ Prec</button>
+                        <span class="page-info">Pagina ${currentPage} / ${totalPages}</span>
+                        <button class="pagination-btn" onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>Succ ▶</button>
+                    </div>
+                ` : ''}
+            `}
+        </div>
+    `;
+    
+    roleContent.innerHTML = contentHtml;
 }
 
 function displayDirectingContent() {
