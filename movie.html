@@ -329,7 +329,7 @@ h1 {
 
     import { initializeApp } from 'firebase/app';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-    import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -532,6 +532,55 @@ function getMovieIdFromURL() {
     const params = new URLSearchParams(window.location.search);
     return params.get('id');
 }
+
+// ========== FUNZIONI PER IL SALVATAGGIO DEL MINUTAGGIO NEL CLOUD ==========
+async function saveMovieProgressCloud(seconds) {
+    if (!window.getCurrentUser || !window.getCurrentUser()) return;
+    if (!movieData) return;
+    
+    try {
+        const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'movie_' + movieData.id);
+        await setDoc(progressRef, {
+            seconds: seconds,
+            timestamp: Date.now(),
+            title: movieData.title,
+            type: "movie"
+        }, { merge: true });
+        console.log("Progresso salvato nel cloud:", seconds);
+    } catch (error) {
+        console.error("Errore salvataggio cloud:", error);
+    }
+}
+
+async function loadMovieProgressCloud() {
+    if (!window.getCurrentUser || !window.getCurrentUser()) return null;
+    if (!movieData) return null;
+    
+    try {
+        const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'movie_' + movieData.id);
+        const docSnap = await getDoc(progressRef);
+        if (docSnap.exists()) {
+            return docSnap.data().seconds;
+        }
+    } catch (error) {
+        console.error("Errore caricamento cloud:", error);
+    }
+    return null;
+}
+
+async function resetMovieProgressCloud() {
+    if (!window.getCurrentUser || !window.getCurrentUser()) return;
+    if (!movieData) return;
+    
+    try {
+        const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'movie_' + movieData.id);
+        await deleteDoc(progressRef);
+        console.log("Progresso cloud rimosso");
+    } catch (error) {
+        console.error("Errore reset cloud:", error);
+    }
+}
+// =======================================================================
 
 async function loadMovieDetails() {
     movieId = getMovieIdFromURL();
@@ -822,14 +871,22 @@ function parseTimeInput(input) {
     return { success: false, seconds: 0 };
 }
 
-function saveCurrentSpot() {
+async function saveCurrentSpot() {
     if (!currentVideoUrl) { alert("⚠️ Apri prima un video!"); return; }
     const helpText = "Formati supportati:\n\n• Minuti: 15.30\n• Ore:Minuti: 1:30\n• Ore:Minuti:Secondi: 1:30:15";
     const input = prompt("A che punto sei?\n\n" + helpText);
     if (input === null) return;
     const result = parseTimeInput(input);
     if (!result.success) { alert("❌ Formato non valido!"); return; }
+    
+    // Salva in locale (fallback)
     localStorage.setItem(`time_movie_${currentVideoUrl}`, result.seconds);
+    
+    // Salva nel cloud se l'utente è loggato
+    if (window.getCurrentUser && window.getCurrentUser()) {
+        await saveMovieProgressCloud(result.seconds);
+    }
+    
     const savedInfo = document.getElementById("savedInfo");
     savedInfo.innerHTML = `✅ Salvato! Riprenderò da ${formatTime(result.seconds)}`;
     savedInfo.style.color = "#4ade80";
@@ -841,24 +898,73 @@ function saveCurrentSpot() {
     }, 3000);
 }
 
-function resetSavedSpot() {
+async function resetSavedSpot() {
     if (!currentVideoUrl) { alert("⚠️ Apri prima un video!"); return; }
-    if (!localStorage.getItem(`time_movie_${currentVideoUrl}`)) { alert("⚠️ Nessun salvataggio trovato!"); return; }
+    
+    // Controlla se c'è un salvataggio
+    let hasSave = false;
+    if (window.getCurrentUser && window.getCurrentUser()) {
+        const cloudSave = await loadMovieProgressCloud();
+        hasSave = cloudSave !== null;
+    }
+    if (!hasSave) {
+        hasSave = localStorage.getItem(`time_movie_${currentVideoUrl}`) !== null;
+    }
+    
+    if (!hasSave) { alert("⚠️ Nessun salvataggio trovato!"); return; }
+    
     if (confirm("Cancellare la posizione salvata?")) {
+        // Rimuovi dal cloud
+        if (window.getCurrentUser && window.getCurrentUser()) {
+            await resetMovieProgressCloud();
+        }
+        // Rimuovi dal localStorage
         localStorage.removeItem(`time_movie_${currentVideoUrl}`);
+        
         const savedInfo = document.getElementById("savedInfo");
         savedInfo.innerHTML = `🗑 Salvataggio rimosso!`;
         savedInfo.style.color = "#ef4444";
+        setTimeout(() => {
+            if (document.getElementById("playerModal").style.display === "flex") {
+                savedInfo.innerHTML = `🎬 Nessun salvataggio`;
+                savedInfo.style.color = "#888";
+            }
+        }, 3000);
+        
+        alert("✅ Posizione cancellata!");
     }
 }
 
-function openPlayer(url) {
+async function openPlayer(url) {
     const modal = document.getElementById("playerModal");
     const frame = document.getElementById("videoFrame");
     currentVideoUrl = url;
-    const savedTime = localStorage.getItem(`time_movie_${url}`);
+    
+    // Prova prima dal cloud (se utente loggato)
+    let savedTime = null;
+    if (window.getCurrentUser && window.getCurrentUser()) {
+        savedTime = await loadMovieProgressCloud();
+    }
+    
+    // Fallback al localStorage se non c'è nel cloud
+    if (!savedTime) {
+        const localSaved = localStorage.getItem(`time_movie_${url}`);
+        if (localSaved) savedTime = parseInt(localSaved);
+    }
+    
     let finalUrl = url;
-    if (savedTime && parseInt(savedTime) > 0) finalUrl += `&startAt=${parseInt(savedTime)}`;
+    let savedInfo = document.getElementById("savedInfo");
+    
+    if (savedTime && savedTime > 0) {
+        const timeString = formatTime(savedTime);
+        finalUrl += `&startAt=${savedTime}`;
+        savedInfo.innerHTML = `📌 Riprenderò da ${timeString}`;
+        savedInfo.style.color = "#f59e0b";
+    } else {
+        savedInfo.innerHTML = `🎬 Nessun salvataggio - riparto dall'inizio`;
+        savedInfo.style.color = "#888";
+    }
+    
     frame.src = finalUrl;
     modal.style.display = "flex";
 }
