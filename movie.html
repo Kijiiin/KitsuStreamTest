@@ -197,7 +197,13 @@ h1 {
     z-index: 9999;
 }
 .player-box { width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; }
-.player-box iframe { width: 100%; height: 50vh; border: none; }
+.player-box iframe { 
+    width: 100%; 
+    height: 50vh; 
+    border: none;
+    /* Sandbox che permette i comandi ma NON i popup automatici */
+    sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups-to-escape-sandbox";
+}
 .player-controls { padding: 12px; display: flex; justify-content: center; gap: 10px; background: #1a1a1a; flex-wrap: wrap; }
 .player-controls button { padding: 8px 16px; border-radius: 30px; font-size: 12px; cursor: pointer; border: none; color: white; }
 .close-btn { background: #ef4444; }
@@ -222,6 +228,18 @@ h1 {
     align-items: center;
     justify-content: center;
     z-index: 9998;
+}
+
+/* CSS per nascondere eventuali popup */
+iframe[src*="doubleclick"],
+iframe[src*="googlead"],
+iframe[src*="popunder"],
+iframe[src*="adserver"],
+iframe[src*="adservice"],
+div[class*="popup"],
+div[id*="popup"],
+[style*="position: fixed"][style*="z-index: 9999"]:not(.player-modal):not(.modal) {
+    display: none !important;
 }
 
 @media (min-width: 769px) {
@@ -576,6 +594,99 @@ const BACKDROP_BASE = "https://image.tmdb.org/t/p/original";
 let movieId = null;
 let movieData = null;
 let currentVideoUrl = "";
+
+// ========== POPUP BLOCKER AVANZATO ==========
+let originalWindowOpen = null;
+let popupObserver = null;
+let popupBlockerActive = false;
+
+function enablePopupBlocker() {
+    if (popupBlockerActive) return;
+    popupBlockerActive = true;
+    
+    // Salva l'originale window.open
+    if (!originalWindowOpen) {
+        originalWindowOpen = window.open;
+    }
+    
+    // Blocca window.open
+    window.open = function(url, name, features) {
+        // Domini permessi (il tuo player e domini essenziali)
+        const allowedDomains = [
+            'vixsrc.to',
+            'kitsustream',
+            'localhost',
+            'blob:',
+            'about:blank'
+        ];
+        
+        // Controlla se l'URL è permesso
+        if (url && allowedDomains.some(domain => url.toLowerCase().includes(domain.toLowerCase()))) {
+            return originalWindowOpen.call(window, url, name, features);
+        }
+        
+        // Blocca tutto il resto
+        console.log('🚫 Popup bloccato:', url);
+        return null;
+    };
+    
+    // Blocca la creazione di iframe popup
+    popupObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.tagName === 'IFRAME') {
+                    const src = node.src || '';
+                    const blockedPatterns = [
+                        'doubleclick', 'googlead', 'popunder', 'adserver',
+                        'adservice', 'adsystem', 'popup', 'advertisement'
+                    ];
+                    
+                    if (blockedPatterns.some(pattern => src.toLowerCase().includes(pattern))) {
+                        node.remove();
+                        console.log('🚫 Iframe pubblicitario rimosso:', src);
+                    }
+                }
+                
+                // Blocca anche div con classi sospette
+                if (node.nodeType === 1 && node.tagName !== 'IFRAME') {
+                    const suspiciousClasses = ['popup', 'advert', 'banner-ads', 'popover'];
+                    const classes = node.className || '';
+                    const id = node.id || '';
+                    
+                    if (suspiciousClasses.some(cls => 
+                        classes.toLowerCase().includes(cls) || 
+                        id.toLowerCase().includes(cls)
+                    )) {
+                        node.remove();
+                        console.log('🚫 Elemento sospetto rimosso:', node);
+                    }
+                }
+            });
+        });
+    });
+    
+    popupObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function disablePopupBlocker() {
+    if (!popupBlockerActive) return;
+    popupBlockerActive = false;
+    
+    // Ripristina window.open originale
+    if (originalWindowOpen) {
+        window.open = originalWindowOpen;
+    }
+    
+    // Disconnetti observer
+    if (popupObserver) {
+        popupObserver.disconnect();
+        popupObserver = null;
+    }
+}
+
+// Attiva il blocco popup all'avvio
+enablePopupBlocker();
+// ==========================================
 
 function getMovieIdFromURL() {
     const params = new URLSearchParams(window.location.search);
@@ -940,6 +1051,9 @@ async function openPlayer(url) {
     const frame = document.getElementById("videoFrame");
     currentVideoUrl = url;
     
+    // Applica sandbox all'iframe (ora con permessi per i comandi)
+    frame.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-modals allow-popups-to-escape-sandbox');
+    
     // Prova prima dal cloud (se utente loggato)
     let savedTime = null;
     if (window.loadMovieProgressCloud) {
@@ -972,6 +1086,7 @@ async function openPlayer(url) {
 function closePlayer() {
     const frame = document.getElementById("videoFrame");
     frame.src = "";
+    frame.removeAttribute('sandbox'); // Rimuovi sandbox quando chiudi
     document.getElementById("playerModal").style.display = "none";
     currentVideoUrl = "";
     if (document.fullscreenElement) document.exitFullscreen();
