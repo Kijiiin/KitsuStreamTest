@@ -361,7 +361,6 @@ h1 {
     let userList = [];
     let currentUsername = "";
     
-    // Funzione globale per aggiornare il bottone
     window.updateTVButton = function() {
         if (!window.tvData) return;
         const btn = document.getElementById("listBtn");
@@ -374,8 +373,14 @@ h1 {
 
     // ========== FUNZIONI PER IL SALVATAGGIO DEL PROGRESSO SERIE TV NEL CLOUD ==========
     window.saveTVProgressCloud = async function(seasonNum, episodeNum) {
-        if (!currentUser) return;
-        if (!window.tvData) return;
+        if (!currentUser) {
+            console.log("Nessun utente loggato, progresso non salvato nel cloud");
+            return;
+        }
+        if (!window.tvData) {
+            console.log("Nessun tvData disponibile");
+            return;
+        }
         
         try {
             const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'tv_' + window.tvData.id);
@@ -400,9 +405,11 @@ h1 {
             const progressRef = doc(db, 'users', currentUser.uid, 'progress', 'tv_' + window.tvData.id);
             const docSnap = await getDoc(progressRef);
             if (docSnap.exists()) {
+                const data = docSnap.data();
+                console.log("Progresso caricato dal cloud:", data);
                 return {
-                    lastSeason: docSnap.data().lastSeason,
-                    lastEpisode: docSnap.data().lastEpisode
+                    lastSeason: data.lastSeason,
+                    lastEpisode: data.lastEpisode
                 };
             }
         } catch (error) {
@@ -544,7 +551,6 @@ h1 {
         await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
         userList = newList;
         
-        // Aggiorna il bottone
         if (window.updateTVButton) window.updateTVButton();
         
         return !exists;
@@ -568,7 +574,6 @@ h1 {
             
             userList = await loadUserList();
             
-            // Aggiorna il bottone se esiste già
             if (window.updateTVButton) window.updateTVButton();
         } else {
             authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
@@ -603,15 +608,17 @@ let tvId = null;
 let tvData = null;
 let selectedSeason = 1;
 let currentVideoUrl = "";
+let currentUserForProgress = null;
 
 function getTVIdFromURL() {
     const params = new URLSearchParams(window.location.search);
     return params.get('id');
 }
 
-// ========== FUNZIONI PER IL SALVATAGGIO DEL PROGRESSO EPISODI (CON CLOUD) ==========
 async function saveSeriesProgress(seasonNum, episodeNum) {
     if (!tvData) return;
+    
+    console.log("Salvataggio progresso:", seasonNum, episodeNum);
     
     // Salva in locale (fallback)
     const key = `series_progress_${tvData.id}`;
@@ -625,11 +632,15 @@ async function saveSeriesProgress(seasonNum, episodeNum) {
     // Salva nel cloud
     if (window.saveTVProgressCloud) {
         await window.saveTVProgressCloud(seasonNum, episodeNum);
+    } else {
+        console.log("window.saveTVProgressCloud non disponibile");
     }
 }
 
 async function loadSeriesProgress() {
     if (!tvData) return null;
+    
+    console.log("Caricamento progresso...");
     
     // Prova prima dal cloud
     let cloudProgress = null;
@@ -638,6 +649,7 @@ async function loadSeriesProgress() {
     }
     
     if (cloudProgress && cloudProgress.lastSeason) {
+        console.log("Progresso caricato dal cloud:", cloudProgress);
         return cloudProgress;
     }
     
@@ -646,7 +658,9 @@ async function loadSeriesProgress() {
     const saved = localStorage.getItem(key);
     if (saved) {
         try {
-            return JSON.parse(saved);
+            const localProgress = JSON.parse(saved);
+            console.log("Progresso caricato dal localStorage:", localProgress);
+            return localProgress;
         } catch(e) { return null; }
     }
     return null;
@@ -679,11 +693,9 @@ async function getNextEpisode() {
 async function resetSeriesProgress() {
     if (!tvData) return;
     if (confirm(`Resettare il progresso per "${tvData.name}"? Ricomincerai dall'episodio 1.`)) {
-        // Rimuovi dal cloud
         if (window.resetTVProgressCloud) {
             await window.resetTVProgressCloud();
         }
-        // Rimuovi dal localStorage
         const key = `series_progress_${tvData.id}`;
         localStorage.removeItem(key);
         await updateResumeButton();
@@ -708,7 +720,6 @@ async function updateResumeButton() {
         watchBtn.onclick = () => playFirstEpisode();
     }
 }
-// =======================================================================
 
 async function loadTVDetails() {
     tvId = getTVIdFromURL();
@@ -737,7 +748,6 @@ async function loadTVDetails() {
         loadSimilar(data.similar);
         loadCast(data.credits);
         
-        // Aggiorna il bottone con la lista già caricata
         if (window.updateTVButton) {
             window.updateTVButton();
         }
@@ -756,7 +766,6 @@ async function displayTVDetails(tv) {
     
     const progress = await loadSeriesProgress();
     
-    // Determina lo stato iniziale del bottone
     let initialInList = false;
     if (window.userList) {
         initialInList = window.userList.some(item => item.id === tv.id && item.type === "tv");
