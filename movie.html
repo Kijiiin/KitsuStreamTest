@@ -822,19 +822,40 @@ function searchActorByName(actorName) {
 }
 
 function loadCast(credits) {
-    if (!credits || !credits.cast || credits.cast.length === 0) return;
+    if (!credits) return;
     
-    const mainCast = credits.cast.slice(0, 12);
+    let castList = [];
+    
+    // 1. Aggiungi il regista come primo elemento (se disponibile)
+    if (credits.crew && credits.crew.length > 0) {
+        const director = credits.crew.find(member => member.job === "Director");
+        if (director) {
+            castList.push({
+                ...director,
+                character: "🎬 Regista",
+                isDirector: true
+            });
+        }
+    }
+    
+    // 2. Aggiungi gli attori principali (max 11 per non superare i 12 totali)
+    if (credits.cast && credits.cast.length > 0) {
+        const maxActors = 11; // +1 regista = 12 totali
+        const mainCast = credits.cast.slice(0, maxActors);
+        castList.push(...mainCast);
+    }
+    
+    if (castList.length === 0) return;
     
     const castHtml = `
         <div class="cast-section">
-            <h3 class="section-title">🎭 Cast</h3>
+            <h3 class="section-title">🎭 Cast & Regia</h3>
             <div class="cast-grid">
-                ${mainCast.map(actor => `
+                ${castList.map(actor => `
                     <div class="cast-card" onclick="searchActorByName('${escapeHtml(actor.name).replace(/'/g, "\\'")}')">
                         <img class="cast-photo" src="${actor.profile_path ? IMG_BASE + actor.profile_path : 'https://via.placeholder.com/150x150?text=No+Photo'}" alt="${actor.name}" loading="lazy">
                         <div class="cast-name">${escapeHtml(actor.name)}</div>
-                        <div class="cast-character">${escapeHtml(actor.character)}</div>
+                        <div class="cast-character">${escapeHtml(actor.character || actor.job || "Regista")}</div>
                     </div>
                 `).join("")}
             </div>
