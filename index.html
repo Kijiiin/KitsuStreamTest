@@ -555,6 +555,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
         if (exists) {
             list = list.filter(item => !(item.id === itemData.id && item.type === itemData.type));
         } else {
+            itemData.addedAt = Date.now();
             list.push(itemData);
         }
         
