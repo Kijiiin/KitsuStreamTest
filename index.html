@@ -779,11 +779,10 @@ async function displayItems(items) {
         }
         
         itemsHtml.push(`
-            <div class="card">
-                <img src="${posterUrl}" alt="${title}" 
-                     onclick="openDetailsPage(${item.id}, event)" 
-                     onauxclick="openDetailsPage(${item.id}, event)" 
-                     loading="lazy">
+            <div class="card"> 
+                     <a href="${currentMediaType === "movie" ? "movie" : "tv"}.html?id=${id}" 
+                        <img src="${posterUrl}" alt="${title}" loading="lazy">
+                    </a>
                 <div class="card-content">
                     <h4>${escapeHtml(title)}</h4>
                     <div class="rating">⭐ ${rating}</div>
