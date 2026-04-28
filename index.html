@@ -779,7 +779,7 @@ async function displayItems(items) {
         
         itemsHtml.push(`
             <div class="card">
-                <img src="${posterUrl}" alt="${title}" onclick="openDetailsPage(${item.id})" loading="lazy">
+                <img src="${posterUrl}" alt="${title}" onclick="openDetailsPage(${item.id}, event)" loading="lazy">
                 <div class="card-content">
                     <h4>${escapeHtml(title)}</h4>
                     <div class="rating">⭐ ${rating}</div>
@@ -812,6 +812,15 @@ window.toggleListGlobal = async function(id, title, poster, rating, year, type, 
 
 function openDetailsPage(id) {
     window.location.href = `${currentMediaType === "movie" ? "movie" : "tv"}.html?id=${id}`;
+
+    // Se è stato passato l'evento e si tratta di click con tasto centrale (button === 1)
+    // o Ctrl/Cmd + click
+    if (event && (event.button === 1 || event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        window.open(url, '_blank');
+    } else {
+        window.location.href = url;
+    }
 }
 
 function goHome() {
