@@ -285,7 +285,8 @@ h1 {
         <div class="filter-group">
             <div class="filter-label">📋 Ordina per:</div>
             <div class="sort-buttons">
-                <button class="sort-btn active" data-sort="date" onclick="changeSort('date')">📅 Data</button>
+                <button class="sort-btn active" data-sort="addedDate" onclick="changeSort('addedDate')">📅 Ultima Aggiunta</button>
+                <button class="sort-btn active" data-sort="date" onclick="changeSort('date')">🗓️ Data Uscita</button>
                 <button class="sort-btn" data-sort="rating" onclick="changeSort('rating')">⭐ Voto</button>
                 <button class="sort-btn" data-sort="title" onclick="changeSort('title')">🔤 Titolo</button>
             </div>
@@ -452,7 +453,7 @@ h1 {
     }
 
     // Funzioni UI
-    let currentSort = "date";
+    let currentSort = "addedDate";
     let currentTypeFilter = "all";
 
     window.changeSort = function(sort) {
@@ -481,6 +482,10 @@ h1 {
             case "date":
             default:
                 sorted.sort((a, b) => (b.year || 0) - (a.year || 0));
+                break;
+            case "addedDate":
+            default:
+                sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
                 break;
         }
         return sorted;
