@@ -779,10 +779,10 @@ async function displayItems(items) {
         }
         
         itemsHtml.push(`
-            <div class="card"> 
-                     <a href="${currentMediaType === "movie" ? "movie" : "tv"}.html?id=${id}" 
-                        <img src="${posterUrl}" alt="${title}" loading="lazy">
-                    </a>
+            <div class="card">
+    <a href="${currentMediaType === "movie" ? "movie" : "tv"}.html?id=${item.id}">
+        <img src="${posterUrl}" alt="${title}" loading="lazy">
+    </a>
                 <div class="card-content">
                     <h4>${escapeHtml(title)}</h4>
                     <div class="rating">⭐ ${rating}</div>
@@ -812,25 +812,6 @@ window.toggleListGlobal = async function(id, title, poster, rating, year, type, 
         btn.style.background = added ? "#ef4444" : "#7c3aed";
     }
 };
-
-function openDetailsPage(id) {
-    window.location.href = `${currentMediaType === "movie" ? "movie" : "tv"}.html?id=${id}`;
-
-    // Per tasto centrale (auxclick)
-    if (event.type === 'auxclick' && event.button === 1) {
-        event.preventDefault();
-        window.open(url, '_blank');
-    }
-    // Per Ctrl/Cmd + click
-    else if (event.ctrlKey || event.metaKey) {
-        event.preventDefault();
-        window.open(url, '_blank');
-    }
-    // Click normale
-    else {
-        window.location.href = url;
-    }
-}
 
 function goHome() {
     searchQuery = "";
