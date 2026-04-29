@@ -1074,18 +1074,44 @@ function goToNextEpisode() {
         return;
     }
     
-    // Ottieni l'episodio corrente e il prossimo
-    const nextEpisode = getNextEpisode();
-    const currentProgress = loadSeriesProgress();
+    // Ottieni il progresso salvato
+    const progress = loadSeriesProgress();
     
-    if (!currentProgress) {
+    if (!progress) {
         alert("Nessun episodio in corso. Inizia a guardare un episodio prima!");
         return;
     }
     
-    // Se non ci sono cambiamenti (stesso episodio), non fare nulla
-    if (nextEpisode.season === currentProgress.lastSeason && 
-        nextEpisode.episode === currentProgress.lastEpisode) {
+    // Calcola il prossimo episodio manualmente
+    let nextSeason = progress.lastSeason;
+    let nextEpisode = progress.lastEpisode + 1;
+    
+    // Trova la stagione corrente
+    const currentSeasonData = tvData.seasons?.find(s => s.season_number === nextSeason);
+    const maxEpisodesInCurrentSeason = currentSeasonData?.episode_count || 0;
+    
+    // Se l'episodio successivo supera il massimo della stagione corrente
+    if (nextEpisode > maxEpisodesInCurrentSeason && maxEpisodesInCurrentSeason > 0) {
+        nextSeason++;
+        nextEpisode = 1;
+        
+        // Verifica se esiste la prossima stagione
+        const nextSeasonData = tvData.seasons?.find(s => s.season_number === nextSeason);
+        if (!nextSeasonData || nextSeasonData.episode_count === 0) {
+            alert("🏁 Hai completato tutte le stagioni disponibili!");
+            return;
+        }
+    }
+    
+    // Verifica se l'episodio successivo esiste
+    const nextSeasonData = tvData.seasons?.find(s => s.season_number === nextSeason);
+    if (!nextSeasonData || nextSeasonData.episode_count < nextEpisode) {
+        alert("🏁 Hai completato tutti gli episodi disponibili!");
+        return;
+    }
+    
+    // Se siamo ancora nello stesso episodio (nessun avanzamento)
+    if (nextSeason === progress.lastSeason && nextEpisode === progress.lastEpisode) {
         alert("Sei già all'ultimo episodio disponibile!");
         return;
     }
@@ -1094,9 +1120,9 @@ function goToNextEpisode() {
     closePlayer();
     
     // Avvia il prossimo episodio
-    playEpisode(nextEpisode.season, nextEpisode.episode);
+    playEpisode(nextSeason, nextEpisode);
 }
-
+    
 function openPlayer(url) {
     const modal = document.getElementById("playerModal");
     const frame = document.getElementById("videoFrame");
