@@ -222,6 +222,7 @@ h1 {
 .close-btn { background: #ef4444; }
 .save-btn { background: #f59e0b; }
 .reset-btn { background: #ef4444; }
+.next-episode-btn { background: #f59e0b; }
 .saved-info { text-align: center; margin-top: 8px; min-height: 30px; padding: 0 15px 15px; font-size: 12px; }
 
 .loading { text-align: center; padding: 40px; font-size: 14px; color: #c084fc; }
@@ -272,6 +273,9 @@ h1 {
     #tornaSu { bottom: 30px; right: 30px; width: 50px; height: 50px; font-size: 24px; }
     #tornaSu:hover { transform: translateY(-5px); }
 }
+.title-link {
+    text-decoration: none;
+}
 
 @media (min-width: 769px) and (max-width: 1024px) {
     .cast-grid, .collection-grid, .similar-grid { grid-template-columns: repeat(3, 1fr); }
@@ -286,7 +290,7 @@ h1 {
         <button class="actors-nav-btn" onclick="goToActors()">🎭 Troupe</button>
     </div>
     <div class="topbar-center">
-        <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
+        <h1> <a href="index.html" class="title-link">🎬 KitsuStream</a> </h1>
     </div>
     <div class="topbar-right">
         <div id="authButtons"></div>
@@ -331,7 +335,7 @@ h1 {
         <div class="player-controls">
             <button class="save-btn" onclick="saveCurrentSpot()">💾 Salva posizione</button>
             <button class="reset-btn" onclick="resetSavedSpot()">🗑 Reset</button>
-            <button class="next-episode-btn" onclick="goToNextEpisode()" style="background: #f59e0b;">⏭ Prossimo episodio</button>
+            <button class="next-episode-btn" onclick="goToNextEpisode()">⏭ Prossimo episodio</button>
             <button class="close-btn" onclick="closePlayer()">❌ Chiudi</button>
         </div>
         <div id="savedInfo" class="saved-info"></div>
@@ -373,7 +377,7 @@ h1 {
         }
     };
 
-    // ========== FUNZIONI PER IL SALVATAGGIO DEL PROGRESSO SERIE TV NEL CLOUD ==========
+    // ========== FUNZIONI PER IL SALVATAGGIO DEL PROGRESSO SERIE TV SU CLOUD ==========
     window.saveTVProgressCloud = async function(seasonNum, episodeNum) {
         if (!currentUser) return;
         if (!window.tvData) return;
@@ -427,6 +431,7 @@ h1 {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
         const errorDiv = document.getElementById('loginError');
+        
         try {
             await signInWithEmailAndPassword(auth, email, password);
             document.getElementById('authModal').style.display = 'none';
@@ -445,26 +450,32 @@ h1 {
         const password = document.getElementById('regPassword').value;
         const errorDiv = document.getElementById('regError');
         const successDiv = document.getElementById('regSuccess');
+        
         if (!username) {
             errorDiv.textContent = 'Inserisci un nome utente';
             return;
         }
+        
         if (username.length < 3) {
             errorDiv.textContent = 'Il nome utente deve avere almeno 3 caratteri';
             return;
         }
+        
         if (password.length < 6) {
             errorDiv.textContent = 'La password deve essere almeno di 6 caratteri';
             return;
         }
+        
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            
             await setDoc(doc(db, 'users', userCredential.user.uid), { 
                 list: [],
                 username: username,
                 email: email,
                 createdAt: new Date()
             });
+            
             successDiv.textContent = '✅ Registrazione completata! Ora puoi accedere.';
             setTimeout(() => window.showLoginPanel(), 2000);
         } catch (error) {
@@ -520,21 +531,35 @@ h1 {
             window.openLoginModal();
             return false;
         }
+        
         const currentList = await loadUserList();
+        
         const exists = currentList.some(item => item.id === itemData.id && item.type === itemData.type);
-        let newList = exists ? currentList.filter(item => !(item.id === itemData.id && item.type === itemData.type)) : [...currentList, itemData];
+        
+        let newList;
+        if (exists) {
+            newList = currentList.filter(item => !(item.id === itemData.id && item.type === itemData.type));
+        } else {
+            newList = [...currentList, itemData];
+        }
+        
         await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
         userList = newList;
+        
+        // Aggiorna il bottone
         if (window.updateTVButton) window.updateTVButton();
+        
         return !exists;
     }
 
     onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         const authButtons = document.getElementById('authButtons');
+        
         if (user) {
             const userData = await loadUserData();
             currentUsername = userData?.username || user.email.split('@')[0];
+            
             authButtons.innerHTML = `
                 <div class="user-info">
                     <span>👤</span>
@@ -542,7 +567,10 @@ h1 {
                     <button class="logout-btn" onclick="window.logout()" style="padding: 4px 10px;">🚪</button>
                 </div>
             `;
+            
             userList = await loadUserList();
+            
+            // Aggiorna il bottone se esiste già
             if (window.updateTVButton) window.updateTVButton();
         } else {
             authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
@@ -583,9 +611,10 @@ function getTVIdFromURL() {
     return params.get('id');
 }
 
-// ========== FUNZIONI PER IL SALVATAGGIO DEL PROGRESSO EPISODI ==========
+// ========== FUNZIONI PER IL SALVATAGGIO DEL PROGRESSO EPISODI (CON CLOUD) ==========
 async function saveSeriesProgress(seasonNum, episodeNum) {
     if (!tvData) return;
+    // Salva in locale (fallback)
     const key = `series_progress_${tvData.id}`;
     localStorage.setItem(key, JSON.stringify({
         lastSeason: seasonNum,
@@ -593,6 +622,7 @@ async function saveSeriesProgress(seasonNum, episodeNum) {
         timestamp: Date.now(),
         title: tvData.name
     }));
+    // Salva nel cloud
     if (window.saveTVProgressCloud) {
         await window.saveTVProgressCloud(seasonNum, episodeNum);
     }
@@ -600,12 +630,14 @@ async function saveSeriesProgress(seasonNum, episodeNum) {
 
 async function loadSeriesProgress() {
     if (!tvData) return null;
-    if (window.loadTVProgressCloud) {
+    // Prova prima dal cloud (se utente loggato)
+    if (window.loadTVProgressCloud && window.getCurrentUser && window.getCurrentUser()) {
         const cloudProgress = await window.loadTVProgressCloud();
         if (cloudProgress && cloudProgress.lastSeason) {
             return cloudProgress;
         }
     }
+    // Fallback al localStorage
     const key = `series_progress_${tvData.id}`;
     const saved = localStorage.getItem(key);
     if (saved) {
@@ -617,26 +649,35 @@ async function loadSeriesProgress() {
 async function getNextEpisode() {
     const progress = await loadSeriesProgress();
     if (!progress) return { season: 1, episode: 1 };
+    
     let nextSeason = progress.lastSeason;
     let nextEpisode = progress.lastEpisode + 1;
+    
     const currentSeasonData = tvData.seasons?.find(s => s.season_number === nextSeason);
     const maxEpisodes = currentSeasonData?.episode_count || 0;
+    
     if (nextEpisode > maxEpisodes && maxEpisodes > 0) {
         nextSeason++;
         nextEpisode = 1;
+        
         const nextSeasonData = tvData.seasons?.find(s => s.season_number === nextSeason);
         if (!nextSeasonData || nextSeasonData.episode_count === 0) {
             nextSeason = progress.lastSeason;
             nextEpisode = progress.lastEpisode;
         }
     }
+    
     return { season: nextSeason, episode: nextEpisode };
 }
 
 async function resetSeriesProgress() {
     if (!tvData) return;
     if (confirm(`Resettare il progresso per "${tvData.name}"? Ricomincerai dall'episodio 1.`)) {
-        if (window.resetTVProgressCloud) await window.resetTVProgressCloud();
+        // Rimuovi dal cloud
+        if (window.resetTVProgressCloud) {
+            await window.resetTVProgressCloud();
+        }
+        // Rimuovi dal localStorage
         const key = `series_progress_${tvData.id}`;
         localStorage.removeItem(key);
         await updateResumeButton();
@@ -647,8 +688,10 @@ async function resetSeriesProgress() {
 async function updateResumeButton() {
     const watchBtn = document.getElementById("watchBtn");
     if (!watchBtn) return;
+    
     const progress = await loadSeriesProgress();
     const nextEpisode = await getNextEpisode();
+    
     if (progress) {
         watchBtn.innerHTML = `▶ Riprendi S${nextEpisode.season}E${nextEpisode.episode}`;
         watchBtn.style.background = "#f59e0b";
@@ -663,18 +706,24 @@ async function updateResumeButton() {
 
 async function loadTVDetails() {
     tvId = getTVIdFromURL();
+    
     if (!tvId) {
         document.getElementById("tvDetails").innerHTML = '<div class="loading">❌ ID serie TV non valido</div>';
         return;
     }
+    
     try {
         document.getElementById("tvDetails").innerHTML = '<div class="loading">⏳ Caricamento...</div>';
+        
         const response = await fetch(`https://api.themoviedb.org/3/tv/${tvId}?api_key=${API_KEY}&language=it-IT&append_to_response=credits,similar`);
         const data = await response.json();
         tvData = data;
         window.tvData = data;
+        document.title = `KitsuStream - ${data.name}`;
+        
         const container = document.getElementById("tvDetails");
         container.innerHTML = '';
+        
         await displayTVDetails(data);
         loadAdditionalInfo(data);
         await loadCollection(data);
@@ -682,8 +731,14 @@ async function loadTVDetails() {
         loadEpisodes(1);
         loadSimilar(data.similar);
         loadCast(data.credits);
-        if (window.updateTVButton) window.updateTVButton();
+        
+        // Aggiorna il bottone con la lista già caricata
+        if (window.updateTVButton) {
+            window.updateTVButton();
+        }
+        
         await updateResumeButton();
+        
     } catch (error) {
         console.error("Errore:", error);
         document.getElementById("tvDetails").innerHTML = '<div class="loading">❌ Errore nel caricamento</div>';
@@ -694,7 +749,14 @@ async function displayTVDetails(tv) {
     const posterUrl = tv.poster_path ? IMG_BASE + tv.poster_path : "https://via.placeholder.com/300x450?text=No+Image";
     const backdropUrl = tv.backdrop_path ? BACKDROP_BASE + tv.backdrop_path : "";
     
-    // 🔴 MOSTRA UN INDICATORE DI CARICAMENTO
+    const progress = await loadSeriesProgress();
+    
+    // Determina lo stato iniziale del bottone
+    let initialInList = false;
+    if (window.userList) {
+        initialInList = window.userList.some(item => item.id === tv.id && item.type === "tv");
+    }
+    
     const html = `
         <div class="tv-header">
             <div class="tv-poster">
@@ -716,10 +778,11 @@ async function displayTVDetails(tv) {
                     ${tv.overview || "Trama non disponibile."}
                 </div>
                 <div class="watch-buttons">
-                    <button class="watch-btn" id="watchBtn" style="background:#888;">⏳ Caricamento...</button>
+                    <button class="watch-btn" id="watchBtn">▶ Guarda</button>
                     <button class="list-toggle-btn" id="listBtn" onclick="toggleListFromDetails()">
-                        ${window.userList?.some(item => item.id === tv.id && item.type === "tv") ? "❌ Rimuovi" : "❤️ Aggiungi"}
+                        ${initialInList ? "❌ Rimuovi" : "❤️ Aggiungi"}
                     </button>
+                    ${progress ? `<button class="reset-progress-btn" onclick="resetSeriesProgress()">🗑 Reset</button>` : ''}
                 </div>
             </div>
         </div>
@@ -731,22 +794,6 @@ async function displayTVDetails(tv) {
         document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url(${backdropUrl})`;
         document.body.style.backgroundSize = "cover";
         document.body.style.backgroundAttachment = "fixed";
-    }
-    
-    // 🔴 ATTENDI IL CARICAMENTO DEL CLOUD PRIMA DI AGGIORNARE IL BOTTONE
-    const progress = await loadSeriesProgress();
-    const watchBtn = document.getElementById("watchBtn");
-    if (watchBtn) {
-        if (progress) {
-            const nextEpisode = await getNextEpisode();
-            watchBtn.innerHTML = `▶ Riprendi S${nextEpisode.season}E${nextEpisode.episode}`;
-            watchBtn.style.background = "#f59e0b";
-            watchBtn.onclick = () => playEpisode(nextEpisode.season, nextEpisode.episode);
-        } else {
-            watchBtn.innerHTML = "▶ Guarda";
-            watchBtn.style.background = "#ef4444";
-            watchBtn.onclick = () => playFirstEpisode();
-        }
     }
 }
 
@@ -782,6 +829,7 @@ function loadAdditionalInfo(tv) {
             </div>
         </div>
     `;
+    
     document.getElementById("tvDetails").insertAdjacentHTML("beforeend", infoHtml);
 }
 
@@ -790,6 +838,7 @@ async function loadCollection(tv) {
         try {
             const response = await fetch(`https://api.themoviedb.org/3/collection/${tv.belongs_to_collection.id}?api_key=${API_KEY}&language=it-IT`);
             const collectionData = await response.json();
+            
             if (collectionData.parts && collectionData.parts.length > 1) {
                 const otherShows = collectionData.parts.filter(show => show.id != tv.id);
                 if (otherShows.length > 0) {
@@ -808,13 +857,14 @@ function displayCollection(shows, collectionName) {
         const dateB = b.first_air_date ? new Date(b.first_air_date) : new Date(0);
         return dateA - dateB;
     });
+    
     const collectionHtml = `
         <div class="collection-section">
             <h3 class="section-title">📀 ${escapeHtml(collectionName)}</h3>
             <div class="collection-grid">
                 ${sortedShows.map(show => `
                     <div class="collection-card" onclick="openTVPage(${show.id})">
-                        <img class="collection-poster" src="${show.poster_path ? IMG_BASE + show.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}">
+                        <img class="collection-poster" src="${show.poster_path ? IMG_BASE + show.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}" alt="${show.name}" loading="lazy">
                         <div class="collection-info">
                             <div class="collection-title">${escapeHtml(show.name)}</div>
                             <div class="collection-year">${show.first_air_date ? show.first_air_date.split("-")[0] : "N/D"} | ⭐ ${show.vote_average ? show.vote_average.toFixed(1) : "N/A"}</div>
@@ -824,18 +874,20 @@ function displayCollection(shows, collectionName) {
             </div>
         </div>
     `;
+    
     document.getElementById("tvDetails").insertAdjacentHTML("beforeend", collectionHtml);
 }
 
 function loadSeasons(seasons) {
     const validSeasons = seasons.filter(s => s.season_number > 0 && s.episode_count > 0);
+    
     const seasonsHtml = `
         <div class="seasons-section">
             <h3 class="section-title">📺 Stagioni</h3>
             <div class="seasons-grid">
                 ${validSeasons.map(season => `
                     <div class="season-card" onclick="selectSeason(${season.season_number})">
-                        <img class="season-poster" src="${season.poster_path ? IMG_BASE + season.poster_path : 'https://via.placeholder.com/300x150?text=Season+' + season.season_number}">
+                        <img class="season-poster" src="${season.poster_path ? IMG_BASE + season.poster_path : 'https://via.placeholder.com/300x150?text=Season+' + season.season_number}" alt="Stagione ${season.season_number}" loading="lazy">
                         <div class="season-number">Stagione ${season.season_number}</div>
                         <div class="season-episodes">📺 ${season.episode_count} episodi</div>
                     </div>
@@ -843,11 +895,13 @@ function loadSeasons(seasons) {
             </div>
         </div>
     `;
+    
     document.getElementById("tvDetails").insertAdjacentHTML("beforeend", seasonsHtml);
 }
 
 async function loadEpisodes(seasonNumber) {
     selectedSeason = seasonNumber;
+    
     try {
         const response = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${API_KEY}&language=it-IT`);
         const seasonData = await response.json();
@@ -860,6 +914,7 @@ async function loadEpisodes(seasonNumber) {
 function displayEpisodes(seasonData) {
     const existingSection = document.querySelector(".episodes-section");
     if (existingSection) existingSection.remove();
+    
     const episodesHtml = `
         <div class="episodes-section">
             <h3 class="section-title">📺 Stagione ${seasonData.season_number}</h3>
@@ -877,6 +932,7 @@ function displayEpisodes(seasonData) {
             </div>
         </div>
     `;
+    
     const seasonsSection = document.querySelector(".seasons-section");
     if (seasonsSection) {
         seasonsSection.insertAdjacentHTML("afterend", episodesHtml);
@@ -895,14 +951,16 @@ function selectSeason(seasonNumber) {
 
 function loadSimilar(similar) {
     if (!similar || !similar.results || similar.results.length === 0) return;
+    
     const similarShows = similar.results.slice(0, 6);
+    
     const similarHtml = `
         <div class="similar-section">
             <h3 class="section-title">📺 Serie simili</h3>
             <div class="similar-grid">
                 ${similarShows.map(show => `
                     <div class="similar-card" onclick="openTVPage(${show.id})">
-                        <img class="similar-poster" src="${show.poster_path ? IMG_BASE + show.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}">
+                        <img class="similar-poster" src="${show.poster_path ? IMG_BASE + show.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}" alt="${show.name}" loading="lazy">
                         <div class="similar-info">
                             <div class="similar-title">${escapeHtml(show.name)}</div>
                             <div class="similar-year">${show.first_air_date ? show.first_air_date.split("-")[0] : "N/D"} | ⭐ ${show.vote_average ? show.vote_average.toFixed(1) : "N/A"}</div>
@@ -912,6 +970,7 @@ function loadSimilar(similar) {
             </div>
         </div>
     `;
+    
     document.getElementById("tvDetails").insertAdjacentHTML("beforeend", similarHtml);
 }
 
@@ -948,7 +1007,7 @@ function loadCast(credits) {
     
     const castHtml = `
         <div class="cast-section">
-            <h3 class="section-title">🎭 Cast & Regia</h3>
+            <h3 class="section-title">🎭 Regia & Cast</h3>
             <div class="cast-grid">
                 ${castList.map(actor => `
                     <div class="cast-card" onclick="searchActorByName('${escapeHtml(actor.name).replace(/'/g, "\\'")}')">
@@ -964,11 +1023,16 @@ function loadCast(credits) {
     document.getElementById("tvDetails").insertAdjacentHTML("beforeend", castHtml);
 }
 
-function goToActors() { window.location.href = "actors.html"; }
-function openTVPage(id) { window.location.href = `tv.html?id=${id}`; }
+function goToActors() {
+    window.location.href = "actors.html";
+}
+
+function openTVPage(id) {
+    window.location.href = `tv.html?id=${id}`;
+}
 
 async function playEpisode(season, episode) {
-    const url = `https://vixsrc.to/tv/${tvId}/${season}/${episode}?lang=it`;
+    const url = `https://vixsrc.to/tv/${tvId}/${season}/${episode}?lang=it&primaryColor=302b63&secondaryColor=24243e`;
     await saveSeriesProgress(season, episode);
     openPlayer(url);
 }
@@ -983,10 +1047,12 @@ async function playFirstEpisode() {
 
 async function toggleListFromDetails() {
     if (!tvData) return;
+    
     if (!window.getCurrentUser || !window.getCurrentUser()) {
         window.openLoginModal();
         return;
     }
+    
     const itemData = {
         id: tvData.id,
         title: tvData.name,
@@ -995,9 +1061,12 @@ async function toggleListFromDetails() {
         year: tvData.first_air_date ? tvData.first_air_date.split("-")[0] : "N/D",
         type: "tv",
         mediaType: "Serie TV",
-        seasons: tvData.number_of_seasons
+        seasons: tvData.number_of_seasons,
+        addedAt: Date.now()
     };
+    
     const added = await window.toggleCloudList(itemData);
+    
     const btn = document.getElementById("listBtn");
     if (btn) {
         btn.innerHTML = added ? "❌ Rimuovi" : "❤️ Aggiungi";
@@ -1005,8 +1074,36 @@ async function toggleListFromDetails() {
     }
 }
 
-function goHome() { window.location.href = "index.html"; }
 function goToList() { window.location.href = "list.html"; }
+
+async function goToNextEpisode() {
+    if (!tvData) {
+        alert("Dati della serie non disponibili");
+        return;
+    }
+    
+    const progress = await loadSeriesProgress();
+    
+    if (!progress) {
+        alert("Nessun episodio in corso. Inizia a guardare un episodio prima!");
+        return;
+    }
+    
+    const nextEp = await getNextEpisode();
+    
+    if (nextEp.season === progress.lastSeason && nextEp.episode === progress.lastEpisode) {
+        alert("🏁 Sei già all'ultimo episodio disponibile!");
+        return;
+    }
+    
+    if (nextEp.season !== progress.lastSeason) {
+        const confirmChange = confirm(`🎉 Hai finito la Stagione ${progress.lastSeason}!\nPassare alla Stagione ${nextEp.season}?`);
+        if (!confirmChange) return;
+    }
+    
+    closePlayer();
+    await playEpisode(nextEp.season, nextEp.episode);
+}
 
 function formatTime(seconds) {
     const h = Math.floor(seconds / 3600);
@@ -1068,61 +1165,6 @@ function resetSavedSpot() {
     }
 }
 
-function goToNextEpisode() {
-    if (!tvData) {
-        alert("Dati della serie non disponibili");
-        return;
-    }
-    
-    // Ottieni il progresso salvato
-    const progress = loadSeriesProgress();
-    
-    if (!progress) {
-        alert("Nessun episodio in corso. Inizia a guardare un episodio prima!");
-        return;
-    }
-    
-    // Calcola il prossimo episodio manualmente
-    let nextSeason = progress.lastSeason;
-    let nextEpisode = progress.lastEpisode + 1;
-    
-    // Trova la stagione corrente
-    const currentSeasonData = tvData.seasons?.find(s => s.season_number === nextSeason);
-    const maxEpisodesInCurrentSeason = currentSeasonData?.episode_count || 0;
-    
-    // Se l'episodio successivo supera il massimo della stagione corrente
-    if (nextEpisode > maxEpisodesInCurrentSeason && maxEpisodesInCurrentSeason > 0) {
-        nextSeason++;
-        nextEpisode = 1;
-        
-        // Verifica se esiste la prossima stagione
-        const nextSeasonData = tvData.seasons?.find(s => s.season_number === nextSeason);
-        if (!nextSeasonData || nextSeasonData.episode_count === 0) {
-            alert("🏁 Hai completato tutte le stagioni disponibili!");
-            return;
-        }
-    }
-    
-    // Verifica se l'episodio successivo esiste
-    const nextSeasonData = tvData.seasons?.find(s => s.season_number === nextSeason);
-    if (!nextSeasonData || nextSeasonData.episode_count < nextEpisode) {
-        alert("🏁 Hai completato tutti gli episodi disponibili!");
-        return;
-    }
-    
-    // Se siamo ancora nello stesso episodio (nessun avanzamento)
-    if (nextSeason === progress.lastSeason && nextEpisode === progress.lastEpisode) {
-        alert("Sei già all'ultimo episodio disponibile!");
-        return;
-    }
-    
-    // Chiudi il player corrente
-    closePlayer();
-    
-    // Avvia il prossimo episodio
-    playEpisode(nextSeason, nextEpisode);
-}
-    
 function openPlayer(url) {
     const modal = document.getElementById("playerModal");
     const frame = document.getElementById("videoFrame");
