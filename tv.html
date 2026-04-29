@@ -331,6 +331,7 @@ h1 {
         <div class="player-controls">
             <button class="save-btn" onclick="saveCurrentSpot()">💾 Salva posizione</button>
             <button class="reset-btn" onclick="resetSavedSpot()">🗑 Reset</button>
+            <button class="next-episode-btn" onclick="goToNextEpisode()" style="background: #f59e0b;">⏭ Prossimo episodio</button>
             <button class="close-btn" onclick="closePlayer()">❌ Chiudi</button>
         </div>
         <div id="savedInfo" class="saved-info"></div>
@@ -1065,6 +1066,35 @@ function resetSavedSpot() {
         savedInfo.innerHTML = `🗑 Salvataggio rimosso!`;
         savedInfo.style.color = "#ef4444";
     }
+}
+
+function goToNextEpisode() {
+    if (!tvData) {
+        alert("Dati della serie non disponibili");
+        return;
+    }
+    
+    // Ottieni l'episodio corrente e il prossimo
+    const nextEpisode = getNextEpisode();
+    const currentProgress = loadSeriesProgress();
+    
+    if (!currentProgress) {
+        alert("Nessun episodio in corso. Inizia a guardare un episodio prima!");
+        return;
+    }
+    
+    // Se non ci sono cambiamenti (stesso episodio), non fare nulla
+    if (nextEpisode.season === currentProgress.lastSeason && 
+        nextEpisode.episode === currentProgress.lastEpisode) {
+        alert("Sei già all'ultimo episodio disponibile!");
+        return;
+    }
+    
+    // Chiudi il player corrente
+    closePlayer();
+    
+    // Avvia il prossimo episodio
+    playEpisode(nextEpisode.season, nextEpisode.episode);
 }
 
 function openPlayer(url) {
