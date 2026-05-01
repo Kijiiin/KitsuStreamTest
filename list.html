@@ -57,7 +57,7 @@ h1 {
     background-clip: text;
 }
 
-.back-btn, .clear-all-btn, .login-btn, .logout-btn, .add-folder-btn, .multi-move-btn {
+.clear-all-btn, .login-btn, .logout-btn {
     background: rgba(124, 58, 237, 0.9);
     border: none;
     padding: 6px 12px;
@@ -69,10 +69,6 @@ h1 {
     transition: all 0.2s ease;
 }
 
-.multi-move-btn { background: rgba(59, 130, 246, 0.9); }
-.multi-move-btn.active { background: #ef4444; }
-
-.add-folder-btn { background: rgba(124, 58, 237, 0.9); }
 .login-btn { background: rgba(16, 185, 129, 0.9); }
 .logout-btn { background: rgba(239, 68, 68, 0.9); }
 .user-info { 
@@ -127,9 +123,49 @@ h1 {
 
 .container { max-width: 1200px; margin: auto; padding: 16px; }
 
-.lista-title { text-align: center; margin-bottom: 20px; }
-.lista-title h2 { font-size: 20px; background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; }
-.lista-title p { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+.lista-title {
+    text-align: center;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+.lista-title h2 { 
+    font-size: 20px; 
+    background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed); 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+    background-clip: text; 
+    display: inline-block; 
+}
+.lista-title p { 
+    font-size: 12px; 
+    color: rgba(255,255,255,0.5); 
+    margin-top: 4px;
+    width: 100%;
+}
+.title-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.title-btn {
+    background: rgba(124, 58, 237, 0.9);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.title-btn.add-folder { background: rgba(124, 58, 237, 0.9); }
+.title-btn.multi-move { background: rgba(59, 130, 246, 0.9); }
+.title-btn.multi-move.active { background: #ef4444; }
 
 /* Selection Bar */
 .selection-bar {
@@ -293,7 +329,8 @@ h1 {
 .selection-hint {
     font-size: 11px;
     color: #3b82f6;
-    margin-left: 10px;
+    text-align: center;
+    padding: 8px;
 }
 
 #tornaSu {
@@ -318,10 +355,11 @@ h1 {
 @media (min-width: 769px) {
     .topbar { padding: 20px 40px; background: rgba(0,0,0,0.3); }
     h1 { font-size: 28px; }
-    .back-btn, .clear-all-btn, .login-btn, .logout-btn, .add-folder-btn, .multi-move-btn { padding: 10px 20px; font-size: 14px; }
+    .clear-all-btn, .login-btn, .logout-btn { padding: 10px 20px; font-size: 14px; }
     .container { padding: 30px; }
-    .lista-title { margin-bottom: 30px; }
+    .lista-title { margin-bottom: 30px; gap: 20px; }
     .lista-title h2 { font-size: 28px; }
+    .title-btn { padding: 8px 20px; font-size: 14px; }
     .filters-bar { padding: 20px; margin-bottom: 30px; border-radius: 20px; }
     .filter-label { font-size: 13px; }
     .sort-btn, .type-btn { padding: 8px 16px; font-size: 13px; }
@@ -353,8 +391,6 @@ h1 {
 <div class="topbar">
     <div class="topbar-left">
         <button class="clear-all-btn" onclick="clearAll()">🗑 Svuota</button>
-        <button class="add-folder-btn" onclick="openAddFolderModal()">📁 + Nuova Cartella</button>
-        <button id="multiMoveBtn" class="multi-move-btn" onclick="toggleMultiSelectMode()">✅ Sposta Multipli</button>
     </div>
     <div class="topbar-center">
         <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
@@ -434,7 +470,9 @@ h1 {
 
 <div class="container">
     <div class="lista-title">
+        <button id="addFolderBtn" class="title-btn add-folder" onclick="openAddFolderModal()">📁 Nuova Cartella</button>
         <h2>⭐ La mia lista</h2>
+        <button id="multiMoveBtn" class="title-btn multi-move" onclick="toggleMultiSelectMode()">✅ Sposta Multipli</button>
         <p>I tuoi film e serie TV organizzati in cartelle</p>
     </div>
 
@@ -652,11 +690,11 @@ h1 {
         
         if (multiSelectMode) {
             btn.classList.add('active');
-            btn.textContent = '❌ Annulla Selezione';
+            btn.innerHTML = '❌ Annulla Selezione';
             selectionBar.classList.add('show');
         } else {
             btn.classList.remove('active');
-            btn.textContent = '✅ Sposta Multipli';
+            btn.innerHTML = '✅ Sposta Multipli';
             selectionBar.classList.remove('show');
             selectedItems.clear();
         }
@@ -669,7 +707,7 @@ h1 {
         const btn = document.getElementById('multiMoveBtn');
         const selectionBar = document.getElementById('selectionBar');
         btn.classList.remove('active');
-        btn.textContent = '✅ Sposta Multipli';
+        btn.innerHTML = '✅ Sposta Multipli';
         selectionBar.classList.remove('show');
         displayList();
     };
@@ -1014,7 +1052,7 @@ h1 {
                                 ${!multiSelectMode ? `
                                     <button class="move-folder-btn" onclick='moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
                                     <button onclick="removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
-                                ` : '<div class="selection-hint">✨ Clicca per selezionare</div>'}
+                                ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
                             </div>
                         </div>
                     `;
