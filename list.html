@@ -531,19 +531,58 @@ h1 {
     };
 
     window.deleteFolder = async function(folderName) {
-        if (confirm(`Eliminare la cartella "${folderName}"? I contenuti saranno spostati nella lista principale.`)) {
-            // Sposta tutti gli elementi nella lista principale
+    if (!currentUser) {
+        alert("Devi essere loggato!");
+        return;
+    }
+    
+    if (confirm(`⚠️ Eliminare definitivamente la cartella "${folderName}"? I contenuti torneranno nella lista principale.`)) {
+        try {
+            console.log(`🗑️ Eliminazione cartella: ${folderName}`);
+            
+            // 1. Prendi gli elementi della cartella
             const folderItems = currentFolders[folderName] || [];
-            currentList = [...currentList, ...folderItems];
+            console.log(`📦 Elementi da spostare: ${folderItems.length}`);
+            
+            // 2. Sposta gli elementi nella lista principale (evita duplicati)
+            for (const item of folderItems) {
+                const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
+                if (!esisteGia) {
+                    currentList.push(item);
+                }
+            }
+            
+            // 3. Elimina la cartella dall'oggetto currentFolders
             delete currentFolders[folderName];
-            await saveAllData();
+            
+            // 4. SALVA SU FIREBASE (questo è il passo critico!)
+            const userRef = doc(db, 'users', currentUser.uid);
+            await setDoc(userRef, {
+                list: currentList,
+                folders: currentFolders,
+                username: currentUsername,
+                email: currentUser.email,
+                lastUpdate: new Date()
+            }, { merge: true });
+            
+            console.log("✅ Cartella eliminata e dati salvati su Firebase!");
+            console.log("📂 Cartelle rimanenti:", Object.keys(currentFolders));
+            
+            // 5. Se stavo visualizzando la cartella cancellata, torno alla lista principale
             if (currentFolder === folderName) {
                 currentFolder = null;
             }
+            
+            // 6. Ricarica l'interfaccia
             renderFoldersBar();
             displayList();
+            
+        } catch (error) {
+            console.error("❌ Errore durante l'eliminazione:", error);
+            alert("Errore durante l'eliminazione. Riprova.");
         }
-    };
+    }
+};
 
     window.selectFolder = function(folderName) {
         currentFolder = folderName === currentFolder ? null : folderName;
