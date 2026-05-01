@@ -57,7 +57,7 @@ h1 {
     background-clip: text;
 }
 
-.back-btn, .clear-all-btn, .login-btn, .logout-btn {
+.back-btn, .clear-all-btn, .login-btn, .logout-btn, .add-folder-btn {
     background: rgba(124, 58, 237, 0.9);
     border: none;
     padding: 6px 12px;
@@ -69,6 +69,7 @@ h1 {
     transition: all 0.2s ease;
 }
 
+.add-folder-btn { background: rgba(16, 185, 129, 0.9); }
 .login-btn { background: rgba(16, 185, 129, 0.9); }
 .logout-btn { background: rgba(239, 68, 68, 0.9); }
 .user-info { 
@@ -82,6 +83,7 @@ h1 {
 }
 .username { font-weight: bold; color: #c084fc; }
 
+/* Modal styles */
 .modal {
     display: none;
     position: fixed;
@@ -102,9 +104,11 @@ h1 {
     max-width: 400px;
     width: 90%;
     text-align: center;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
-.modal-content input {
+.modal-content input, .modal-content select {
     width: 100%;
     margin: 10px 0;
     padding: 12px;
@@ -123,6 +127,51 @@ h1 {
 .lista-title { text-align: center; margin-bottom: 20px; }
 .lista-title h2 { font-size: 20px; background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; }
 .lista-title p { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+/* Folder Navigation */
+.folders-bar {
+    background: rgba(31, 27, 58, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.folder-btn {
+    background: rgba(124, 58, 237, 0.4);
+    border: 1px solid rgba(124, 58, 237, 0.5);
+    padding: 8px 16px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.folder-btn.active {
+    background: #7c3aed;
+    border-color: #7c3aed;
+}
+
+.folder-btn:hover {
+    transform: translateY(-2px);
+}
+
+.delete-folder-btn {
+    background: rgba(239, 68, 68, 0.6);
+    margin-left: 5px;
+}
+
+.folder-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
 
 .filters-bar {
     background: rgba(31, 27, 58, 0.6);
@@ -175,11 +224,10 @@ h1 {
 .badge-movie { background: #7c3aed; }
 .badge-tv { background: #ef4444; }
 .card p { font-size: 9px; color: #c084fc; margin-bottom: 3px; }
-.card button {
+.move-folder-btn, .card button {
     padding: 6px 0;
     border: none;
     border-radius: 8px;
-    background: #ef4444;
     color: white;
     cursor: pointer;
     font-size: 10px;
@@ -187,6 +235,8 @@ h1 {
     width: 100%;
     margin-top: 6px;
 }
+.move-folder-btn { background: #3b82f6; margin-top: 4px; }
+.card button { background: #ef4444; }
 .empty-state { text-align: center; padding: 50px 20px; font-size: 13px; color: #888; }
 
 #tornaSu {
@@ -211,7 +261,7 @@ h1 {
 @media (min-width: 769px) {
     .topbar { padding: 20px 40px; background: rgba(0,0,0,0.3); }
     h1 { font-size: 28px; }
-    .back-btn, .clear-all-btn, .login-btn, .logout-btn { padding: 10px 20px; font-size: 14px; }
+    .back-btn, .clear-all-btn, .login-btn, .logout-btn, .add-folder-btn { padding: 10px 20px; font-size: 14px; }
     .container { padding: 30px; }
     .lista-title { margin-bottom: 30px; }
     .lista-title h2 { font-size: 28px; }
@@ -225,9 +275,10 @@ h1 {
     .card h4 { font-size: 14px; }
     .media-badge { padding: 3px 10px; font-size: 10px; }
     .card p { font-size: 11px; }
-    .card button { padding: 8px 12px; font-size: 12px; }
+    .move-folder-btn, .card button { padding: 8px 12px; font-size: 12px; }
     #tornaSu { bottom: 30px; right: 30px; width: 50px; height: 50px; font-size: 24px; }
     #tornaSu:hover { transform: translateY(-5px); }
+    .folder-btn { font-size: 14px; }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
@@ -241,6 +292,7 @@ h1 {
 
 <div class="topbar">
     <div class="topbar-left">
+        <button class="add-folder-btn" onclick="openAddFolderModal()">📁 + Nuova Cartella</button>
         <button class="clear-all-btn" onclick="clearAll()">🗑 Svuota</button>
     </div>
     <div class="topbar-center">
@@ -275,11 +327,37 @@ h1 {
     </div>
 </div>
 
+<!-- Modale Aggiungi Cartella -->
+<div id="folderModal" class="modal">
+    <div class="modal-content">
+        <h2>📁 Nuova Cartella</h2>
+        <input type="text" id="folderName" placeholder="Nome cartella (es. Film Azione, Serie preferite...)">
+        <button onclick="createFolder()">Crea Cartella</button>
+        <button onclick="closeFolderModal()">Annulla</button>
+        <div id="folderError" class="error-msg"></div>
+    </div>
+</div>
+
+<!-- Modale Sposta in Cartella -->
+<div id="moveModal" class="modal">
+    <div class="modal-content">
+        <h2>📂 Sposta in cartella</h2>
+        <select id="folderSelect">
+            <option value="">-- Nessuna cartella (Lista principale) --</option>
+        </select>
+        <button onclick="moveToFolder()">Sposta</button>
+        <button onclick="closeMoveModal()">Annulla</button>
+    </div>
+</div>
+
 <div class="container">
     <div class="lista-title">
         <h2>⭐ La mia lista</h2>
-        <p>I tuoi film e serie TV preferiti</p>
+        <p>I tuoi film e serie TV organizzati in cartelle</p>
     </div>
+
+    <!-- Cartelle -->
+    <div class="folders-bar" id="foldersBar"></div>
 
     <div class="filters-bar">
         <div class="filter-group">
@@ -308,7 +386,6 @@ h1 {
 <button id="tornaSu" title="Torna su">↑</button>
 
 <script type="module">
-    // 👇 INSERISCI QUI LA TUA CONFIGURAZIONE FIREBASE 👇
     const firebaseConfig = {
         apiKey: "AIzaSyCeM7KVc9lZsdd8HM5b-PAfhx0usN8Aubo",
         authDomain: "kitsustream-454e8.firebaseapp.com",
@@ -317,11 +394,10 @@ h1 {
         messagingSenderId: "1008216243036",
         appId: "1:1008216243036:web:73dfb15639862757b0df99"
     };
-    // 👆 COPIA I DATI DALLA TUA CONSOLE FIREBASE 👆
 
     import { initializeApp } from 'firebase/app';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-    import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+    import { getFirestore, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -329,9 +405,14 @@ h1 {
 
     let currentUser = null;
     let currentList = [];
+    let currentFolders = {};
+    let currentFolder = null; // null = lista principale
     let currentUsername = "";
+    let currentSort = "addedDate";
+    let currentTypeFilter = "all";
+    let pendingMoveItem = null;
 
-    // Funzioni di autenticazione
+    // Funzioni di autenticazione (uguali a prima)
     window.login = async function() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
@@ -376,6 +457,7 @@ h1 {
             
             await setDoc(doc(db, 'users', userCredential.user.uid), { 
                 list: [],
+                folders: {},
                 username: username,
                 email: email,
                 createdAt: new Date()
@@ -384,8 +466,8 @@ h1 {
             successDiv.textContent = '✅ Registrazione completata! Ora puoi accedere.';
             setTimeout(() => window.showLoginPanel(), 2000);
         } catch (error) {
-            let msg = error.code === 'auth/email-already-in-use' ? 'Email già registrata' :
-                      error.code === 'auth/invalid-email' ? 'Email non valida' : error.message;
+            let msg = error.code === 'email-already-in-use' ? 'Email già registrata' :
+                      error.code === 'invalid-email' ? 'Email non valida' : error.message;
             errorDiv.textContent = msg;
         }
     };
@@ -400,17 +482,11 @@ h1 {
         document.getElementById('loginError').textContent = '';
         document.getElementById('regError').textContent = '';
         document.getElementById('regSuccess').textContent = '';
-        document.getElementById('regUsername').value = '';
-        document.getElementById('regEmail').value = '';
-        document.getElementById('regPassword').value = '';
     };
 
     window.showRegisterPanel = function() {
         document.getElementById('loginPanel').style.display = 'none';
         document.getElementById('registerPanel').style.display = 'block';
-        document.getElementById('loginError').textContent = '';
-        document.getElementById('regError').textContent = '';
-        document.getElementById('regSuccess').textContent = '';
     };
 
     window.openLoginModal = function() {
@@ -418,44 +494,175 @@ h1 {
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    // Funzioni per la lista
-    async function loadUserList() {
-        if (!currentUser) return [];
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        return userDoc.exists() ? (userDoc.data().list || []) : [];
-    }
+    // Funzioni per cartelle
+    window.openAddFolderModal = function() {
+        if (!currentUser) {
+            alert("Devi prima accedere!");
+            return;
+        }
+        document.getElementById('folderName').value = '';
+        document.getElementById('folderError').textContent = '';
+        document.getElementById('folderModal').style.display = 'flex';
+    };
 
+    window.closeFolderModal = function() {
+        document.getElementById('folderModal').style.display = 'none';
+    };
+
+    window.createFolder = async function() {
+        const folderName = document.getElementById('folderName').value.trim();
+        if (!folderName) {
+            document.getElementById('folderError').textContent = 'Inserisci un nome per la cartella';
+            return;
+        }
+        
+        if (currentFolders[folderName]) {
+            document.getElementById('folderError').textContent = 'Esiste già una cartella con questo nome';
+            return;
+        }
+        
+        currentFolders[folderName] = [];
+        await saveFolders();
+        closeFolderModal();
+        renderFoldersBar();
+        displayList();
+    };
+
+    window.deleteFolder = async function(folderName) {
+        if (confirm(`Eliminare la cartella "${folderName}"? I contenuti saranno spostati nella lista principale.`)) {
+            // Sposta tutti gli elementi nella lista principale
+            const folderItems = currentFolders[folderName] || [];
+            currentList = [...currentList, ...folderItems];
+            delete currentFolders[folderName];
+            await saveAllData();
+            if (currentFolder === folderName) {
+                currentFolder = null;
+            }
+            renderFoldersBar();
+            displayList();
+        }
+    };
+
+    window.selectFolder = function(folderName) {
+        currentFolder = folderName === currentFolder ? null : folderName;
+        renderFoldersBar();
+        displayList();
+    };
+
+    window.openMoveModal = function(item) {
+        if (!currentUser) return;
+        pendingMoveItem = item;
+        const select = document.getElementById('folderSelect');
+        select.innerHTML = '<option value="">-- Nessuna cartella (Lista principale) --</option>';
+        
+        for (const folderName in currentFolders) {
+            select.innerHTML += `<option value="${escapeHtml(folderName)}">📁 ${escapeHtml(folderName)}</option>`;
+        }
+        
+        document.getElementById('moveModal').style.display = 'flex';
+    };
+
+    window.closeMoveModal = function() {
+        document.getElementById('moveModal').style.display = 'none';
+        pendingMoveItem = null;
+    };
+
+    window.moveToFolder = async function() {
+        const folderName = document.getElementById('folderSelect').value;
+        if (!pendingMoveItem) return;
+        
+        // Rimuovi dalla posizione corrente
+        let itemMoved = false;
+        
+        if (currentFolder) {
+            // Rimuovi dalla cartella corrente
+            const folderItems = currentFolders[currentFolder] || [];
+            const index = folderItems.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (index !== -1) {
+                folderItems.splice(index, 1);
+                currentFolders[currentFolder] = folderItems;
+                itemMoved = true;
+            }
+        } else {
+            // Rimuovi dalla lista principale
+            const index = currentList.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (index !== -1) {
+                currentList.splice(index, 1);
+                itemMoved = true;
+            }
+        }
+        
+        if (itemMoved) {
+            if (folderName && currentFolders[folderName]) {
+                // Aggiungi alla cartella selezionata
+                currentFolders[folderName].push(pendingMoveItem);
+            } else {
+                // Aggiungi alla lista principale
+                currentList.push(pendingMoveItem);
+            }
+            await saveAllData();
+        }
+        
+        closeMoveModal();
+        displayList();
+    };
+
+    // Funzioni per la lista
     async function loadUserData() {
         if (!currentUser) return null;
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        return userDoc.exists() ? userDoc.data() : null;
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            currentList = data.list || [];
+            currentFolders = data.folders || {};
+            return data;
+        }
+        return null;
     }
 
-    async function saveUserList(list) {
+    async function saveAllData() {
         if (!currentUser) return;
-        await setDoc(doc(db, 'users', currentUser.uid), { list: list }, { merge: true });
+        await setDoc(doc(db, 'users', currentUser.uid), { 
+            list: currentList,
+            folders: currentFolders
+        }, { merge: true });
+    }
+
+    async function saveFolders() {
+        if (!currentUser) return;
+        await setDoc(doc(db, 'users', currentUser.uid), { folders: currentFolders }, { merge: true });
     }
 
     async function removeFromCloudList(id, type) {
         if (!currentUser) return;
-        let list = await loadUserList();
-        list = list.filter(item => !(item.id === id && item.type === type));
-        await saveUserList(list);
-        currentList = list;
+        
+        if (currentFolder) {
+            const folderItems = currentFolders[currentFolder] || [];
+            currentFolders[currentFolder] = folderItems.filter(item => !(item.id === id && item.type === type));
+            await saveFolders();
+        } else {
+            currentList = currentList.filter(item => !(item.id === id && item.type === type));
+            await saveAllData();
+        }
+        
         displayList();
     }
 
     async function clearCloudList() {
         if (!currentUser) return;
-        await saveUserList([]);
-        currentList = [];
+        
+        if (currentFolder) {
+            currentFolders[currentFolder] = [];
+            await saveFolders();
+        } else {
+            currentList = [];
+            await saveAllData();
+        }
+        
         displayList();
     }
 
     // Funzioni UI
-    let currentSort = "addedDate";
-    let currentTypeFilter = "all";
-
     window.changeSort = function(sort) {
         currentSort = sort;
         document.querySelectorAll(".sort-btn").forEach(btn => btn.classList.remove("active"));
@@ -469,6 +676,13 @@ h1 {
         document.querySelector(`.type-btn[data-type="${type}"]`).classList.add("active");
         displayList();
     };
+
+    function getCurrentItems() {
+        if (currentFolder) {
+            return currentFolders[currentFolder] || [];
+        }
+        return currentList;
+    }
 
     function sortItems(items) {
         const sorted = [...items];
@@ -506,23 +720,45 @@ h1 {
         statsDiv.innerHTML = `📊 Mostrati ${filteredItems.length} su ${totalItems} totali | 🎬 Film: ${moviesCount} | 📺 Serie: ${tvCount} | ⭐ Media voto: ${avgRating}`;
     }
 
+    function renderFoldersBar() {
+        const container = document.getElementById('foldersBar');
+        let html = `<button class="folder-btn ${!currentFolder ? 'active' : ''}" onclick="window.selectFolder(null)">📂 Tutti</button>`;
+        
+        for (const folderName in currentFolders) {
+            const count = currentFolders[folderName].length;
+            html += `<div class="folder-item">
+                        <button class="folder-btn ${currentFolder === folderName ? 'active' : ''}" onclick="window.selectFolder('${escapeHtml(folderName)}')">
+                            📁 ${escapeHtml(folderName)} (${count})
+                        </button>
+                        <button class="folder-btn delete-folder-btn" onclick="window.deleteFolder('${escapeHtml(folderName)}')">🗑</button>
+                    </div>`;
+        }
+        
+        container.innerHTML = html;
+    }
+
     window.displayList = function() {
         const container = document.getElementById("listContainer");
         
         if (!currentUser) {
             container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
             updateStats([], 0);
+            renderFoldersBar();
             return;
         }
         
-        if (currentList.length === 0) {
-            container.innerHTML = '<div class="empty-state">📭 La tua lista è vuota<br>Aggiungi film o serie TV dalla home!</div>';
+        renderFoldersBar();
+        const items = getCurrentItems();
+        const totalItems = items.length;
+        
+        if (totalItems === 0) {
+            const folderText = currentFolder ? ` nella cartella "${currentFolder}"` : '';
+            container.innerHTML = `<div class="empty-state">📭 La tua lista${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
             updateStats([], 0);
             return;
         }
         
-        let filtered = filterItems(currentList);
-        const totalItems = currentList.length;
+        let filtered = filterItems(items);
         const sorted = sortItems(filtered);
         
         updateStats(filtered, totalItems);
@@ -548,12 +784,17 @@ h1 {
                             <p>⭐ ${item.rating || "N/A"}/10</p>
                             <p>📅 ${item.year || "N/D"}</p>
                             ${item.seasons ? `<p>📺 ${item.seasons} stagioni</p>` : ''}
+                            <button class="move-folder-btn" onclick='moveItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>📂 Sposta</button>
                             <button onclick="removeFromList(${item.id}, '${item.type}')">❌ Rimuovi</button>
                         </div>
                     </div>
                 `).join("")}
             </div>
         `;
+    };
+
+    window.moveItem = function(item) {
+        openMoveModal(item);
     };
 
     window.openDetails = function(id, type) {
@@ -567,13 +808,10 @@ h1 {
     };
 
     window.clearAll = async function() {
-        if (confirm("⚠️ Sei sicuro di voler svuotare tutta la lista?")) {
+        const confirmMsg = currentFolder ? `⚠️ Sei sicuro di voler svuotare la cartella "${currentFolder}"?` : "⚠️ Sei sicuro di voler svuotare tutta la lista?";
+        if (confirm(confirmMsg)) {
             await clearCloudList();
         }
-    };
-
-    window.goBack = function() {
-        window.history.back();
     };
 
     function escapeHtml(text) {
@@ -582,6 +820,10 @@ h1 {
         div.textContent = text;
         return div.innerHTML;
     }
+
+    window.goHome = function() {
+        window.location.href = "index.html";
+    };
 
     // Stato autenticazione
     onAuthStateChanged(auth, async (user) => {
@@ -599,12 +841,13 @@ h1 {
                     <button class="logout-btn" onclick="window.logout()" style="padding: 4px 10px;">🚪</button>
                 </div>
             `;
-            currentList = await loadUserList();
             displayList();
         } else {
             authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
             currentUsername = "";
             currentList = [];
+            currentFolders = {};
+            currentFolder = null;
             displayList();
         }
     });
@@ -617,12 +860,6 @@ h1 {
     tornaSuBtn.addEventListener("click", function() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     });
-</script>
-
-<script>
-    function goHome() {
-        window.location.href = "index.html";
-    }
 </script>
 
 </body>
