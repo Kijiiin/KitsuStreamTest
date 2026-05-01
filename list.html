@@ -256,41 +256,19 @@ h1 {
     border-radius: 12px;
     overflow: hidden;
     backdrop-filter: blur(10px);
-    transition: transform 0.2s ease;
-    position: relative;
+    transition: transform 0.2s ease, border 0.2s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
 }
 .card:active { transform: scale(0.98); }
 .card.selected {
-    border: 2px solid #3b82f6;
-    transform: scale(0.98);
-}
-.card-checkbox {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    width: 24px;
-    height: 24px;
-    background: rgba(0,0,0,0.7);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 10;
-    border: 1px solid rgba(255,255,255,0.3);
-}
-.card-checkbox.selected {
-    background: #3b82f6;
     border-color: #3b82f6;
-}
-.card-checkbox span {
-    font-size: 14px;
+    transform: scale(0.98);
 }
 .card img {
     width: 100%;
     aspect-ratio: 2 / 3;
     object-fit: cover;
-    cursor: pointer;
 }
 .card-content { padding: 8px; }
 .card h4 { margin: 0 0 3px; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -312,6 +290,11 @@ h1 {
 .move-folder-btn { background: #3b82f6; margin-top: 4px; }
 .card button { background: #ef4444; }
 .empty-state { text-align: center; padding: 50px 20px; font-size: 13px; color: #888; }
+.selection-hint {
+    font-size: 11px;
+    color: #3b82f6;
+    margin-left: 10px;
+}
 
 #tornaSu {
     position: fixed;
@@ -355,6 +338,7 @@ h1 {
     .folder-btn { font-size: 14px; }
     .selection-count { font-size: 14px; }
     .selection-action-btn { padding: 8px 16px; font-size: 13px; }
+    .selection-hint { font-size: 13px; }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
@@ -421,6 +405,18 @@ h1 {
         <button onclick="createFolder()">Crea Cartella</button>
         <button onclick="closeFolderModal()">Annulla</button>
         <div id="folderError" class="error-msg"></div>
+    </div>
+</div>
+
+<!-- Modale Sposta in Cartella -->
+<div id="moveModal" class="modal">
+    <div class="modal-content">
+        <h2>📂 Sposta in cartella</h2>
+        <select id="folderSelect">
+            <option value="">-- Nessuna cartella (Lista principale) --</option>
+        </select>
+        <button onclick="confirmSingleMove()">Sposta</button>
+        <button onclick="closeMoveModal()">Annulla</button>
     </div>
 </div>
 
@@ -622,7 +618,6 @@ h1 {
         if (confirm(`Eliminare la cartella "${folderName}"? I contenuti torneranno nella lista principale.`)) {
             const folderItems = currentFolders[folderName] || [];
             
-            // Sposta nella lista principale evitando duplicati
             for (const item of folderItems) {
                 const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
                 if (!esisteGia) {
@@ -643,7 +638,7 @@ h1 {
     };
 
     window.selectFolder = function(folderName) {
-        cancelMultiSelect(); // Esci dalla modalità selezione quando cambi cartella
+        cancelMultiSelect();
         currentFolder = folderName === currentFolder ? null : folderName;
         renderFoldersBar();
         displayList();
@@ -665,7 +660,7 @@ h1 {
             selectionBar.classList.remove('show');
             selectedItems.clear();
         }
-        displayList(); // Ricarica la lista per mostrare i checkbox
+        displayList();
     };
 
     window.cancelMultiSelect = function() {
@@ -687,7 +682,7 @@ h1 {
             selectedItems.add(key);
         }
         updateSelectionCount();
-        displayList(); // Ricarica per aggiornare lo stile
+        displayList();
     };
 
     function updateSelectionCount() {
@@ -703,7 +698,6 @@ h1 {
             return;
         }
         
-        // Popola il select con le cartelle
         const select = document.getElementById('multiFolderSelect');
         select.innerHTML = '<option value="">-- Nessuna cartella (Lista principale) --</option>';
         for (const folderName in currentFolders) {
@@ -723,7 +717,6 @@ h1 {
         const targetFolder = document.getElementById('multiFolderSelect').value;
         const itemsToMove = [];
         
-        // Raccogli gli elementi selezionati
         for (const key of selectedItems) {
             const [id, type] = key.split('_');
             const found = getCurrentItems().find(item => item.id == id && item.type === type);
@@ -734,7 +727,6 @@ h1 {
         
         if (itemsToMove.length === 0) return;
         
-        // Rimuovi dalla posizione corrente
         if (currentFolder) {
             const folderItems = currentFolders[currentFolder] || [];
             currentFolders[currentFolder] = folderItems.filter(item => 
@@ -746,7 +738,6 @@ h1 {
             );
         }
         
-        // Aggiungi alla destinazione
         if (targetFolder && currentFolders[targetFolder]) {
             for (const item of itemsToMove) {
                 const esisteGia = currentFolders[targetFolder].some(i => i.id === item.id && i.type === item.type);
@@ -766,6 +757,60 @@ h1 {
         await saveAllData();
         closeMultiMoveModal();
         cancelMultiSelect();
+        displayList();
+    };
+
+    // Funzioni per spostamento singolo
+    window.moveItem = function(item) {
+        if (multiSelectMode) return;
+        pendingMoveItem = item;
+        const select = document.getElementById('folderSelect');
+        select.innerHTML = '<option value="">-- Nessuna cartella (Lista principale) --</option>';
+        for (const folderName in currentFolders) {
+            if (folderName !== currentFolder) {
+                select.innerHTML += `<option value="${escapeHtml(folderName)}">📁 ${escapeHtml(folderName)}</option>`;
+            }
+        }
+        document.getElementById('moveModal').style.display = 'flex';
+    };
+
+    window.closeMoveModal = function() {
+        document.getElementById('moveModal').style.display = 'none';
+        pendingMoveItem = null;
+    };
+
+    window.confirmSingleMove = async function() {
+        const targetFolder = document.getElementById('folderSelect').value;
+        if (!pendingMoveItem) return;
+        
+        if (currentFolder) {
+            const folderItems = currentFolders[currentFolder] || [];
+            const index = folderItems.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (index !== -1) {
+                folderItems.splice(index, 1);
+                currentFolders[currentFolder] = folderItems;
+            }
+        } else {
+            const index = currentList.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (index !== -1) {
+                currentList.splice(index, 1);
+            }
+        }
+        
+        if (targetFolder && currentFolders[targetFolder]) {
+            const esisteGia = currentFolders[targetFolder].some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (!esisteGia) {
+                currentFolders[targetFolder].push(pendingMoveItem);
+            }
+        } else {
+            const esisteGia = currentList.some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (!esisteGia) {
+                currentList.push(pendingMoveItem);
+            }
+        }
+        
+        await saveAllData();
+        closeMoveModal();
         displayList();
     };
 
@@ -891,6 +936,32 @@ h1 {
         container.innerHTML = html;
     }
 
+    // Funzione per gestire il click sulla card
+    window.handleCardClick = function(id, type, event) {
+        if (multiSelectMode) {
+            event.stopPropagation();
+            toggleSelectItem(id, type);
+        } else {
+            openDetails(id, type);
+        }
+    };
+
+    window.openDetails = function(id, type) {
+        window.location.href = `${type === 'movie' ? 'movie' : 'tv'}.html?id=${id}`;
+    };
+
+    window.removeFromList = async function(id, type, event) {
+        event.stopPropagation();
+        if (confirm("Rimuovere questo elemento dalla lista?")) {
+            await removeFromCloudList(id, type);
+        }
+    };
+
+    window.moveItemClick = function(item, event) {
+        event.stopPropagation();
+        moveItem(item);
+    };
+
     window.displayList = function() {
         const container = document.getElementById("listContainer");
         
@@ -928,15 +999,9 @@ h1 {
                     const key = `${item.id}_${item.type}`;
                     const isSelected = selectedItems.has(key);
                     return `
-                        <div class="card ${isSelected ? 'selected' : ''}" data-id="${item.id}" data-type="${item.type}">
-                            ${multiSelectMode ? `
-                                <div class="card-checkbox ${isSelected ? 'selected' : ''}" onclick="event.stopPropagation(); toggleSelectItem(${item.id}, '${item.type}')">
-                                    <span>${isSelected ? '✓' : '□'}</span>
-                                </div>
-                            ` : ''}
+                        <div class="card ${isSelected ? 'selected' : ''}" onclick="handleCardClick(${item.id}, '${item.type}', event)">
                             <img src="${item.poster || 'https://via.placeholder.com/500x750'}" 
                                  alt="${item.title}" 
-                                 onclick="openDetails(${item.id}, '${item.type}')"
                                  loading="lazy">
                             <div class="card-content">
                                 <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
@@ -947,39 +1012,15 @@ h1 {
                                 <p>📅 ${item.year || "N/D"}</p>
                                 ${item.seasons ? `<p>📺 ${item.seasons} stagioni</p>` : ''}
                                 ${!multiSelectMode ? `
-                                    <button class="move-folder-btn" onclick='moveItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>📂 Sposta</button>
-                                    <button onclick="removeFromList(${item.id}, '${item.type}')">❌ Rimuovi</button>
-                                ` : ''}
+                                    <button class="move-folder-btn" onclick='moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
+                                    <button onclick="removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
+                                ` : '<div class="selection-hint">✨ Clicca per selezionare</div>'}
                             </div>
                         </div>
                     `;
                 }).join("")}
             </div>
         `;
-    };
-
-    window.moveItem = function(item) {
-        // Funzione per spostamento singolo (mantenuta per compatibilità)
-        const select = document.getElementById('folderSelect');
-        select.innerHTML = '<option value="">-- Nessuna cartella (Lista principale) --</option>';
-        for (const folderName in currentFolders) {
-            if (folderName !== currentFolder) {
-                select.innerHTML += `<option value="${escapeHtml(folderName)}">📁 ${escapeHtml(folderName)}</option>`;
-            }
-        }
-        pendingMoveItem = item;
-        document.getElementById('moveModal').style.display = 'flex';
-    };
-
-    window.openDetails = function(id, type) {
-        if (multiSelectMode) return;
-        window.location.href = `${type === 'movie' ? 'movie' : 'tv'}.html?id=${id}`;
-    };
-
-    window.removeFromList = async function(id, type) {
-        if (confirm("Rimuovere questo elemento dalla lista?")) {
-            await removeFromCloudList(id, type);
-        }
     };
 
     window.clearAll = async function() {
