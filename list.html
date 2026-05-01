@@ -57,7 +57,7 @@ h1 {
     background-clip: text;
 }
 
-.back-btn, .clear-all-btn, .login-btn, .logout-btn, .add-folder-btn {
+.back-btn, .clear-all-btn, .login-btn, .logout-btn, .add-folder-btn, .multi-move-btn {
     background: rgba(124, 58, 237, 0.9);
     border: none;
     padding: 6px 12px;
@@ -69,9 +69,10 @@ h1 {
     transition: all 0.2s ease;
 }
 
-.add-folder-btn { 
-    background: rgba(124, 58, 237, 0.9);  /* Cambiato da verde a viola */
-}
+.multi-move-btn { background: rgba(59, 130, 246, 0.9); }
+.multi-move-btn.active { background: #ef4444; }
+
+.add-folder-btn { background: rgba(124, 58, 237, 0.9); }
 .login-btn { background: rgba(16, 185, 129, 0.9); }
 .logout-btn { background: rgba(239, 68, 68, 0.9); }
 .user-info { 
@@ -129,6 +130,50 @@ h1 {
 .lista-title { text-align: center; margin-bottom: 20px; }
 .lista-title h2 { font-size: 20px; background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; }
 .lista-title p { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+/* Selection Bar */
+.selection-bar {
+    background: rgba(31, 27, 58, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    display: none;
+}
+
+.selection-bar.show {
+    display: flex;
+}
+
+.selection-count {
+    font-size: 13px;
+    color: #c084fc;
+    font-weight: bold;
+}
+
+.selection-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.selection-action-btn {
+    background: rgba(124, 58, 237, 0.8);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.selection-action-btn.cancel {
+    background: rgba(107, 114, 128, 0.8);
+}
 
 /* Folder Navigation */
 .folders-bar {
@@ -212,8 +257,35 @@ h1 {
     overflow: hidden;
     backdrop-filter: blur(10px);
     transition: transform 0.2s ease;
+    position: relative;
 }
 .card:active { transform: scale(0.98); }
+.card.selected {
+    border: 2px solid #3b82f6;
+    transform: scale(0.98);
+}
+.card-checkbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 24px;
+    height: 24px;
+    background: rgba(0,0,0,0.7);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+.card-checkbox.selected {
+    background: #3b82f6;
+    border-color: #3b82f6;
+}
+.card-checkbox span {
+    font-size: 14px;
+}
 .card img {
     width: 100%;
     aspect-ratio: 2 / 3;
@@ -263,7 +335,7 @@ h1 {
 @media (min-width: 769px) {
     .topbar { padding: 20px 40px; background: rgba(0,0,0,0.3); }
     h1 { font-size: 28px; }
-    .back-btn, .clear-all-btn, .login-btn, .logout-btn, .add-folder-btn { padding: 10px 20px; font-size: 14px; }
+    .back-btn, .clear-all-btn, .login-btn, .logout-btn, .add-folder-btn, .multi-move-btn { padding: 10px 20px; font-size: 14px; }
     .container { padding: 30px; }
     .lista-title { margin-bottom: 30px; }
     .lista-title h2 { font-size: 28px; }
@@ -281,6 +353,8 @@ h1 {
     #tornaSu { bottom: 30px; right: 30px; width: 50px; height: 50px; font-size: 24px; }
     #tornaSu:hover { transform: translateY(-5px); }
     .folder-btn { font-size: 14px; }
+    .selection-count { font-size: 14px; }
+    .selection-action-btn { padding: 8px 16px; font-size: 13px; }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
@@ -294,14 +368,24 @@ h1 {
 
 <div class="topbar">
     <div class="topbar-left">
-        <button class="add-folder-btn" onclick="openAddFolderModal()">📁 + Nuova Cartella</button>
         <button class="clear-all-btn" onclick="clearAll()">🗑 Svuota</button>
+        <button class="add-folder-btn" onclick="openAddFolderModal()">📁 + Nuova Cartella</button>
+        <button id="multiMoveBtn" class="multi-move-btn" onclick="toggleMultiSelectMode()">✅ Sposta Multipli</button>
     </div>
     <div class="topbar-center">
         <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
     </div>
     <div class="topbar-right">
         <div id="authButtons"></div>
+    </div>
+</div>
+
+<!-- Selection Bar per spostamento multiplo -->
+<div id="selectionBar" class="selection-bar">
+    <div class="selection-count" id="selectionCount">0 selezionati</div>
+    <div class="selection-actions">
+        <button class="selection-action-btn" onclick="moveSelectedToFolder()">📂 Sposta in cartella</button>
+        <button class="selection-action-btn cancel" onclick="cancelMultiSelect()">❌ Annulla</button>
     </div>
 </div>
 
@@ -340,15 +424,15 @@ h1 {
     </div>
 </div>
 
-<!-- Modale Sposta in Cartella -->
-<div id="moveModal" class="modal">
+<!-- Modale Sposta Multipla in Cartella -->
+<div id="multiMoveModal" class="modal">
     <div class="modal-content">
-        <h2>📂 Sposta in cartella</h2>
-        <select id="folderSelect">
+        <h2>📂 Sposta elementi selezionati in cartella</h2>
+        <select id="multiFolderSelect">
             <option value="">-- Nessuna cartella (Lista principale) --</option>
         </select>
-        <button onclick="moveToFolder()">Sposta</button>
-        <button onclick="closeMoveModal()">Annulla</button>
+        <button onclick="confirmMultiMove()">Sposta</button>
+        <button onclick="closeMultiMoveModal()">Annulla</button>
     </div>
 </div>
 
@@ -399,7 +483,7 @@ h1 {
 
     import { initializeApp } from 'firebase/app';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-    import { getFirestore, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+    import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -408,13 +492,17 @@ h1 {
     let currentUser = null;
     let currentList = [];
     let currentFolders = {};
-    let currentFolder = null; // null = lista principale
+    let currentFolder = null;
     let currentUsername = "";
     let currentSort = "addedDate";
     let currentTypeFilter = "all";
     let pendingMoveItem = null;
+    
+    // Variabili per selezione multipla
+    let multiSelectMode = false;
+    let selectedItems = new Set();
 
-    // Funzioni di autenticazione (uguali a prima)
+    // Funzioni di autenticazione
     window.login = async function() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
@@ -524,27 +612,17 @@ h1 {
         }
         
         currentFolders[folderName] = [];
-        await saveFolders();
+        await saveAllData();
         closeFolderModal();
         renderFoldersBar();
         displayList();
     };
 
     window.deleteFolder = async function(folderName) {
-    if (!currentUser) {
-        alert("Devi essere loggato!");
-        return;
-    }
-    
-    if (confirm(`⚠️ Eliminare definitivamente la cartella "${folderName}"? I contenuti torneranno nella lista principale.`)) {
-        try {
-            console.log(`🗑️ Eliminazione cartella: ${folderName}`);
-            
-            // 1. Prendi gli elementi della cartella
+        if (confirm(`Eliminare la cartella "${folderName}"? I contenuti torneranno nella lista principale.`)) {
             const folderItems = currentFolders[folderName] || [];
-            console.log(`📦 Elementi da spostare: ${folderItems.length}`);
             
-            // 2. Sposta gli elementi nella lista principale (evita duplicati)
+            // Sposta nella lista principale evitando duplicati
             for (const item of folderItems) {
                 const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
                 if (!esisteGia) {
@@ -552,99 +630,142 @@ h1 {
                 }
             }
             
-            // 3. Elimina la cartella dall'oggetto currentFolders
             delete currentFolders[folderName];
+            await saveAllData();
             
-            // 4. SALVA SU FIREBASE (questo è il passo critico!)
-            const userRef = doc(db, 'users', currentUser.uid);
-            await setDoc(userRef, {
-                list: currentList,
-                folders: currentFolders,
-                username: currentUsername,
-                email: currentUser.email,
-                lastUpdate: new Date()
-            }, { merge: true });
-            
-            console.log("✅ Cartella eliminata e dati salvati su Firebase!");
-            console.log("📂 Cartelle rimanenti:", Object.keys(currentFolders));
-            
-            // 5. Se stavo visualizzando la cartella cancellata, torno alla lista principale
             if (currentFolder === folderName) {
                 currentFolder = null;
             }
             
-            // 6. Ricarica l'interfaccia
             renderFoldersBar();
             displayList();
-            
-        } catch (error) {
-            console.error("❌ Errore durante l'eliminazione:", error);
-            alert("Errore durante l'eliminazione. Riprova.");
         }
-    }
-};
+    };
 
     window.selectFolder = function(folderName) {
+        cancelMultiSelect(); // Esci dalla modalità selezione quando cambi cartella
         currentFolder = folderName === currentFolder ? null : folderName;
         renderFoldersBar();
         displayList();
     };
 
-    window.openMoveModal = function(item) {
-        if (!currentUser) return;
-        pendingMoveItem = item;
-        const select = document.getElementById('folderSelect');
-        select.innerHTML = '<option value="">-- Nessuna cartella (Lista principale) --</option>';
+    // Funzioni per selezione multipla
+    window.toggleMultiSelectMode = function() {
+        multiSelectMode = !multiSelectMode;
+        const btn = document.getElementById('multiMoveBtn');
+        const selectionBar = document.getElementById('selectionBar');
         
-        for (const folderName in currentFolders) {
-            select.innerHTML += `<option value="${escapeHtml(folderName)}">📁 ${escapeHtml(folderName)}</option>`;
+        if (multiSelectMode) {
+            btn.classList.add('active');
+            btn.textContent = '❌ Annulla Selezione';
+            selectionBar.classList.add('show');
+        } else {
+            btn.classList.remove('active');
+            btn.textContent = '✅ Sposta Multipli';
+            selectionBar.classList.remove('show');
+            selectedItems.clear();
+        }
+        displayList(); // Ricarica la lista per mostrare i checkbox
+    };
+
+    window.cancelMultiSelect = function() {
+        multiSelectMode = false;
+        selectedItems.clear();
+        const btn = document.getElementById('multiMoveBtn');
+        const selectionBar = document.getElementById('selectionBar');
+        btn.classList.remove('active');
+        btn.textContent = '✅ Sposta Multipli';
+        selectionBar.classList.remove('show');
+        displayList();
+    };
+
+    window.toggleSelectItem = function(itemId, itemType) {
+        const key = `${itemId}_${itemType}`;
+        if (selectedItems.has(key)) {
+            selectedItems.delete(key);
+        } else {
+            selectedItems.add(key);
+        }
+        updateSelectionCount();
+        displayList(); // Ricarica per aggiornare lo stile
+    };
+
+    function updateSelectionCount() {
+        const countSpan = document.getElementById('selectionCount');
+        if (countSpan) {
+            countSpan.textContent = `${selectedItems.size} selezionati`;
+        }
+    }
+
+    window.moveSelectedToFolder = function() {
+        if (selectedItems.size === 0) {
+            alert("Nessun elemento selezionato");
+            return;
         }
         
-        document.getElementById('moveModal').style.display = 'flex';
+        // Popola il select con le cartelle
+        const select = document.getElementById('multiFolderSelect');
+        select.innerHTML = '<option value="">-- Nessuna cartella (Lista principale) --</option>';
+        for (const folderName in currentFolders) {
+            if (folderName !== currentFolder) {
+                select.innerHTML += `<option value="${escapeHtml(folderName)}">📁 ${escapeHtml(folderName)}</option>`;
+            }
+        }
+        
+        document.getElementById('multiMoveModal').style.display = 'flex';
     };
 
-    window.closeMoveModal = function() {
-        document.getElementById('moveModal').style.display = 'none';
-        pendingMoveItem = null;
+    window.closeMultiMoveModal = function() {
+        document.getElementById('multiMoveModal').style.display = 'none';
     };
 
-    window.moveToFolder = async function() {
-        const folderName = document.getElementById('folderSelect').value;
-        if (!pendingMoveItem) return;
+    window.confirmMultiMove = async function() {
+        const targetFolder = document.getElementById('multiFolderSelect').value;
+        const itemsToMove = [];
+        
+        // Raccogli gli elementi selezionati
+        for (const key of selectedItems) {
+            const [id, type] = key.split('_');
+            const found = getCurrentItems().find(item => item.id == id && item.type === type);
+            if (found) {
+                itemsToMove.push(found);
+            }
+        }
+        
+        if (itemsToMove.length === 0) return;
         
         // Rimuovi dalla posizione corrente
-        let itemMoved = false;
-        
         if (currentFolder) {
-            // Rimuovi dalla cartella corrente
             const folderItems = currentFolders[currentFolder] || [];
-            const index = folderItems.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
-            if (index !== -1) {
-                folderItems.splice(index, 1);
-                currentFolders[currentFolder] = folderItems;
-                itemMoved = true;
+            currentFolders[currentFolder] = folderItems.filter(item => 
+                !itemsToMove.some(move => move.id === item.id && move.type === item.type)
+            );
+        } else {
+            currentList = currentList.filter(item => 
+                !itemsToMove.some(move => move.id === item.id && move.type === item.type)
+            );
+        }
+        
+        // Aggiungi alla destinazione
+        if (targetFolder && currentFolders[targetFolder]) {
+            for (const item of itemsToMove) {
+                const esisteGia = currentFolders[targetFolder].some(i => i.id === item.id && i.type === item.type);
+                if (!esisteGia) {
+                    currentFolders[targetFolder].push(item);
+                }
             }
         } else {
-            // Rimuovi dalla lista principale
-            const index = currentList.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
-            if (index !== -1) {
-                currentList.splice(index, 1);
-                itemMoved = true;
+            for (const item of itemsToMove) {
+                const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
+                if (!esisteGia) {
+                    currentList.push(item);
+                }
             }
         }
         
-        if (itemMoved) {
-            if (folderName && currentFolders[folderName]) {
-                // Aggiungi alla cartella selezionata
-                currentFolders[folderName].push(pendingMoveItem);
-            } else {
-                // Aggiungi alla lista principale
-                currentList.push(pendingMoveItem);
-            }
-            await saveAllData();
-        }
-        
-        closeMoveModal();
+        await saveAllData();
+        closeMultiMoveModal();
+        cancelMultiSelect();
         displayList();
     };
 
@@ -665,13 +786,9 @@ h1 {
         if (!currentUser) return;
         await setDoc(doc(db, 'users', currentUser.uid), { 
             list: currentList,
-            folders: currentFolders
+            folders: currentFolders,
+            lastUpdate: new Date()
         }, { merge: true });
-    }
-
-    async function saveFolders() {
-        if (!currentUser) return;
-        await setDoc(doc(db, 'users', currentUser.uid), { folders: currentFolders }, { merge: true });
     }
 
     async function removeFromCloudList(id, type) {
@@ -680,12 +797,10 @@ h1 {
         if (currentFolder) {
             const folderItems = currentFolders[currentFolder] || [];
             currentFolders[currentFolder] = folderItems.filter(item => !(item.id === id && item.type === type));
-            await saveFolders();
         } else {
             currentList = currentList.filter(item => !(item.id === id && item.type === type));
-            await saveAllData();
         }
-        
+        await saveAllData();
         displayList();
     }
 
@@ -694,12 +809,10 @@ h1 {
         
         if (currentFolder) {
             currentFolders[currentFolder] = [];
-            await saveFolders();
         } else {
             currentList = [];
-            await saveAllData();
         }
-        
+        await saveAllData();
         displayList();
     }
 
@@ -811,34 +924,55 @@ h1 {
         
         container.innerHTML = `
             <div class="grid">
-                ${sorted.map(item => `
-                    <div class="card">
-                        <img src="${item.poster || 'https://via.placeholder.com/500x750'}" 
-                             alt="${item.title}" 
-                             onclick="openDetails(${item.id}, '${item.type}')"
-                             loading="lazy">
-                        <div class="card-content">
-                            <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
-                                ${item.mediaType || (item.type === 'movie' ? 'Film' : 'Serie TV')}
-                            </span>
-                            <h4>${escapeHtml(item.title)}</h4>
-                            <p>⭐ ${item.rating || "N/A"}/10</p>
-                            <p>📅 ${item.year || "N/D"}</p>
-                            ${item.seasons ? `<p>📺 ${item.seasons} stagioni</p>` : ''}
-                            <button class="move-folder-btn" onclick='moveItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>📂 Sposta</button>
-                            <button onclick="removeFromList(${item.id}, '${item.type}')">❌ Rimuovi</button>
+                ${sorted.map(item => {
+                    const key = `${item.id}_${item.type}`;
+                    const isSelected = selectedItems.has(key);
+                    return `
+                        <div class="card ${isSelected ? 'selected' : ''}" data-id="${item.id}" data-type="${item.type}">
+                            ${multiSelectMode ? `
+                                <div class="card-checkbox ${isSelected ? 'selected' : ''}" onclick="event.stopPropagation(); toggleSelectItem(${item.id}, '${item.type}')">
+                                    <span>${isSelected ? '✓' : '□'}</span>
+                                </div>
+                            ` : ''}
+                            <img src="${item.poster || 'https://via.placeholder.com/500x750'}" 
+                                 alt="${item.title}" 
+                                 onclick="openDetails(${item.id}, '${item.type}')"
+                                 loading="lazy">
+                            <div class="card-content">
+                                <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
+                                    ${item.mediaType || (item.type === 'movie' ? 'Film' : 'Serie TV')}
+                                </span>
+                                <h4>${escapeHtml(item.title)}</h4>
+                                <p>⭐ ${item.rating || "N/A"}/10</p>
+                                <p>📅 ${item.year || "N/D"}</p>
+                                ${item.seasons ? `<p>📺 ${item.seasons} stagioni</p>` : ''}
+                                ${!multiSelectMode ? `
+                                    <button class="move-folder-btn" onclick='moveItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>📂 Sposta</button>
+                                    <button onclick="removeFromList(${item.id}, '${item.type}')">❌ Rimuovi</button>
+                                ` : ''}
+                            </div>
                         </div>
-                    </div>
-                `).join("")}
+                    `;
+                }).join("")}
             </div>
         `;
     };
 
     window.moveItem = function(item) {
-        openMoveModal(item);
+        // Funzione per spostamento singolo (mantenuta per compatibilità)
+        const select = document.getElementById('folderSelect');
+        select.innerHTML = '<option value="">-- Nessuna cartella (Lista principale) --</option>';
+        for (const folderName in currentFolders) {
+            if (folderName !== currentFolder) {
+                select.innerHTML += `<option value="${escapeHtml(folderName)}">📁 ${escapeHtml(folderName)}</option>`;
+            }
+        }
+        pendingMoveItem = item;
+        document.getElementById('moveModal').style.display = 'flex';
     };
 
     window.openDetails = function(id, type) {
+        if (multiSelectMode) return;
         window.location.href = `${type === 'movie' ? 'movie' : 'tv'}.html?id=${id}`;
     };
 
