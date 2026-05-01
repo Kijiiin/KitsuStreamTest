@@ -1265,7 +1265,7 @@ async function searchMoviesByStudio(companyId, studioName) {
     studioMovies = [];
     try {
         let page = 1;
-        while (page <= 5) {
+        while (page <= 20) {
             const url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&with_companies=${companyId}&sort_by=popularity.desc&page=${page}`;
             const response = await fetch(url);
             const data = await response.json();
