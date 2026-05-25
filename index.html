@@ -707,22 +707,35 @@ async function loadContent() {
         let url = "";
         
         if (searchQuery) {
-            // RICERCA CON ORDINAMENTO LATO CLIENT
+            // RICERCA: carichiamo più pagine per avere risultati da ordinare correttamente
             const searchType = currentMediaType === "movie" ? "movie" : "tv";
-            url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(searchQuery)}&language=it-IT&page=${currentPage}&include_adult=false`;
             
-            const response = await fetch(url);
-            const data = await response.json();
+            // Determina quante pagine caricare in base al filtro
+            let maxPages = 1;
+            if (currentOrder === 'top_rated' || currentOrder === 'latest') {
+                // Per ordinamento, carichiamo più pagine (max 5 per non essere troppo lenti)
+                maxPages = Math.min(5, currentPage + 2);
+            }
             
-            // Ordina i risultati lato client in base al filtro selezionato
-            let results = [...(data.results || [])];
+            let allResults = [];
+            let totalPagesGlobal = 1;
             
+            // Carica le pagine necessarie
+            for (let i = 1; i <= maxPages; i++) {
+                const searchUrl = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(searchQuery)}&language=it-IT&page=${i}&include_adult=false`;
+                const response = await fetch(searchUrl);
+                const data = await response.json();
+                totalPagesGlobal = Math.min(data.total_pages, 500);
+                allResults = [...allResults, ...(data.results || [])];
+                
+                if (i === 1 && currentOrder === 'popular') break; // Per popular basta 1 pagina
+            }
+            
+            // Ora ordina TUTTI i risultati caricati
             if (currentOrder === 'top_rated') {
-                // Ordina per voto (più alto prima)
-                results.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+                allResults.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
             } else if (currentOrder === 'latest') {
-                // Ordina per data (più recente prima)
-                results.sort((a, b) => {
+                allResults.sort((a, b) => {
                     const dateA = currentMediaType === "movie" ? a.release_date : a.first_air_date;
                     const dateB = currentMediaType === "movie" ? b.release_date : b.first_air_date;
                     if (!dateA && !dateB) return 0;
@@ -731,15 +744,23 @@ async function loadContent() {
                     return dateB.localeCompare(dateA);
                 });
             }
-            // Se currentOrder === 'popular' non fare nulla (già in ordine di popolarità)
             
-            totalPages = Math.min(data.total_pages, 500);
-            displayItems(results);
+            // Paginazione manuale sui risultati ordinati
+            const itemsPerPage = 20;
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedResults = allResults.slice(startIndex, endIndex);
+            
+            // Calcola il totale delle pagine basato sui risultati totali
+            const calculatedTotalPages = Math.ceil(allResults.length / itemsPerPage);
+            totalPages = Math.max(1, calculatedTotalPages);
+            
+            displayItems(paginatedResults);
             updatePageNumber();
             return;
         } 
         else if (selectedGenres.length > 0) {
-            // FILTRO PER GENERE CON ORDINAMENTO
+            // FILTRO PER GENERE (nessun cambiamento)
             const genreQuery = selectedGenres.join(",");
             let sortBy = 'popularity.desc';
             if (currentOrder === 'top_rated') {
@@ -750,7 +771,7 @@ async function loadContent() {
             url = `https://api.themoviedb.org/3/discover/${currentMediaType}?api_key=${API_KEY}&with_genres=${genreQuery}&language=it-IT&page=${currentPage}&sort_by=${sortBy}&vote_count.gte=50`;
         } 
         else {
-            // NAVIGAZIONE NORMALE SENZA RICERCA
+            // NAVIGAZIONE NORMALE (nessun cambiamento)
             if (currentOrder === 'top_rated') {
                 url = `https://api.themoviedb.org/3/${currentMediaType}/top_rated?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
             } else if (currentOrder === 'latest') {
