@@ -84,6 +84,7 @@ h1 {
     align-items: center;
     gap: 4px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    text-decoration: none;
 }
 
 .list-btn:active, .actors-btn:active, .home-btn:active {
@@ -93,6 +94,7 @@ h1 {
 
 .actors-btn {
     background: linear-gradient(135deg, #ec4899, #be185d);
+    text-decoration: none;
 }
 
 .login-btn {
@@ -348,7 +350,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
 
 <div class="topbar">
     <div class="topbar-left">
-        <button class="actors-btn" onclick="goToActors()">🎭 Troupe</button>
+        <a href="actors.html" class="actors-btn">🎭 Troupe</a>
     </div>
     <div class="topbar-center">
         <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
@@ -393,7 +395,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     <div class="media-selector">
         <button class="media-btn active" data-type="movie" onclick="switchMediaType('movie')">🎬 Film</button>
         <button class="media-btn" data-type="tv" onclick="switchMediaType('tv')">📺 Serie TV</button>
-        <button class="list-btn" onclick="goToList()">❤️ Lista</button>
+        <a href="list.html" class="list-btn">❤️ Lista</a>
     </div>
 
     <div class="order-selector">
@@ -637,9 +639,6 @@ window.onload = function() {
     document.getElementById("searchInput").addEventListener("input", handleSearch);
 };
 
-function goToActors() {
-    window.location.href = "actors.html";
-}
 
 function changeOrder(order) {
     currentOrder = order;
@@ -875,10 +874,6 @@ function goHome() {
     document.querySelectorAll(".order-btn").forEach(btn => btn.classList.remove("active"));
     document.querySelector(`.order-btn[data-order="popular"]`).classList.add("active");
     loadContent();
-}
-
-function goToList() {
-    window.location.href = "list.html";
 }
 
 function prevPage() {
