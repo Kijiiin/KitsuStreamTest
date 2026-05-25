@@ -707,31 +707,37 @@ async function loadContent() {
         let url = "";
         
         if (searchQuery) {
-            // RICERCA: carichiamo più pagine per avere risultati da ordinare correttamente
+            // RICERCA: carica TUTTE le pagine disponibili
             const searchType = currentMediaType === "movie" ? "movie" : "tv";
             
-            // Determina quante pagine caricare in base al filtro
-            let maxPages = 1;
-            if (currentOrder === 'top_rated' || currentOrder === 'latest') {
-                // Per ordinamento, carichiamo più pagine (max 5 per non essere troppo lenti)
-                maxPages = Math.min(5, currentPage + 2);
-            }
+            // Prima richiesta per sapere quante pagine totali ci sono
+            const firstPageUrl = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(searchQuery)}&language=it-IT&page=1&include_adult=false`;
+            const firstResponse = await fetch(firstPageUrl);
+            const firstData = await firstResponse.json();
             
-            let allResults = [];
-            let totalPagesGlobal = 1;
+            const totalAvailablePages = Math.min(firstData.total_pages, 50); // Max 50 pagine (1000 risultati)
+            let allResults = [...(firstData.results || [])];
             
-            // Carica le pagine necessarie
-            for (let i = 1; i <= maxPages; i++) {
-                const searchUrl = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(searchQuery)}&language=it-IT&page=${i}&include_adult=false`;
-                const response = await fetch(searchUrl);
-                const data = await response.json();
-                totalPagesGlobal = Math.min(data.total_pages, 500);
-                allResults = [...allResults, ...(data.results || [])];
+            // Se ci sono più pagine e il filtro non è "popular", carica tutte le altre pagine
+            if (totalAvailablePages > 1 && currentOrder !== 'popular') {
+                // Mostra loading con progresso
+                document.getElementById("results").innerHTML = `<div class="loading">⏳ Caricamento ${allResults.length} risultati... (${Math.floor((1/totalAvailablePages)*100)}%)</div>`;
                 
-                if (i === 1 && currentOrder === 'popular') break; // Per popular basta 1 pagina
+                // Carica tutte le pagine rimanenti
+                for (let page = 2; page <= totalAvailablePages; page++) {
+                    const pageUrl = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(searchQuery)}&language=it-IT&page=${page}&include_adult=false`;
+                    const response = await fetch(pageUrl);
+                    const data = await response.json();
+                    allResults = [...allResults, ...(data.results || [])];
+                    
+                    // Aggiorna progresso
+                    if (page % 5 === 0 || page === totalAvailablePages) {
+                        document.getElementById("results").innerHTML = `<div class="loading">⏳ Caricamento ${allResults.length} risultati... (${Math.floor((page/totalAvailablePages)*100)}%)</div>`;
+                    }
+                }
             }
             
-            // Ora ordina TUTTI i risultati caricati
+            // Ora ordina TUTTI i risultati in base al filtro
             if (currentOrder === 'top_rated') {
                 allResults.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
             } else if (currentOrder === 'latest') {
@@ -744,16 +750,22 @@ async function loadContent() {
                     return dateB.localeCompare(dateA);
                 });
             }
+            // Per 'popular' manteniamo l'ordine originale di TMDB (già per popolarità)
             
-            // Paginazione manuale sui risultati ordinati
+            // Paginazione manuale
             const itemsPerPage = 20;
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
             const paginatedResults = allResults.slice(startIndex, endIndex);
             
-            // Calcola il totale delle pagine basato sui risultati totali
-            const calculatedTotalPages = Math.ceil(allResults.length / itemsPerPage);
-            totalPages = Math.max(1, calculatedTotalPages);
+            // Calcola pagine totali
+            totalPages = Math.ceil(allResults.length / itemsPerPage);
+            
+            if (paginatedResults.length === 0 && currentPage > 1) {
+                // Se siamo oltre l'ultima pagina, torna alla prima
+                currentPage = 1;
+                return loadContent();
+            }
             
             displayItems(paginatedResults);
             updatePageNumber();
@@ -794,10 +806,6 @@ async function loadContent() {
         console.error("Errore:", error);
         document.getElementById("results").innerHTML = '<div class="no-results">❌ Errore nel caricamento</div>';
     }
-}
-    
-function showLoading() {
-    document.getElementById("results").innerHTML = '<div class="loading">⏳ Caricamento in corso...</div>';
 }
 
 async function displayItems(items) {
