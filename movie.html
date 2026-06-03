@@ -38,7 +38,7 @@ body {
     justify-content: space-between;
     padding: 12px 16px;
     background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(15px);
+    backdrop-filter: none;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -123,7 +123,7 @@ h1 {
 
 .movie-details {
     background: rgba(31, 27, 58, 0.6);
-    backdrop-filter: blur(10px);
+    backdrop-filter: none;
     border-radius: 16px;
     padding: 20px;
     margin-bottom: 20px;
@@ -161,7 +161,7 @@ h1 {
 
 .info-section, .collection-section, .similar-section, .cast-section {
     background: rgba(31, 27, 58, 0.6);
-    backdrop-filter: blur(10px);
+    backdrop-filter: none;
     border-radius: 16px;
     padding: 20px;
     margin-top: 16px;
@@ -264,31 +264,6 @@ h1 {
 
 @media (min-width: 769px) and (max-width: 1024px) {
     .cast-grid, .collection-grid, .similar-grid { grid-template-columns: repeat(3, 1fr); }
-}
-
-/* OTTIMIZZAZIONE SCROLL - AGGIUNGI QUESTO */
-#dynamic-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-size: cover;
-    background-position: center;
-    z-index: -2;
-    will-change: transform;
-}
-
-body {
-    transform: translateZ(0);
-}
-
-.topbar {
-    backdrop-filter: blur(5px) !important;  /* era 15px */
-}
-
-.movie-details, .info-section, .collection-section, .similar-section, .cast-section {
-    backdrop-filter: blur(3px) !important;  /* era 10px */
 }
 </style>
 </head>
@@ -690,21 +665,10 @@ async function displayMovieDetails(movie) {
     
     document.getElementById("movieDetails").innerHTML = html;
     
-    // ---- PARTE MODIFICATA: sfondo senza scatti ----
     if (backdropUrl && window.innerWidth > 768) {
-        // Rimuovi eventuale sfondo precedente
-        let bgElement = document.getElementById('dynamic-backdrop');
-        if (!bgElement) {
-            bgElement = document.createElement('div');
-            bgElement.id = 'dynamic-backdrop';
-            document.body.insertBefore(bgElement, document.body.firstChild);
-        }
-        
-        bgElement.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url(${backdropUrl})`;
-        
-        // Rimuovi lo sfondo dal body
-        document.body.style.backgroundImage = 'none';
-        document.body.style.backgroundColor = '#0f0c29';
+        document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url(${backdropUrl})`;
+        document.body.style.backgroundSize = "cover";
+        document.body.style.backgroundAttachment = "fixed";
     }
 }
 
