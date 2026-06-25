@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>KitsuStream - Le mie liste</title>
+<title>KitsuStream - La mia lista</title>
 
 <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
@@ -82,34 +82,6 @@ h1 {
 }
 .username { font-weight: bold; color: #c084fc; }
 
-/* Tab per liste */
-.list-tabs {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 25px;
-}
-
-.list-tab-btn {
-    background: rgba(31, 27, 58, 0.8);
-    border: none;
-    padding: 12px 28px;
-    border-radius: 40px;
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.list-tab-btn.active {
-    background: linear-gradient(135deg, #7c3aed, #a855f7);
-    box-shadow: 0 0 15px rgba(124,58,237,0.5);
-}
-
-.list-tab-btn.da-guardare.active { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-.list-tab-btn.visti.active { background: linear-gradient(135deg, #10b981, #059669); }
-
 /* Modal styles */
 .modal {
     display: none;
@@ -174,7 +146,11 @@ h1 {
     margin-top: 4px;
     width: 100%;
 }
-
+.title-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
 .title-btn {
     background: rgba(124, 58, 237, 0.9);
     border: none;
@@ -317,7 +293,6 @@ h1 {
     overflow: hidden;
     backdrop-filter: blur(10px);
     transition: transform 0.2s ease, border 0.2s ease;
-    cursor: pointer;
     border: 2px solid transparent;
 }
 .card:active { transform: scale(0.98); }
@@ -325,18 +300,35 @@ h1 {
     border-color: #3b82f6;
     transform: scale(0.98);
 }
-.card img {
+
+/* Stile per il link della card */
+.card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.card-link img {
     width: 100%;
     aspect-ratio: 2 / 3;
     object-fit: cover;
+    display: block;
 }
+
 .card-content { padding: 8px; }
 .card h4 { margin: 0 0 3px; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .media-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 9px; font-weight: 600; margin-bottom: 6px; }
 .badge-movie { background: #7c3aed; }
 .badge-tv { background: #ef4444; }
 .card p { font-size: 9px; color: #c084fc; margin-bottom: 3px; }
-.move-folder-btn, .card button {
+
+.card-actions {
+    padding: 8px;
+    padding-top: 0;
+}
+
+.card-actions .move-folder-btn, .card-actions button {
     padding: 6px 0;
     border: none;
     border-radius: 8px;
@@ -345,10 +337,11 @@ h1 {
     font-size: 10px;
     font-weight: 500;
     width: 100%;
-    margin-top: 6px;
+    margin-top: 4px;
 }
-.move-folder-btn { background: #3b82f6; margin-top: 4px; }
-.card button { background: #ef4444; }
+.card-actions .move-folder-btn { background: #3b82f6; }
+.card-actions button:last-child { background: #ef4444; }
+
 .empty-state { text-align: center; padding: 50px 20px; font-size: 13px; color: #888; }
 .selection-hint {
     font-size: 11px;
@@ -381,7 +374,6 @@ h1 {
     h1 { font-size: 28px; }
     .clear-all-btn, .login-btn, .logout-btn { padding: 10px 20px; font-size: 14px; }
     .container { padding: 30px; }
-    .list-tab-btn { padding: 12px 32px; font-size: 18px; }
     .lista-title { margin-bottom: 30px; gap: 20px; }
     .lista-title h2 { font-size: 28px; }
     .title-btn { padding: 8px 20px; font-size: 14px; }
@@ -395,7 +387,7 @@ h1 {
     .card h4 { font-size: 14px; }
     .media-badge { padding: 3px 10px; font-size: 10px; }
     .card p { font-size: 11px; }
-    .move-folder-btn, .card button { padding: 8px 12px; font-size: 12px; }
+    .card-actions .move-folder-btn, .card-actions button { padding: 8px 12px; font-size: 12px; margin-top: 6px; }
     #tornaSu { bottom: 30px; right: 30px; width: 50px; height: 50px; font-size: 24px; }
     #tornaSu:hover { transform: translateY(-5px); }
     .folder-btn { font-size: 14px; }
@@ -415,7 +407,7 @@ h1 {
 
 <div class="topbar">
     <div class="topbar-left">
-        <button class="clear-all-btn" onclick="clearCurrentList()">🗑 Svuota lista</button>
+        <button class="clear-all-btn" onclick="clearAll()">🗑 Svuota</button>
     </div>
     <div class="topbar-center">
         <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
@@ -434,11 +426,11 @@ h1 {
     </div>
 </div>
 
-<!-- Modali Auth/Folder/Move (identici) -->
+<!-- Modale Login/Registrazione -->
 <div id="authModal" class="modal">
     <div class="modal-content">
         <div id="loginPanel">
-            <h2>🔐 Accedi per vedere le tue liste</h2>
+            <h2>🔐 Accedi per vedere la tua lista</h2>
             <input type="email" id="loginEmail" placeholder="Email">
             <input type="password" id="loginPassword" placeholder="Password">
             <button onclick="login()">Accedi</button>
@@ -462,7 +454,7 @@ h1 {
 <div id="folderModal" class="modal">
     <div class="modal-content">
         <h2>📁 Nuova Cartella</h2>
-        <input type="text" id="folderName" placeholder="Nome cartella">
+        <input type="text" id="folderName" placeholder="Nome cartella (es. Film Azione, Serie preferite...)">
         <button onclick="createFolder()">Crea Cartella</button>
         <button onclick="closeFolderModal()">Annulla</button>
         <div id="folderError" class="error-msg"></div>
@@ -474,19 +466,19 @@ h1 {
     <div class="modal-content">
         <h2>📂 Sposta in cartella</h2>
         <select id="folderSelect">
-            <option value="">-- Nessuna cartella --</option>
+            <option value="">-- Nessuna cartella (Lista principale) --</option>
         </select>
         <button onclick="confirmSingleMove()">Sposta</button>
         <button onclick="closeMoveModal()">Annulla</button>
     </div>
 </div>
 
-<!-- Modale Sposta Multipla -->
+<!-- Modale Sposta Multipla in Cartella -->
 <div id="multiMoveModal" class="modal">
     <div class="modal-content">
-        <h2>📂 Sposta elementi selezionati</h2>
+        <h2>📂 Sposta elementi selezionati in cartella</h2>
         <select id="multiFolderSelect">
-            <option value="">-- Nessuna cartella --</option>
+            <option value="">-- Nessuna cartella (Lista principale) --</option>
         </select>
         <button onclick="confirmMultiMove()">Sposta</button>
         <button onclick="closeMultiMoveModal()">Annulla</button>
@@ -494,17 +486,11 @@ h1 {
 </div>
 
 <div class="container">
-    <!-- TABS per le liste -->
-    <div class="list-tabs">
-        <button class="list-tab-btn da-guardare active" onclick="switchListType('da_guardare')">📋 Da Guardare</button>
-        <button class="list-tab-btn visti" onclick="switchListType('visti')">✅ Visti</button>
-    </div>
-
     <div class="lista-title">
         <button id="addFolderBtn" class="title-btn add-folder" onclick="openAddFolderModal()">📁 Nuova Cartella</button>
-        <h2 id="listTitle">⭐ Da Guardare</h2>
+        <h2>⭐ La mia lista</h2>
         <button id="multiMoveBtn" class="title-btn multi-move" onclick="toggleMultiSelectMode()">✅ Sposta Multipli</button>
-        <p id="listDescription">Film e serie TV che hai intenzione di guardare</p>
+        <p>I tuoi film e serie TV organizzati in cartelle</p>
     </div>
 
     <!-- Cartelle -->
@@ -555,40 +541,19 @@ h1 {
     const db = getFirestore(app);
 
     let currentUser = null;
-    
-    // Liste principali
-    let daGuardareList = [];
-    let vistiList = [];
-    let currentFolders = { da_guardare: {}, visti: {} };
-    let currentListType = "da_guardare"; // "da_guardare" o "visti"
+    let currentList = [];
+    let currentFolders = {};
     let currentFolder = null;
     let currentUsername = "";
     let currentSort = "addedDate";
     let currentTypeFilter = "all";
     let pendingMoveItem = null;
     
-    // Selezione multipla
+    // Variabili per selezione multipla
     let multiSelectMode = false;
     let selectedItems = new Set();
 
-    // Helper per ottenere la lista corrente
-    function getCurrentMainList() {
-        return currentListType === "da_guardare" ? daGuardareList : vistiList;
-    }
-    
-    function getCurrentFolders() {
-        return currentListType === "da_guardare" ? currentFolders.da_guardare : currentFolders.visti;
-    }
-    
-    function getCurrentItems() {
-        if (currentFolder) {
-            const folders = getCurrentFolders();
-            return folders[currentFolder] || [];
-        }
-        return getCurrentMainList();
-    }
-
-    // Funzioni di autenticazione (identiche all'originale)
+    // Funzioni di autenticazione
     window.login = async function() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
@@ -617,10 +582,12 @@ h1 {
             errorDiv.textContent = 'Inserisci un nome utente';
             return;
         }
+        
         if (username.length < 3) {
             errorDiv.textContent = 'Il nome utente deve avere almeno 3 caratteri';
             return;
         }
+        
         if (password.length < 6) {
             errorDiv.textContent = 'La password deve essere almeno di 6 caratteri';
             return;
@@ -628,14 +595,15 @@ h1 {
         
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            
             await setDoc(doc(db, 'users', userCredential.user.uid), { 
-                da_guardare: [],
-                visti: [],
-                folders: { da_guardare: {}, visti: {} },
+                list: [],
+                folders: {},
                 username: username,
                 email: email,
                 createdAt: new Date()
             });
+            
             successDiv.textContent = '✅ Registrazione completata! Ora puoi accedere.';
             setTimeout(() => window.showLoginPanel(), 2000);
         } catch (error) {
@@ -645,7 +613,10 @@ h1 {
         }
     };
 
-    window.logout = async function() { await signOut(auth); };
+    window.logout = async function() {
+        await signOut(auth);
+    };
+
     window.showLoginPanel = function() {
         document.getElementById('loginPanel').style.display = 'block';
         document.getElementById('registerPanel').style.display = 'none';
@@ -653,70 +624,32 @@ h1 {
         document.getElementById('regError').textContent = '';
         document.getElementById('regSuccess').textContent = '';
     };
+
     window.showRegisterPanel = function() {
         document.getElementById('loginPanel').style.display = 'none';
         document.getElementById('registerPanel').style.display = 'block';
     };
+
     window.openLoginModal = function() {
         window.showLoginPanel();
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    // Caricamento e salvataggio dati
-    async function loadUserData() {
-        if (!currentUser) return null;
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (userDoc.exists()) {
-            const data = userDoc.data();
-            daGuardareList = data.da_guardare || [];
-            vistiList = data.visti || [];
-            currentFolders = data.folders || { da_guardare: {}, visti: {} };
-            return data;
-        }
-        return null;
-    }
-
-    async function saveAllData() {
-        if (!currentUser) return;
-        await setDoc(doc(db, 'users', currentUser.uid), { 
-            da_guardare: daGuardareList,
-            visti: vistiList,
-            folders: currentFolders,
-            lastUpdate: new Date()
-        }, { merge: true });
-    }
-
-    // Cambio tra le liste
-    window.switchListType = function(type) {
-        currentListType = type;
-        currentFolder = null;
-        cancelMultiSelect();
-        
-        // Aggiorna UI tabs
-        document.querySelectorAll('.list-tab-btn').forEach(btn => btn.classList.remove('active'));
-        if (type === 'da_guardare') {
-            document.querySelector('.list-tab-btn.da-guardare').classList.add('active');
-            document.getElementById('listTitle').innerHTML = '⭐ Da Guardare';
-            document.getElementById('listDescription').innerHTML = 'Film e serie TV che hai intenzione di guardare';
-        } else {
-            document.querySelector('.list-tab-btn.visti').classList.add('active');
-            document.getElementById('listTitle').innerHTML = '✅ Già Visti';
-            document.getElementById('listDescription').innerHTML = 'Film e serie TV che hai già completato';
-        }
-        
-        renderFoldersBar();
-        displayList();
-    };
-
     // Funzioni per cartelle
     window.openAddFolderModal = function() {
-        if (!currentUser) { alert("Devi prima accedere!"); return; }
+        if (!currentUser) {
+            alert("Devi prima accedere!");
+            return;
+        }
         document.getElementById('folderName').value = '';
         document.getElementById('folderError').textContent = '';
         document.getElementById('folderModal').style.display = 'flex';
     };
-    window.closeFolderModal = function() { document.getElementById('folderModal').style.display = 'none'; };
-    
+
+    window.closeFolderModal = function() {
+        document.getElementById('folderModal').style.display = 'none';
+    };
+
     window.createFolder = async function() {
         const folderName = document.getElementById('folderName').value.trim();
         if (!folderName) {
@@ -724,41 +657,41 @@ h1 {
             return;
         }
         
-        const folders = getCurrentFolders();
-        if (folders[folderName]) {
+        if (currentFolders[folderName]) {
             document.getElementById('folderError').textContent = 'Esiste già una cartella con questo nome';
             return;
         }
         
-        folders[folderName] = [];
+        currentFolders[folderName] = [];
         await saveAllData();
         closeFolderModal();
         renderFoldersBar();
         displayList();
     };
-    
+
     window.deleteFolder = async function(folderName) {
         if (confirm(`Eliminare la cartella "${folderName}"? I contenuti torneranno nella lista principale.`)) {
-            const folders = getCurrentFolders();
-            const folderItems = folders[folderName] || [];
-            const mainList = getCurrentMainList();
+            const folderItems = currentFolders[folderName] || [];
             
             for (const item of folderItems) {
-                const esisteGia = mainList.some(i => i.id === item.id && i.type === item.type);
+                const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
                 if (!esisteGia) {
-                    if (currentListType === "da_guardare") daGuardareList.push(item);
-                    else vistiList.push(item);
+                    currentList.push(item);
                 }
             }
             
-            delete folders[folderName];
+            delete currentFolders[folderName];
             await saveAllData();
-            if (currentFolder === folderName) currentFolder = null;
+            
+            if (currentFolder === folderName) {
+                currentFolder = null;
+            }
+            
             renderFoldersBar();
             displayList();
         }
     };
-    
+
     window.selectFolder = function(folderName) {
         cancelMultiSelect();
         currentFolder = folderName === currentFolder ? null : folderName;
@@ -766,11 +699,12 @@ h1 {
         displayList();
     };
 
-    // Selezione multipla
+    // Funzioni per selezione multipla
     window.toggleMultiSelectMode = function() {
         multiSelectMode = !multiSelectMode;
         const btn = document.getElementById('multiMoveBtn');
         const selectionBar = document.getElementById('selectionBar');
+        
         if (multiSelectMode) {
             btn.classList.add('active');
             btn.innerHTML = '❌ Annulla Selezione';
@@ -783,7 +717,7 @@ h1 {
         }
         displayList();
     };
-    
+
     window.cancelMultiSelect = function() {
         multiSelectMode = false;
         selectedItems.clear();
@@ -794,75 +728,83 @@ h1 {
         selectionBar.classList.remove('show');
         displayList();
     };
-    
+
     window.toggleSelectItem = function(itemId, itemType) {
         const key = `${itemId}_${itemType}`;
-        if (selectedItems.has(key)) selectedItems.delete(key);
-        else selectedItems.add(key);
+        if (selectedItems.has(key)) {
+            selectedItems.delete(key);
+        } else {
+            selectedItems.add(key);
+        }
         updateSelectionCount();
         displayList();
     };
-    
+
     function updateSelectionCount() {
         const countSpan = document.getElementById('selectionCount');
-        if (countSpan) countSpan.textContent = `${selectedItems.size} selezionati`;
+        if (countSpan) {
+            countSpan.textContent = `${selectedItems.size} selezionati`;
+        }
     }
-    
+
     window.moveSelectedToFolder = function() {
-        if (selectedItems.size === 0) { alert("Nessun elemento selezionato"); return; }
+        if (selectedItems.size === 0) {
+            alert("Nessun elemento selezionato");
+            return;
+        }
+        
         const select = document.getElementById('multiFolderSelect');
-        select.innerHTML = '<option value="">-- Nessuna cartella --</option>';
-        const folders = getCurrentFolders();
-        for (const folderName in folders) {
+        select.innerHTML = '<option value="">-- Nessuna cartella (Lista principale) --</option>';
+        for (const folderName in currentFolders) {
             if (folderName !== currentFolder) {
                 select.innerHTML += `<option value="${escapeHtml(folderName)}">📁 ${escapeHtml(folderName)}</option>`;
             }
         }
+        
         document.getElementById('multiMoveModal').style.display = 'flex';
     };
-    
-    window.closeMultiMoveModal = function() { document.getElementById('multiMoveModal').style.display = 'none'; };
-    
+
+    window.closeMultiMoveModal = function() {
+        document.getElementById('multiMoveModal').style.display = 'none';
+    };
+
     window.confirmMultiMove = async function() {
         const targetFolder = document.getElementById('multiFolderSelect').value;
         const itemsToMove = [];
+        
         for (const key of selectedItems) {
             const [id, type] = key.split('_');
             const found = getCurrentItems().find(item => item.id == id && item.type === type);
-            if (found) itemsToMove.push(found);
+            if (found) {
+                itemsToMove.push(found);
+            }
         }
+        
         if (itemsToMove.length === 0) return;
         
-        const folders = getCurrentFolders();
-        const mainList = getCurrentMainList();
-        
         if (currentFolder) {
-            folders[currentFolder] = (folders[currentFolder] || []).filter(item => 
+            const folderItems = currentFolders[currentFolder] || [];
+            currentFolders[currentFolder] = folderItems.filter(item => 
                 !itemsToMove.some(move => move.id === item.id && move.type === item.type)
             );
         } else {
-            if (currentListType === "da_guardare") {
-                daGuardareList = daGuardareList.filter(item => 
-                    !itemsToMove.some(move => move.id === item.id && move.type === item.type)
-                );
-            } else {
-                vistiList = vistiList.filter(item => 
-                    !itemsToMove.some(move => move.id === item.id && move.type === item.type)
-                );
-            }
+            currentList = currentList.filter(item => 
+                !itemsToMove.some(move => move.id === item.id && move.type === item.type)
+            );
         }
         
-        if (targetFolder && folders[targetFolder]) {
+        if (targetFolder && currentFolders[targetFolder]) {
             for (const item of itemsToMove) {
-                const esisteGia = folders[targetFolder].some(i => i.id === item.id && i.type === item.type);
-                if (!esisteGia) folders[targetFolder].push(item);
+                const esisteGia = currentFolders[targetFolder].some(i => i.id === item.id && i.type === item.type);
+                if (!esisteGia) {
+                    currentFolders[targetFolder].push(item);
+                }
             }
         } else {
             for (const item of itemsToMove) {
-                const esisteGia = mainList.some(i => i.id === item.id && i.type === item.type);
+                const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
                 if (!esisteGia) {
-                    if (currentListType === "da_guardare") daGuardareList.push(item);
-                    else vistiList.push(item);
+                    currentList.push(item);
                 }
             }
         }
@@ -872,51 +814,53 @@ h1 {
         cancelMultiSelect();
         displayList();
     };
-    
-    // Spostamento singolo
+
+    // Funzioni per spostamento singolo
     window.moveItem = function(item) {
         if (multiSelectMode) return;
         pendingMoveItem = item;
         const select = document.getElementById('folderSelect');
-        select.innerHTML = '<option value="">-- Nessuna cartella --</option>';
-        const folders = getCurrentFolders();
-        for (const folderName in folders) {
+        select.innerHTML = '<option value="">-- Nessuna cartella (Lista principale) --</option>';
+        for (const folderName in currentFolders) {
             if (folderName !== currentFolder) {
                 select.innerHTML += `<option value="${escapeHtml(folderName)}">📁 ${escapeHtml(folderName)}</option>`;
             }
         }
         document.getElementById('moveModal').style.display = 'flex';
     };
-    
-    window.closeMoveModal = function() { document.getElementById('moveModal').style.display = 'none'; pendingMoveItem = null; };
-    
+
+    window.closeMoveModal = function() {
+        document.getElementById('moveModal').style.display = 'none';
+        pendingMoveItem = null;
+    };
+
     window.confirmSingleMove = async function() {
         const targetFolder = document.getElementById('folderSelect').value;
         if (!pendingMoveItem) return;
         
-        const folders = getCurrentFolders();
-        const mainList = getCurrentMainList();
-        
         if (currentFolder) {
-            folders[currentFolder] = (folders[currentFolder] || []).filter(i => 
-                !(i.id === pendingMoveItem.id && i.type === pendingMoveItem.type)
-            );
+            const folderItems = currentFolders[currentFolder] || [];
+            const index = folderItems.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (index !== -1) {
+                folderItems.splice(index, 1);
+                currentFolders[currentFolder] = folderItems;
+            }
         } else {
-            if (currentListType === "da_guardare") {
-                daGuardareList = daGuardareList.filter(i => !(i.id === pendingMoveItem.id && i.type === pendingMoveItem.type));
-            } else {
-                vistiList = vistiList.filter(i => !(i.id === pendingMoveItem.id && i.type === pendingMoveItem.type));
+            const index = currentList.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (index !== -1) {
+                currentList.splice(index, 1);
             }
         }
         
-        if (targetFolder && folders[targetFolder]) {
-            const esisteGia = folders[targetFolder].some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
-            if (!esisteGia) folders[targetFolder].push(pendingMoveItem);
-        } else {
-            const esisteGia = mainList.some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+        if (targetFolder && currentFolders[targetFolder]) {
+            const esisteGia = currentFolders[targetFolder].some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
             if (!esisteGia) {
-                if (currentListType === "da_guardare") daGuardareList.push(pendingMoveItem);
-                else vistiList.push(pendingMoveItem);
+                currentFolders[targetFolder].push(pendingMoveItem);
+            }
+        } else {
+            const esisteGia = currentList.some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (!esisteGia) {
+                currentList.push(pendingMoveItem);
             }
         }
         
@@ -924,86 +868,118 @@ h1 {
         closeMoveModal();
         displayList();
     };
-    
-    // Rimozione e UI
-    async function removeFromCurrentList(id, type) {
+
+    // Funzioni per la lista
+    async function loadUserData() {
+        if (!currentUser) return null;
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            currentList = data.list || [];
+            currentFolders = data.folders || {};
+            return data;
+        }
+        return null;
+    }
+
+    async function saveAllData() {
+        if (!currentUser) return;
+        await setDoc(doc(db, 'users', currentUser.uid), { 
+            list: currentList,
+            folders: currentFolders,
+            lastUpdate: new Date()
+        }, { merge: true });
+    }
+
+    async function removeFromCloudList(id, type) {
+        if (!currentUser) return;
+        
         if (currentFolder) {
-            const folders = getCurrentFolders();
-            folders[currentFolder] = (folders[currentFolder] || []).filter(item => !(item.id === id && item.type === type));
+            const folderItems = currentFolders[currentFolder] || [];
+            currentFolders[currentFolder] = folderItems.filter(item => !(item.id === id && item.type === type));
         } else {
-            if (currentListType === "da_guardare") {
-                daGuardareList = daGuardareList.filter(item => !(item.id === id && item.type === type));
-            } else {
-                vistiList = vistiList.filter(item => !(item.id === id && item.type === type));
-            }
+            currentList = currentList.filter(item => !(item.id === id && item.type === type));
         }
         await saveAllData();
         displayList();
     }
-    
-    async function clearCurrentList() {
+
+    async function clearCloudList() {
+        if (!currentUser) return;
+        
         if (currentFolder) {
-            const folders = getCurrentFolders();
-            folders[currentFolder] = [];
+            currentFolders[currentFolder] = [];
         } else {
-            if (currentListType === "da_guardare") daGuardareList = [];
-            else vistiList = [];
+            currentList = [];
         }
         await saveAllData();
         displayList();
     }
-    
-    window.clearCurrentList = async function() {
-        const listName = currentListType === "da_guardare" ? "Da Guardare" : "Visti";
-        const confirmMsg = currentFolder ? `⚠️ Svuotare la cartella "${currentFolder}" in ${listName}?` : `⚠️ Svuotare tutta la lista ${listName}?`;
-        if (confirm(confirmMsg)) await clearCurrentList();
-    };
-    
+
+    // Funzioni UI
     window.changeSort = function(sort) {
         currentSort = sort;
         document.querySelectorAll(".sort-btn").forEach(btn => btn.classList.remove("active"));
         document.querySelector(`.sort-btn[data-sort="${sort}"]`).classList.add("active");
         displayList();
     };
-    
+
     window.filterByType = function(type) {
         currentTypeFilter = type;
         document.querySelectorAll(".type-btn").forEach(btn => btn.classList.remove("active"));
         document.querySelector(`.type-btn[data-type="${type}"]`).classList.add("active");
         displayList();
     };
-    
+
+    function getCurrentItems() {
+        if (currentFolder) {
+            return currentFolders[currentFolder] || [];
+        }
+        return currentList;
+    }
+
     function sortItems(items) {
         const sorted = [...items];
         switch(currentSort) {
-            case "rating": sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
-            case "title": sorted.sort((a, b) => (a.title || "").localeCompare(b.title || "")); break;
-            case "date": sorted.sort((a, b) => (b.year || 0) - (a.year || 0)); break;
-            default: sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0)); break;
+            case "rating":
+                sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                break;
+            case "title":
+                sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+                break;
+            case "date":
+                sorted.sort((a, b) => (b.year || 0) - (a.year || 0));
+                break;
+            case "addedDate":
+            default:
+                sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+                break;
         }
         return sorted;
     }
-    
+
     function filterItems(items) {
         if (currentTypeFilter === "all") return items;
         return items.filter(item => item.type === currentTypeFilter);
     }
-    
+
     function updateStats(filteredItems, totalItems) {
         const statsDiv = document.getElementById("stats");
         const moviesCount = filteredItems.filter(i => i.type === "movie").length;
         const tvCount = filteredItems.filter(i => i.type === "tv").length;
         const avgRating = filteredItems.length > 0 
-            ? (filteredItems.reduce((sum, i) => sum + (i.rating || 0), 0) / filteredItems.length).toFixed(1) : 0;
+            ? (filteredItems.reduce((sum, i) => sum + (i.rating || 0), 0) / filteredItems.length).toFixed(1)
+            : 0;
+        
         statsDiv.innerHTML = `📊 Mostrati ${filteredItems.length} su ${totalItems} totali | 🎬 Film: ${moviesCount} | 📺 Serie: ${tvCount} | ⭐ Media voto: ${avgRating}`;
     }
-    
+
     function renderFoldersBar() {
         const container = document.getElementById('foldersBar');
         let html = `<button class="folder-btn ${!currentFolder ? 'active' : ''}" onclick="window.selectFolder(null)">📂 Tutti</button>`;
-        const folders = getCurrentFolders();
-        for (const folderName in folders) {
-            const count = folders[folderName].length;
+        
+        for (const folderName in currentFolders) {
+            const count = currentFolders[folderName].length;
             html += `<div class="folder-item">
                         <button class="folder-btn ${currentFolder === folderName ? 'active' : ''}" onclick="window.selectFolder('${escapeHtml(folderName)}')">
                             📁 ${escapeHtml(folderName)} (${count})
@@ -1011,58 +987,44 @@ h1 {
                         <button class="folder-btn delete-folder-btn" onclick="window.deleteFolder('${escapeHtml(folderName)}')">🗑</button>
                     </div>`;
         }
+        
         container.innerHTML = html;
     }
-    
+
+    // Funzione per gestire il click sulla card
     window.handleCardClick = function(id, type, event) {
         if (multiSelectMode) {
             event.stopPropagation();
+            event.preventDefault();
             toggleSelectItem(id, type);
-        } else {
-            window.location.href = `${type === 'movie' ? 'movie' : 'tv'}.html?id=${id}`;
+            return false;
         }
+        return true;
     };
-    
+
+    window.openDetails = function(id, type) {
+        window.location.href = `${type === 'movie' ? 'movie' : 'tv'}.html?id=${id}`;
+    };
+
     window.removeFromList = async function(id, type, event) {
         event.stopPropagation();
-        if (confirm("Rimuovere questo elemento dalla lista?")) await removeFromCurrentList(id, type);
+        event.preventDefault();
+        if (confirm("Rimuovere questo elemento dalla lista?")) {
+            await removeFromCloudList(id, type);
+        }
     };
-    
+
     window.moveItemClick = function(item, event) {
         event.stopPropagation();
+        event.preventDefault();
         moveItem(item);
     };
-    
-    // Sposta tra le liste (Da Guardare <-> Visti)
-    window.moveToOtherList = async function(item, event) {
-        event.stopPropagation();
-        const isDaGuardare = currentListType === "da_guardare";
-        const targetList = isDaGuardare ? vistiList : daGuardareList;
-        const sourceList = isDaGuardare ? daGuardareList : vistiList;
-        
-        // Rimuovi dalla lista corrente
-        if (currentFolder) {
-            const folders = getCurrentFolders();
-            folders[currentFolder] = (folders[currentFolder] || []).filter(i => !(i.id === item.id && i.type === item.type));
-        } else {
-            const idx = sourceList.findIndex(i => i.id === item.id && i.type === item.type);
-            if (idx !== -1) sourceList.splice(idx, 1);
-        }
-        
-        // Aggiungi all'altra lista
-        const esisteGia = targetList.some(i => i.id === item.id && i.type === item.type);
-        if (!esisteGia) {
-            targetList.push({ ...item, addedAt: Date.now() });
-        }
-        
-        await saveAllData();
-        displayList();
-    };
-    
+
     window.displayList = function() {
         const container = document.getElementById("listContainer");
+        
         if (!currentUser) {
-            container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere le tue liste!</div>';
+            container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
             updateStats([], 0);
             renderFoldersBar();
             return;
@@ -1074,43 +1036,47 @@ h1 {
         
         if (totalItems === 0) {
             const folderText = currentFolder ? ` nella cartella "${currentFolder}"` : '';
-            const listName = currentListType === "da_guardare" ? "Da Guardare" : "Visti";
-            container.innerHTML = `<div class="empty-state">📭 La lista ${listName}${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
+            container.innerHTML = `<div class="empty-state">📭 La tua lista${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
             updateStats([], 0);
             return;
         }
         
         let filtered = filterItems(items);
         const sorted = sortItems(filtered);
+        
         updateStats(filtered, totalItems);
         
         if (sorted.length === 0) {
-            container.innerHTML = '<div class="empty-state">😕 Nessun elemento corrisponde ai filtri</div>';
+            container.innerHTML = '<div class="empty-state">😕 Nessun elemento corrisponde ai filtri selezionati</div>';
             return;
         }
-        
-        const isDaGuardare = currentListType === "da_guardare";
-        const otherListName = isDaGuardare ? "✅ Segna come Visto" : "📋 Sposta in Da Guardare";
-        const otherListColor = isDaGuardare ? "#10b981" : "#3b82f6";
         
         container.innerHTML = `
             <div class="grid">
                 ${sorted.map(item => {
                     const key = `${item.id}_${item.type}`;
                     const isSelected = selectedItems.has(key);
+                    const detailsUrl = `${item.type === 'movie' ? 'movie' : 'tv'}.html?id=${item.id}`;
+                    
                     return `
-                        <div class="card ${isSelected ? 'selected' : ''}" onclick="handleCardClick(${item.id}, '${item.type}', event)">
-                            <img src="${item.poster || 'https://via.placeholder.com/500x750'}" alt="${item.title}" loading="lazy">
-                            <div class="card-content">
-                                <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
-                                    ${item.mediaType || (item.type === 'movie' ? 'Film' : 'Serie TV')}
-                                </span>
-                                <h4>${escapeHtml(item.title)}</h4>
-                                <p>⭐ ${item.rating || "N/A"}/10</p>
-                                <p>📅 ${item.year || "N/D"}</p>
+                        <div class="card ${isSelected ? 'selected' : ''}">
+                            <a href="${detailsUrl}" class="card-link" onclick="return handleCardClick(${item.id}, '${item.type}', event)">
+                                <img src="${item.poster || 'https://via.placeholder.com/500x750'}" 
+                                     alt="${item.title}" 
+                                     loading="lazy">
+                                <div class="card-content">
+                                    <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
+                                        ${item.mediaType || (item.type === 'movie' ? 'Film' : 'Serie TV')}
+                                    </span>
+                                    <h4>${escapeHtml(item.title)}</h4>
+                                    <p>⭐ ${item.rating || "N/A"}/10</p>
+                                    <p>📅 ${item.year || "N/D"}</p>
+                                    ${item.seasons ? `<p>📺 ${item.seasons} stagioni</p>` : ''}
+                                </div>
+                            </a>
+                            <div class="card-actions">
                                 ${!multiSelectMode ? `
-                                    <button class="move-folder-btn" onclick='moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta in cartella</button>
-                                    <button style="background: ${otherListColor}" onclick='moveToOtherList(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>${otherListName}</button>
+                                    <button class="move-folder-btn" onclick="moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)">📂 Sposta</button>
                                     <button onclick="removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
                                 ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
                             </div>
@@ -1120,16 +1086,25 @@ h1 {
             </div>
         `;
     };
-    
+
+    window.clearAll = async function() {
+        const confirmMsg = currentFolder ? `⚠️ Sei sicuro di voler svuotare la cartella "${currentFolder}"?` : "⚠️ Sei sicuro di voler svuotare tutta la lista?";
+        if (confirm(confirmMsg)) {
+            await clearCloudList();
+        }
+    };
+
     function escapeHtml(text) {
         if (!text) return "";
         const div = document.createElement("div");
         div.textContent = text;
         return div.innerHTML;
     }
-    
-    window.goHome = function() { window.location.href = "index.html"; };
-    
+
+    window.goHome = function() {
+        window.location.href = "index.html";
+    };
+
     // Stato autenticazione
     onAuthStateChanged(auth, async (user) => {
         currentUser = user;
@@ -1138,6 +1113,7 @@ h1 {
         if (user) {
             const userData = await loadUserData();
             currentUsername = userData?.username || user.email.split('@')[0];
+            
             authButtons.innerHTML = `
                 <div class="user-info">
                     <span>👤</span>
@@ -1149,14 +1125,13 @@ h1 {
         } else {
             authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
             currentUsername = "";
-            daGuardareList = [];
-            vistiList = [];
-            currentFolders = { da_guardare: {}, visti: {} };
+            currentList = [];
+            currentFolders = {};
             currentFolder = null;
             displayList();
         }
     });
-    
+
     // Torna su
     const tornaSuBtn = document.getElementById("tornaSu");
     window.addEventListener("scroll", function() {
@@ -1166,5 +1141,6 @@ h1 {
         window.scrollTo({ top: 0, behavior: "smooth" });
     });
 </script>
+
 </body>
 </html>
