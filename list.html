@@ -322,13 +322,7 @@ h1 {
 .badge-movie { background: #7c3aed; }
 .badge-tv { background: #ef4444; }
 .card p { font-size: 9px; color: #c084fc; margin-bottom: 3px; }
-
-.card-actions {
-    padding: 8px;
-    padding-top: 0;
-}
-
-.card-actions .move-folder-btn, .card-actions button {
+.move-folder-btn, .card button {
     padding: 6px 0;
     border: none;
     border-radius: 8px;
@@ -337,11 +331,10 @@ h1 {
     font-size: 10px;
     font-weight: 500;
     width: 100%;
-    margin-top: 4px;
+    margin-top: 6px;
 }
-.card-actions .move-folder-btn { background: #3b82f6; }
-.card-actions button:last-child { background: #ef4444; }
-
+.move-folder-btn { background: #3b82f6; margin-top: 4px; }
+.card button { background: #ef4444; }
 .empty-state { text-align: center; padding: 50px 20px; font-size: 13px; color: #888; }
 .selection-hint {
     font-size: 11px;
@@ -387,7 +380,7 @@ h1 {
     .card h4 { font-size: 14px; }
     .media-badge { padding: 3px 10px; font-size: 10px; }
     .card p { font-size: 11px; }
-    .card-actions .move-folder-btn, .card-actions button { padding: 8px 12px; font-size: 12px; margin-top: 6px; }
+    .move-folder-btn, .card button { padding: 8px 12px; font-size: 12px; }
     #tornaSu { bottom: 30px; right: 30px; width: 50px; height: 50px; font-size: 24px; }
     #tornaSu:hover { transform: translateY(-5px); }
     .folder-btn { font-size: 14px; }
@@ -992,96 +985,95 @@ h1 {
     }
 
     // Funzione per gestire il click sulla card
-window.handleCardClick = function(id, type, event) {
-    if (multiSelectMode) {
-        event.stopPropagation();
-        event.preventDefault();
-        toggleSelectItem(id, type);
-        return false;
-    }
-    return true;
-};
+    window.handleCardClick = function(id, type, event) {
+        if (multiSelectMode) {
+            event.stopPropagation();
+            toggleSelectItem(id, type);
+            return false;
+        }
+        return true;
+    };
 
     window.openDetails = function(id, type) {
         window.location.href = `${type === 'movie' ? 'movie' : 'tv'}.html?id=${id}`;
     };
 
-window.removeFromList = async function(id, type, event) {
-    event.stopPropagation();
-    if (confirm("Rimuovere questo elemento dalla lista?")) {
-        await removeFromCloudList(id, type);
-    }
-};
+    window.removeFromList = async function(id, type, event) {
+        event.stopPropagation();
+        if (confirm("Rimuovere questo elemento dalla lista?")) {
+            await removeFromCloudList(id, type);
+        }
+    };
 
-window.moveItemClick = function(item, event) {
-    event.stopPropagation();
-    moveItem(item);
-};
+    window.moveItemClick = function(item, event) {
+        event.stopPropagation();
+        moveItem(item);
+    };
 
-window.displayList = function() {
-    const container = document.getElementById("listContainer");
-    
-    if (!currentUser) {
-        container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
-        updateStats([], 0);
+    window.displayList = function() {
+        const container = document.getElementById("listContainer");
+        
+        if (!currentUser) {
+            container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
+            updateStats([], 0);
+            renderFoldersBar();
+            return;
+        }
+        
         renderFoldersBar();
-        return;
-    }
-    
-    renderFoldersBar();
-    const items = getCurrentItems();
-    const totalItems = items.length;
-    
-    if (totalItems === 0) {
-        const folderText = currentFolder ? ` nella cartella "${currentFolder}"` : '';
-        container.innerHTML = `<div class="empty-state">📭 La tua lista${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
-        updateStats([], 0);
-        return;
-    }
-    
-    let filtered = filterItems(items);
-    const sorted = sortItems(filtered);
-    
-    updateStats(filtered, totalItems);
-    
-    if (sorted.length === 0) {
-        container.innerHTML = '<div class="empty-state">😕 Nessun elemento corrisponde ai filtri selezionati</div>';
-        return;
-    }
-    
-    container.innerHTML = `
-        <div class="grid">
-            ${sorted.map(item => {
-                const key = `${item.id}_${item.type}`;
-                const isSelected = selectedItems.has(key);
-                const detailsUrl = `${item.type === 'movie' ? 'movie' : 'tv'}.html?id=${item.id}`;
-                
-                return `
-                    <div class="card ${isSelected ? 'selected' : ''}">
-                        <a href="${detailsUrl}" class="card-link" onclick="return handleCardClick(${item.id}, '${item.type}', event)">
-                            <img src="${item.poster || 'https://via.placeholder.com/500x750'}" 
-                                 alt="${item.title}" 
-                                 loading="lazy">
-                            <div class="card-content">
-                                <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
-                                    ${item.mediaType || (item.type === 'movie' ? 'Film' : 'Serie TV')}
-                                </span>
-                                <h4>${escapeHtml(item.title)}</h4>
-                                <p>⭐ ${item.rating || "N/A"}/10</p>
-                                <p>📅 ${item.year || "N/D"}</p>
-                                ${item.seasons ? `<p>📺 ${item.seasons} stagioni</p>` : ''}
-                            </div>
-                        </a>
-                        ${!multiSelectMode ? `
-                            <button class="move-folder-btn" onclick='moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
-                            <button onclick="removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
-                        ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
-                    </div>
-                `;
-            }).join("")}
-        </div>
-    `;
-};
+        const items = getCurrentItems();
+        const totalItems = items.length;
+        
+        if (totalItems === 0) {
+            const folderText = currentFolder ? ` nella cartella "${currentFolder}"` : '';
+            container.innerHTML = `<div class="empty-state">📭 La tua lista${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
+            updateStats([], 0);
+            return;
+        }
+        
+        let filtered = filterItems(items);
+        const sorted = sortItems(filtered);
+        
+        updateStats(filtered, totalItems);
+        
+        if (sorted.length === 0) {
+            container.innerHTML = '<div class="empty-state">😕 Nessun elemento corrisponde ai filtri selezionati</div>';
+            return;
+        }
+        
+        container.innerHTML = `
+            <div class="grid">
+                ${sorted.map(item => {
+                    const key = `${item.id}_${item.type}`;
+                    const isSelected = selectedItems.has(key);
+                    const detailsUrl = `${item.type === 'movie' ? 'movie' : 'tv'}.html?id=${item.id}`;
+                    
+                    return `
+                        <div class="card ${isSelected ? 'selected' : ''}">
+                            <a href="${detailsUrl}" class="card-link" onclick="return handleCardClick(${item.id}, '${item.type}', event)">
+                                <img src="${item.poster || 'https://via.placeholder.com/500x750'}" 
+                                     alt="${item.title}" 
+                                     loading="lazy">
+                                <div class="card-content">
+                                    <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
+                                        ${item.mediaType || (item.type === 'movie' ? 'Film' : 'Serie TV')}
+                                    </span>
+                                    <h4>${escapeHtml(item.title)}</h4>
+                                    <p>⭐ ${item.rating || "N/A"}/10</p>
+                                    <p>📅 ${item.year || "N/D"}</p>
+                                    ${item.seasons ? `<p>📺 ${item.seasons} stagioni</p>` : ''}
+                                    ${!multiSelectMode ? `
+                                        <button class="move-folder-btn" onclick='moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
+                                        <button onclick="removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
+                                    ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
+                                </div>
+                            </a>
+                        </div>
+                    `;
+                }).join("")}
+            </div>
+        `;
+    };
 
     window.clearAll = async function() {
         const confirmMsg = currentFolder ? `⚠️ Sei sicuro di voler svuotare la cartella "${currentFolder}"?` : "⚠️ Sei sicuro di voler svuotare tutta la lista?";
