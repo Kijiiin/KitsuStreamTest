@@ -1037,10 +1037,11 @@ h1 {
                     const key = `${item.id}_${item.type}`;
                     const isSelected = selectedItems.has(key);
                     return `
-                         <div class="card">
-    <a href="${currentMediaType === "movie" ? "movie" : "tv"}.html?id=${item.id}">
-        <img src="${posterUrl}" alt="${title}" loading="lazy">
-    </a>
+                        <div class="card <a href="${isSelected ? 'selected' : ''}" onclick="handleCardClick(${item.id}, '${item.type}', event)">
+                            <img src="${item.poster || 'https://via.placeholder.com/500x750'}" 
+                                 alt="${item.title}" 
+                                 loading="lazy">
+                            <div class="card-content">
                                 <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
                                     ${item.mediaType || (item.type === 'movie' ? 'Film' : 'Serie TV')}
                                 </span>
