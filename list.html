@@ -1037,7 +1037,7 @@ h1 {
                     const key = `${item.id}_${item.type}`;
                     const isSelected = selectedItems.has(key);
                     return `
-                        <a href="${detailsUrl}" <div class="card ${isSelected ? 'selected' : ''}" onclick="handleCardClick(${item.id}, '${item.type}', event)">
+                        <a href="${detailsUrl}" class="card ${isSelected ? 'selected' : ''}" onclick="handleCardClick(${item.id}, '${item.type}', event)">
                             <img src="${item.poster || 'https://via.placeholder.com/500x750'}" 
                                  alt="${item.title}" 
                                  loading="lazy">
@@ -1049,13 +1049,12 @@ h1 {
                                 <p>⭐ ${item.rating || "N/A"}/10</p>
                                 <p>📅 ${item.year || "N/D"}</p>
                                 ${item.seasons ? `<p>📺 ${item.seasons} stagioni</p>` : ''}
-                            </a>
+                           </div>
+                        </a>
                                 ${!multiSelectMode ? `
                                     <button class="move-folder-btn" onclick='moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
                                     <button onclick="removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
                                 ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
-                            </div>
-                        </div>
                     `;
                 }).join("")}
             </div>
