@@ -293,7 +293,7 @@ h1 {
     overflow: hidden;
     backdrop-filter: blur(10px);
     transition: transform 0.2s ease, border 0.2s ease;
-    cursor: pointer;
+    cursor: default;
     border: 2px solid transparent;
 }
 .card:active { transform: scale(0.98); }
@@ -305,6 +305,7 @@ h1 {
     width: 100%;
     aspect-ratio: 2 / 3;
     object-fit: cover;
+    cursor: pointer;
 }
 .card-content { padding: 8px; }
 .card h4 { margin: 0 0 3px; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
