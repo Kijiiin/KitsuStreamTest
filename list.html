@@ -998,17 +998,15 @@ h1 {
         window.location.href = `${type === 'movie' ? 'movie' : 'tv'}.html?id=${id}`;
     };
 
-    window.removeFromList = async function(id, type, event) {
-        event.stopPropagation();
-        if (confirm("Rimuovere questo elemento dalla lista?")) {
-            await removeFromCloudList(id, type);
-        }
-    };
+window.removeFromList = async function(id, type, event) {
+    if (confirm("Rimuovere questo elemento dalla lista?")) {
+        await removeFromCloudList(id, type);
+    }
+};
 
-    window.moveItemClick = function(item, event) {
-        event.stopPropagation();
-        moveItem(item);
-    };
+window.moveItemClick = function(item, event) {
+    moveItem(item);
+};
 
 window.displayList = function() {
     const container = document.getElementById("listContainer");
