@@ -844,6 +844,26 @@ h1 {
     let multiSelectMode = false;
     let selectedItems = new Set();
 
+    // ===== FUNZIONE PER FORMARE LA DATA =====
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+            
+            const options = { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            return date.toLocaleDateString('it-IT', options);
+        } catch (e) {
+            return dateString;
+        }
+    }
+
     // ===== TOGGLE SEZIONE IMPORT =====
     window.toggleImportSection = function() {
         const section = document.getElementById('importSection');
@@ -1722,7 +1742,7 @@ h1 {
                                 <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
                                     ${mediaType}
                                 </span>
-                                ${isCompleted ? `<div class="completed-badge">✅ Completato ${item.completedDate ? '📅 ' + item.completedDate : ''}</div>` : ''}
+                                ${isCompleted ? `<div class="completed-badge">✅ Completato ${item.completedDate ? '📅 ' + formatDate(item.completedDate) : ''}</div>` : ''}
                                 <h4>${escapeHtml(item.title)}</h4>
                                 <p>⭐ ${item.rating || "N/A"}/10</p>
                                 <p>📅 ${item.year || "N/D"}</p>
