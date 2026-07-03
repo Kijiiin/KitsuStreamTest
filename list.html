@@ -402,26 +402,35 @@ h1 {
     margin-left: 5px;
 }
 
-.completed-filter-btn {
-    background: rgba(16, 185, 129, 0.3);
-    border: 1px solid rgba(16, 185, 129, 0.5);
-    padding: 5px 12px;
+/* ===== NUOVI FILTRI COMPLETATI MODIFICATI ===== */
+.status-filter-btn {
+    background: rgba(124, 58, 237, 0.3);
+    border: 1px solid rgba(124, 58, 237, 0.5);
+    padding: 8px 20px;
     border-radius: 30px;
     color: white;
     cursor: pointer;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 500;
     transition: all 0.2s ease;
+    flex: 1;
+    min-width: 120px;
 }
 
-.completed-filter-btn.active {
+.status-filter-btn.active {
+    background: #7c3aed;
+    border-color: #7c3aed;
+}
+
+.status-filter-btn.completed-active {
     background: #10b981;
     border-color: #10b981;
 }
 
-.completed-filter-btn:hover {
+.status-filter-btn:hover {
     transform: translateY(-2px);
 }
+/* ===== FINE NUOVI FILTRI ===== */
 
 .completed-stats {
     display: flex;
@@ -555,6 +564,7 @@ h1 {
     .filters-bar { padding: 20px; margin-bottom: 30px; border-radius: 20px; }
     .filter-label { font-size: 13px; }
     .sort-btn, .type-btn { padding: 8px 16px; font-size: 13px; }
+    .status-filter-btn { font-size: 15px; padding: 10px 24px; }
     .stats { font-size: 13px; }
     .completed-stats { font-size: 13px; }
     .completed-stats span { padding: 6px 16px; }
@@ -571,7 +581,6 @@ h1 {
     #tornaSu { bottom: 30px; right: 30px; width: 50px; height: 50px; font-size: 24px; }
     #tornaSu:hover { transform: translateY(-5px); }
     .folder-btn { font-size: 14px; }
-    .completed-filter-btn { font-size: 13px; padding: 8px 16px; }
     .selection-count { font-size: 14px; }
     .selection-action-btn { padding: 8px 16px; font-size: 13px; }
     .selection-hint { font-size: 13px; }
@@ -735,22 +744,23 @@ h1 {
                 <button class="type-btn" data-type="tv" onclick="filterByType('tv')">📺 Serie TV</button>
             </div>
         </div>
-        <!-- ===== FILTRO COMPLETATI ===== -->
+        <!-- ===== NUOVI FILTRI: SOLO "DA GUARDARE" E "COMPLETATI" ===== -->
         <div class="filter-group">
-            <div class="filter-label">✅ Stato:</div>
-            <div class="type-buttons">
-                <button class="completed-filter-btn active" data-completed="all" onclick="filterByCompleted('all')">📋 Tutti</button>
-                <button class="completed-filter-btn" data-completed="completed" onclick="filterByCompleted('completed')">✅ Completati</button>
-                <button class="completed-filter-btn" data-completed="notcompleted" onclick="filterByCompleted('notcompleted')">⏳ Da Completare</button>
+            <div class="filter-label">📋 Stato:</div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="status-filter-btn active" data-status="all" onclick="filterByStatus('all')">📋 Da Guardare</button>
+                <button class="status-filter-btn" data-status="completed" onclick="filterByStatus('completed')">✅ Completati</button>
             </div>
         </div>
+        <!-- ===== FINE NUOVI FILTRI ===== -->
+        
         <!-- ===== STATISTICHE COMPLETATI ===== -->
         <div class="completed-stats" id="completedStats">
             <span>✅ Completati: <span class="number" id="completedCount">0</span></span>
-            <span>⏳ Da completare: <span class="number" id="notCompletedCount">0</span></span>
+            <span>⏳ Da guardare: <span class="number" id="notCompletedCount">0</span></span>
             <span>📊 Completati: <span class="number" id="completionPercentage">0</span>%</span>
         </div>
-        <!-- ===== FINE MODIFICHE ===== -->
+        <!-- ===== FINE STATISTICHE ===== -->
         <div class="stats" id="stats"></div>
     </div>
 
@@ -787,7 +797,7 @@ h1 {
     let currentUsername = "";
     let currentSort = "addedDate";
     let currentTypeFilter = "all";
-    let currentCompletedFilter = "all";
+    let currentStatusFilter = "all"; // 'all' = da guardare, 'completed' = completati
     let pendingMoveItem = null;
     
     // Variabili per selezione multipla
@@ -800,7 +810,6 @@ h1 {
             let searchType = type === 'movie' ? 'movie' : 'tv';
             let url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(title)}&language=it-IT`;
             
-            // Aggiungi l'anno se presente per migliorare la ricerca
             if (year) {
                 url += `&year=${year}`;
             }
@@ -811,7 +820,6 @@ h1 {
             if (data.results && data.results.length > 0) {
                 let bestMatch = data.results[0];
                 
-                // Cerca il match migliore per anno
                 if (year) {
                     const yearNum = parseInt(year);
                     for (const result of data.results) {
@@ -844,7 +852,6 @@ h1 {
 
     // ===== FUNZIONI PER IMPORTARE COMPLETATI =====
     
-    // Gestione import film completati
     document.getElementById('moviesCompletedInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -852,7 +859,6 @@ h1 {
         this.value = '';
     });
 
-    // Gestione import serie completate
     document.getElementById('seriesCompletedInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -981,26 +987,16 @@ h1 {
                 
                 const movieData = await fetchMovieData(movie.title, movie.year, 'movie');
                 
-                // Usa i dati del JSON come fallback
-                const title = movie.title || 'Film senza titolo';
-                const year = movieData?.year || movie.year || null;
-                const poster = movieData?.poster || null;
-                const rating = movieData?.rating || null;
-                const overview = movieData?.overview || null;
-                
-                // Cerca l'IMDB ID dai dati di TV Time
-                const imdbId = movie.id?.imdb || null;
-                
                 converted.push({
-                    id: imdbId || movie.uuid || `movie_${Date.now()}_${Math.random()}`,
-                    title: title,
+                    id: movie.id?.imdb || movie.uuid || `movie_${Date.now()}_${Math.random()}`,
+                    title: movie.title || 'Film senza titolo',
                     type: 'movie',
-                    year: year,
-                    poster: poster,
-                    rating: rating,
-                    overview: overview,
+                    year: movieData?.year || movie.year || null,
+                    poster: movieData?.poster || null,
+                    rating: movieData?.rating || null,
+                    overview: movieData?.overview || null,
                     watched: true,
-                    watched_at: movie.watched_at,
+                    watched_at: movie.watched_at || movie.created_at || new Date().toISOString(),
                     genres: movieData?.genres || [],
                     tmdb_id: movieData?.tmdb_id || null,
                     addedAt: Date.now(),
@@ -1017,11 +1013,6 @@ h1 {
                 }
                 
                 const seriesData = await fetchMovieData(series.title, null, 'tv');
-                
-                const title = series.title || 'Serie senza titolo';
-                const poster = seriesData?.poster || null;
-                const rating = seriesData?.rating || null;
-                const overview = seriesData?.overview || null;
                 
                 let totalEpisodes = 0;
                 let watchedEpisodes = 0;
@@ -1045,16 +1036,14 @@ h1 {
                     });
                 }
                 
-                const tvdbId = series.id?.tvdb || null;
-                
                 converted.push({
-                    id: tvdbId || series.uuid || `series_${Date.now()}_${Math.random()}`,
-                    title: title,
+                    id: series.id?.tvdb || series.uuid || `series_${Date.now()}_${Math.random()}`,
+                    title: series.title || 'Serie senza titolo',
                     type: 'tv',
                     year: seriesData?.year || null,
-                    poster: poster,
-                    rating: rating,
-                    overview: overview,
+                    poster: seriesData?.poster || null,
+                    rating: seriesData?.rating || null,
+                    overview: seriesData?.overview || null,
                     totalEpisodes: totalEpisodes,
                     watchedEpisodes: watchedEpisodes,
                     status: 'completed',
@@ -1064,6 +1053,7 @@ h1 {
                     addedAt: Date.now(),
                     completed: true,
                     completedDate: lastWatchedDate || series.created_at || new Date().toISOString().split('T')[0],
+                    watched_at: lastWatchedDate || series.created_at || new Date().toISOString(),
                     mediaType: 'Serie TV'
                 });
             }
@@ -1166,11 +1156,12 @@ h1 {
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    // ===== FUNZIONI FILTRO COMPLETATI =====
-    window.filterByCompleted = function(filter) {
-        currentCompletedFilter = filter;
-        document.querySelectorAll(".completed-filter-btn").forEach(btn => btn.classList.remove("active"));
-        document.querySelector(`.completed-filter-btn[data-completed="${filter}"]`).classList.add("active");
+    // ===== NUOVO FILTRO PER STATO =====
+    window.filterByStatus = function(status) {
+        currentStatusFilter = status;
+        document.querySelectorAll(".status-filter-btn").forEach(btn => btn.classList.remove("active"));
+        const btn = document.querySelector(`.status-filter-btn[data-status="${status}"]`);
+        if (btn) btn.classList.add("active");
         displayList();
     };
 
@@ -1183,13 +1174,13 @@ h1 {
         
         if (!item) return;
         
-        // Toggle completato
         if (item.completed) {
             item.completed = false;
             item.completedDate = null;
         } else {
             item.completed = true;
             item.completedDate = new Date().toISOString().split('T')[0];
+            item.watched_at = new Date().toISOString();
         }
         
         await saveAllData();
@@ -1539,9 +1530,17 @@ h1 {
             filtered = filtered.filter(item => item.type === currentTypeFilter);
         }
         
-        if (currentCompletedFilter === "completed") {
+        // ===== NUOVO FILTRO PER STATO =====
+        if (currentStatusFilter === "completed") {
             filtered = filtered.filter(item => item.completed === true);
-        } else if (currentCompletedFilter === "notcompleted") {
+            // Ordina per data di completamento (dal più recente al più vecchio)
+            filtered.sort((a, b) => {
+                const dateA = a.completedDate || a.watched_at || '';
+                const dateB = b.completedDate || b.watched_at || '';
+                return dateB.localeCompare(dateA);
+            });
+        } else {
+            // "Da guardare" - mostra solo quelli NON completati
             filtered = filtered.filter(item => item.completed !== true);
         }
         
@@ -1556,7 +1555,8 @@ h1 {
             ? (filteredItems.reduce((sum, i) => sum + (i.rating || 0), 0) / filteredItems.length).toFixed(1)
             : 0;
         
-        statsDiv.innerHTML = `📊 Mostrati ${filteredItems.length} su ${totalItems} totali | 🎬 Film: ${moviesCount} | 📺 Serie: ${tvCount} | ⭐ Media voto: ${avgRating}`;
+        const statusLabel = currentStatusFilter === "completed" ? "Completati" : "Da Guardare";
+        statsDiv.innerHTML = `📊 ${statusLabel}: ${filteredItems.length} su ${totalItems} totali | 🎬 Film: ${moviesCount} | 📺 Serie: ${tvCount} | ⭐ Media voto: ${avgRating}`;
         updateCompletedStats();
     }
 
@@ -1624,18 +1624,25 @@ h1 {
         }
         
         let filtered = filterItems(items);
-        const sorted = sortItems(filtered);
+        // Se non è il filtro "completati", applica l'ordinamento normale
+        if (currentStatusFilter !== "completed") {
+            filtered = sortItems(filtered);
+        }
+        // Se è "completati", l'ordinamento è già stato fatto in filterItems per data
         
         updateStats(filtered, totalItems);
         
-        if (sorted.length === 0) {
-            container.innerHTML = '<div class="empty-state">😕 Nessun elemento corrisponde ai filtri selezionati</div>';
+        if (filtered.length === 0) {
+            const emptyMsg = currentStatusFilter === "completed" ? 
+                '😕 Nessun elemento completato' : 
+                '😕 Nessun elemento da guardare';
+            container.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
             return;
         }
         
         container.innerHTML = `
             <div class="grid">
-                ${sorted.map(item => {
+                ${filtered.map(item => {
                     const key = `${item.id}_${item.type}`;
                     const isSelected = selectedItems.has(key);
                     const detailsUrl = `${item.type === 'movie' ? 'movie' : 'tv'}.html?id=${item.id}`;
