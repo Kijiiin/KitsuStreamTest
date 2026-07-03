@@ -1212,10 +1212,12 @@ h1 {
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    // ===== FILTRO PER STATO =====
+    // ===== FILTRO PER STATO (CORRETTO) =====
     window.filterByStatus = function(status) {
         currentStatusFilter = status;
-        document.querySelectorAll(".status-filter-btn").forEach(btn => btn.classList.remove("active"));
+        document.querySelectorAll(".status-filter-btn").forEach(btn => {
+            btn.classList.remove("active", "completed-active");
+        });
         const btn = document.querySelector(`.status-filter-btn[data-status="${status}"]`);
         if (btn) {
             btn.classList.add("active");
