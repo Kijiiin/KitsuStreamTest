@@ -280,6 +280,24 @@ h1 {
 .sort-btn.active, .type-btn.active { background: #7c3aed; border-color: #7c3aed; }
 .stats { font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
 
+.update-dates-btn {
+    background: rgba(59, 130, 246, 0.8);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    margin-top: 5px;
+}
+
+.update-dates-btn:hover {
+    background: rgba(59, 130, 246, 1);
+    transform: translateY(-2px);
+}
+
 /* ===== STILI PER IMPORT COMPLETATI ===== */
 .import-completed-section {
     background: rgba(16, 185, 129, 0.1);
@@ -287,7 +305,7 @@ h1 {
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 20px;
-    display: none; /* Nascondi di default */
+    display: none;
 }
 
 .import-completed-section.visible {
@@ -389,7 +407,6 @@ h1 {
     font-size: 16px;
 }
 
-/* ===== PULSANTE MOSTRA/NASCONDI IMPORT ===== */
 .toggle-import-btn {
     background: rgba(16, 185, 129, 0.8);
     border: none;
@@ -415,11 +432,7 @@ h1 {
 .toggle-import-btn.active:hover {
     background: #dc2626;
 }
-/* ===== FINE PULSANTE ===== */
 
-/* ===== FINE STILI IMPORT COMPLETATI ===== */
-
-/* ===== BADGE COMPLETATI MODIFICATO ===== */
 .completed-badge {
     display: flex;
     flex-direction: column;
@@ -440,9 +453,7 @@ h1 {
     font-size: 8px;
     opacity: 0.85;
 }
-/* ===== FINE BADGE COMPLETATI ===== */
 
-/* ===== FILTRI ===== */
 .status-filter-btn {
     background: rgba(124, 58, 237, 0.3);
     border: 1px solid rgba(124, 58, 237, 0.5);
@@ -470,7 +481,6 @@ h1 {
 .status-filter-btn:hover {
     transform: translateY(-2px);
 }
-/* ===== FINE FILTRI ===== */
 
 .completed-stats {
     display: flex;
@@ -574,6 +584,13 @@ h1 {
     padding: 8px;
 }
 
+.loading {
+    text-align: center;
+    padding: 40px;
+    font-size: 13px;
+    color: #c084fc;
+}
+
 #tornaSu {
     position: fixed;
     bottom: 20px;
@@ -625,6 +642,7 @@ h1 {
     .selection-count { font-size: 14px; }
     .selection-action-btn { padding: 8px 16px; font-size: 13px; }
     .selection-hint { font-size: 13px; }
+    .update-dates-btn { font-size: 14px; padding: 10px 20px; }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
@@ -717,12 +735,12 @@ h1 {
 </div>
 
 <div class="container">
-    <!-- ===== PULSANTE MOSTRA/NASCONDI IMPORT ===== -->
+    <!-- PULSANTE MOSTRA/NASCONDI IMPORT -->
     <button class="toggle-import-btn" onclick="toggleImportSection()">
         📥 Mostra Importazione
     </button>
     
-    <!-- ===== SEZIONE IMPORT COMPLETATI ===== -->
+    <!-- SEZIONE IMPORT COMPLETATI -->
     <div class="import-completed-section" id="importSection">
         <h3>✅ Importa Completati da TV Time</h3>
         <div class="subtitle">
@@ -760,7 +778,6 @@ h1 {
             </div>
         </div>
     </div>
-    <!-- ===== FINE SEZIONE IMPORT COMPLETATI ===== -->
 
     <div class="lista-title">
         <button id="addFolderBtn" class="title-btn add-folder" onclick="openAddFolderModal()">📁 Nuova Cartella</button>
@@ -790,7 +807,6 @@ h1 {
                 <button class="type-btn" data-type="tv" onclick="filterByType('tv')">📺 Serie TV</button>
             </div>
         </div>
-        <!-- ===== FILTRI STATO ===== -->
         <div class="filter-group">
             <div class="filter-label">📋 Stato:</div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -798,15 +814,17 @@ h1 {
                 <button class="status-filter-btn" data-status="completed" onclick="filterByStatus('completed')">✅ Completati</button>
             </div>
         </div>
-        <!-- ===== FINE FILTRI STATO ===== -->
         
-        <!-- ===== STATISTICHE COMPLETATI ===== -->
+        <!-- Pulsante Aggiorna Date -->
+        <div class="filter-group">
+            <button class="update-dates-btn" onclick="forceUpdateDates()">🔄 Aggiorna Date Precise</button>
+        </div>
+        
         <div class="completed-stats" id="completedStats">
             <span>✅ Completati: <span class="number" id="completedCount">0</span></span>
             <span>⏳ Da guardare: <span class="number" id="notCompletedCount">0</span></span>
             <span>📊 Completati: <span class="number" id="completionPercentage">0</span>%</span>
         </div>
-        <!-- ===== FINE STATISTICHE ===== -->
         <div class="stats" id="stats"></div>
     </div>
 
@@ -845,6 +863,7 @@ h1 {
     let currentTypeFilter = "all";
     let currentStatusFilter = "all";
     let pendingMoveItem = null;
+    let isUpdatingDates = false;
     
     // Variabili per selezione multipla
     let multiSelectMode = false;
@@ -860,9 +879,7 @@ h1 {
             const options = { 
                 day: '2-digit', 
                 month: 'short', 
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                year: 'numeric'
             };
             return date.toLocaleDateString('it-IT', options);
         } catch (e) {
@@ -888,51 +905,132 @@ h1 {
 
     // ===== FUNZIONE PER RECUPERARE I DATI DA TMDB =====
     async function fetchMovieData(title, year, type) {
-    try {
-        let searchType = type === 'movie' ? 'movie' : 'tv';
-        let url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(title)}&language=it-IT`;
-        
-        if (year) {
-            url += `&year=${year}`;
-        }
-        
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data.results && data.results.length > 0) {
-            let bestMatch = data.results[0];
+        try {
+            let searchType = type === 'movie' ? 'movie' : 'tv';
+            let url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(title)}&language=it-IT`;
             
             if (year) {
-                const yearNum = parseInt(year);
-                for (const result of data.results) {
-                    const resultYear = result.release_date ? parseInt(result.release_date.split('-')[0]) : 
-                                      result.first_air_date ? parseInt(result.first_air_date.split('-')[0]) : 0;
-                    if (resultYear === yearNum) {
-                        bestMatch = result;
-                        break;
-                    }
-                }
+                url += `&year=${year}`;
             }
             
-            return {
-                poster: bestMatch.poster_path ? IMG_BASE + bestMatch.poster_path : null,
-                rating: bestMatch.vote_average ? parseFloat(bestMatch.vote_average.toFixed(1)) : null,
-                year: bestMatch.release_date ? parseInt(bestMatch.release_date.split('-')[0]) : 
-                      bestMatch.first_air_date ? parseInt(bestMatch.first_air_date.split('-')[0]) : 
-                      (year ? parseInt(year) : null),
-                release_date: bestMatch.release_date || null,  // Data precisa per i film
-                first_air_date: bestMatch.first_air_date || null,  // Data precisa per le serie TV
-                overview: bestMatch.overview || null,
-                genres: bestMatch.genre_ids || [],
-                tmdb_id: bestMatch.id
-            };
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.results && data.results.length > 0) {
+                let bestMatch = data.results[0];
+                
+                if (year) {
+                    const yearNum = parseInt(year);
+                    for (const result of data.results) {
+                        const resultYear = result.release_date ? parseInt(result.release_date.split('-')[0]) : 
+                                          result.first_air_date ? parseInt(result.first_air_date.split('-')[0]) : 0;
+                        if (resultYear === yearNum) {
+                            bestMatch = result;
+                            break;
+                        }
+                    }
+                }
+                
+                return {
+                    poster: bestMatch.poster_path ? IMG_BASE + bestMatch.poster_path : null,
+                    rating: bestMatch.vote_average ? parseFloat(bestMatch.vote_average.toFixed(1)) : null,
+                    year: bestMatch.release_date ? parseInt(bestMatch.release_date.split('-')[0]) : 
+                          bestMatch.first_air_date ? parseInt(bestMatch.first_air_date.split('-')[0]) : 
+                          (year ? parseInt(year) : null),
+                    release_date: bestMatch.release_date || null,
+                    first_air_date: bestMatch.first_air_date || null,
+                    overview: bestMatch.overview || null,
+                    genres: bestMatch.genre_ids || [],
+                    tmdb_id: bestMatch.id
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error(`Errore nel recupero dati per ${title}:`, error);
+            return null;
         }
-        return null;
-    } catch (error) {
-        console.error(`Errore nel recupero dati per ${title}:`, error);
-        return null;
     }
-}
+
+    // ===== FUNZIONE PER AGGIORNARE LE DATE DEGLI ELEMENTI ESISTENTI =====
+    async function updateItemDates() {
+        if (!currentUser || isUpdatingDates) return;
+        isUpdatingDates = true;
+        
+        let updated = false;
+        const itemsToUpdate = [];
+        
+        // Raccogli tutti gli elementi che necessitano di aggiornamento
+        const allItems = [...currentList];
+        for (const folderName in currentFolders) {
+            allItems.push(...currentFolders[folderName]);
+        }
+        
+        // Filtra gli elementi senza data precisa
+        for (const item of allItems) {
+            if (!item.release_date && !item.first_air_date && item.tmdb_id) {
+                itemsToUpdate.push(item);
+            }
+        }
+        
+        if (itemsToUpdate.length === 0) {
+            isUpdatingDates = false;
+            return;
+        }
+        
+        // Mostra un indicatore di caricamento
+        const container = document.getElementById("listContainer");
+        container.innerHTML = `<div class="loading">⏳ Aggiornamento date in corso (0/${itemsToUpdate.length})...</div>`;
+        
+        let processed = 0;
+        for (const item of itemsToUpdate) {
+            processed++;
+            container.innerHTML = `<div class="loading">⏳ Aggiornamento date in corso (${processed}/${itemsToUpdate.length})...</div>`;
+            
+            try {
+                const type = item.type === 'movie' ? 'movie' : 'tv';
+                const url = `https://api.themoviedb.org/3/${type}/${item.tmdb_id}?api_key=${API_KEY}&language=it-IT`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data) {
+                    if (type === 'movie' && data.release_date) {
+                        item.release_date = data.release_date;
+                        item.year = parseInt(data.release_date.split('-')[0]);
+                    } else if (type === 'tv' && data.first_air_date) {
+                        item.first_air_date = data.first_air_date;
+                        item.year = parseInt(data.first_air_date.split('-')[0]);
+                    }
+                    
+                    // Aggiorna anche altri dati se necessario
+                    if (data.vote_average) {
+                        item.rating = parseFloat(data.vote_average.toFixed(1));
+                    }
+                    if (data.poster_path) {
+                        item.poster = IMG_BASE + data.poster_path;
+                    }
+                    
+                    updated = true;
+                }
+            } catch (error) {
+                console.error(`Errore aggiornamento per ${item.title}:`, error);
+            }
+        }
+        
+        if (updated) {
+            await saveAllData();
+        }
+        
+        isUpdatingDates = false;
+        displayList();
+    }
+
+    window.forceUpdateDates = async function() {
+        if (!currentUser) {
+            alert("Devi prima accedere!");
+            return;
+        }
+        await updateItemDates();
+    };
 
     // ===== FUNZIONI PER IMPORTARE COMPLETATI =====
     
@@ -1058,95 +1156,95 @@ h1 {
     }
 
     async function convertToWatchTrackerFormat(items, type, statusDiv) {
-    const converted = [];
-    let processed = 0;
-    const total = items.length;
-    
-    if (type === 'movies') {
-        for (const movie of items) {
-            processed++;
-            if (statusDiv) {
-                statusDiv.textContent = `🖼️ Recuperando ${movie.title} (${processed}/${total})...`;
-            }
-            
-            const movieData = await fetchMovieData(movie.title, movie.year, 'movie');
-            
-            converted.push({
-                id: movie.id?.imdb || movie.uuid || `movie_${Date.now()}_${Math.random()}`,
-                title: movie.title || 'Film senza titolo',
-                type: 'movie',
-                year: movieData?.year || movie.year || null,
-                release_date: movieData?.release_date || null,  // Aggiungi data precisa
-                poster: movieData?.poster || null,
-                rating: movieData?.rating || null,
-                overview: movieData?.overview || null,
-                watched: true,
-                watched_at: movie.watched_at || movie.created_at || new Date().toISOString(),
-                genres: movieData?.genres || [],
-                tmdb_id: movieData?.tmdb_id || null,
-                addedAt: Date.now(),
-                completed: true,
-                completedDate: movie.watched_at || new Date().toISOString().split('T')[0],
-                mediaType: 'Film'
-            });
-        }
-    } else if (type === 'series') {
-        for (const series of items) {
-            processed++;
-            if (statusDiv) {
-                statusDiv.textContent = `🖼️ Recuperando ${series.title} (${processed}/${total})...`;
-            }
-            
-            const seriesData = await fetchMovieData(series.title, null, 'tv');
-            
-            let totalEpisodes = 0;
-            let watchedEpisodes = 0;
-            let lastWatchedDate = null;
-            
-            if (series.seasons) {
-                series.seasons.forEach(season => {
-                    if (season.episodes) {
-                        season.episodes.forEach(ep => {
-                            totalEpisodes++;
-                            if (ep.is_watched === true) {
-                                watchedEpisodes++;
-                                if (ep.watched_at) {
-                                    if (!lastWatchedDate || ep.watched_at > lastWatchedDate) {
-                                        lastWatchedDate = ep.watched_at;
-                                    }
-                                }
-                            }
-                        });
-                    }
+        const converted = [];
+        let processed = 0;
+        const total = items.length;
+        
+        if (type === 'movies') {
+            for (const movie of items) {
+                processed++;
+                if (statusDiv) {
+                    statusDiv.textContent = `🖼️ Recuperando ${movie.title} (${processed}/${total})...`;
+                }
+                
+                const movieData = await fetchMovieData(movie.title, movie.year, 'movie');
+                
+                converted.push({
+                    id: movie.id?.imdb || movie.uuid || `movie_${Date.now()}_${Math.random()}`,
+                    title: movie.title || 'Film senza titolo',
+                    type: 'movie',
+                    year: movieData?.year || movie.year || null,
+                    release_date: movieData?.release_date || null,
+                    poster: movieData?.poster || null,
+                    rating: movieData?.rating || null,
+                    overview: movieData?.overview || null,
+                    watched: true,
+                    watched_at: movie.watched_at || movie.created_at || new Date().toISOString(),
+                    genres: movieData?.genres || [],
+                    tmdb_id: movieData?.tmdb_id || null,
+                    addedAt: Date.now(),
+                    completed: true,
+                    completedDate: movie.watched_at || new Date().toISOString().split('T')[0],
+                    mediaType: 'Film'
                 });
             }
-            
-            converted.push({
-                id: series.id?.tvdb || series.uuid || `series_${Date.now()}_${Math.random()}`,
-                title: series.title || 'Serie senza titolo',
-                type: 'tv',
-                year: seriesData?.year || null,
-                first_air_date: seriesData?.first_air_date || null,  // Aggiungi data precisa
-                poster: seriesData?.poster || null,
-                rating: seriesData?.rating || null,
-                overview: seriesData?.overview || null,
-                totalEpisodes: totalEpisodes,
-                watchedEpisodes: watchedEpisodes,
-                status: 'completed',
-                genres: seriesData?.genres || [],
-                seasons: series.seasons || [],
-                tmdb_id: seriesData?.tmdb_id || null,
-                addedAt: Date.now(),
-                completed: true,
-                completedDate: lastWatchedDate || series.created_at || new Date().toISOString().split('T')[0],
-                watched_at: lastWatchedDate || series.created_at || new Date().toISOString(),
-                mediaType: 'Serie TV'
-            });
+        } else if (type === 'series') {
+            for (const series of items) {
+                processed++;
+                if (statusDiv) {
+                    statusDiv.textContent = `🖼️ Recuperando ${series.title} (${processed}/${total})...`;
+                }
+                
+                const seriesData = await fetchMovieData(series.title, null, 'tv');
+                
+                let totalEpisodes = 0;
+                let watchedEpisodes = 0;
+                let lastWatchedDate = null;
+                
+                if (series.seasons) {
+                    series.seasons.forEach(season => {
+                        if (season.episodes) {
+                            season.episodes.forEach(ep => {
+                                totalEpisodes++;
+                                if (ep.is_watched === true) {
+                                    watchedEpisodes++;
+                                    if (ep.watched_at) {
+                                        if (!lastWatchedDate || ep.watched_at > lastWatchedDate) {
+                                            lastWatchedDate = ep.watched_at;
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                converted.push({
+                    id: series.id?.tvdb || series.uuid || `series_${Date.now()}_${Math.random()}`,
+                    title: series.title || 'Serie senza titolo',
+                    type: 'tv',
+                    year: seriesData?.year || null,
+                    first_air_date: seriesData?.first_air_date || null,
+                    poster: seriesData?.poster || null,
+                    rating: seriesData?.rating || null,
+                    overview: seriesData?.overview || null,
+                    totalEpisodes: totalEpisodes,
+                    watchedEpisodes: watchedEpisodes,
+                    status: 'completed',
+                    genres: seriesData?.genres || [],
+                    seasons: series.seasons || [],
+                    tmdb_id: seriesData?.tmdb_id || null,
+                    addedAt: Date.now(),
+                    completed: true,
+                    completedDate: lastWatchedDate || series.created_at || new Date().toISOString().split('T')[0],
+                    watched_at: lastWatchedDate || series.created_at || new Date().toISOString(),
+                    mediaType: 'Serie TV'
+                });
+            }
         }
+        
+        return converted;
     }
-    
-    return converted;
-}
 
     function updateImportStats() {
         const allCompleted = currentList.filter(item => item.completed === true);
@@ -1242,7 +1340,7 @@ h1 {
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    // ===== FILTRO PER STATO (CORRETTO) =====
+    // ===== FILTRO PER STATO =====
     window.filterByStatus = function(status) {
         currentStatusFilter = status;
         document.querySelectorAll(".status-filter-btn").forEach(btn => {
@@ -1535,6 +1633,12 @@ h1 {
             const data = userDoc.data();
             currentList = data.list || [];
             currentFolders = data.folders || {};
+            
+            // Aggiorna le date degli elementi esistenti in background
+            setTimeout(() => {
+                updateItemDates();
+            }, 1000);
+            
             return data;
         }
         return null;
@@ -1597,38 +1701,38 @@ h1 {
     }
 
     function sortItems(items) {
-    const sorted = [...items];
-    switch(currentSort) {
-        case "rating":
-            sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-            break;
-        case "title":
-            sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-            break;
-        case "date":
-            // Ordinamento per data di uscita precisa (dal più recente al più vecchio)
-            sorted.sort((a, b) => {
-                const dateA = a.release_date || a.first_air_date || '';
-                const dateB = b.release_date || b.first_air_date || '';
-                
-                // Se entrambe hanno date precise, confrontale
-                if (dateA && dateB) {
-                    return dateB.localeCompare(dateA);
-                }
-                // Se una ha data precisa e l'altra no
-                if (dateA) return -1;
-                if (dateB) return 1;
-                // Se nessuna ha data precisa, usa l'anno
-                return (b.year || 0) - (a.year || 0);
-            });
-            break;
-        case "addedDate":
-        default:
-            sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-            break;
+        const sorted = [...items];
+        switch(currentSort) {
+            case "rating":
+                sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                break;
+            case "title":
+                sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+                break;
+            case "date":
+                // Ordinamento per data di uscita precisa (dal più recente al più vecchio)
+                sorted.sort((a, b) => {
+                    const dateA = a.release_date || a.first_air_date || '';
+                    const dateB = b.release_date || b.first_air_date || '';
+                    
+                    // Se entrambe hanno date precise, confrontale
+                    if (dateA && dateB) {
+                        return dateB.localeCompare(dateA);
+                    }
+                    // Se una ha data precisa e l'altra no
+                    if (dateA) return -1;
+                    if (dateB) return 1;
+                    // Se nessuna ha data precisa, usa l'anno
+                    return (b.year || 0) - (a.year || 0);
+                });
+                break;
+            case "addedDate":
+            default:
+                sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+                break;
+        }
+        return sorted;
     }
-    return sorted;
-}
 
     function filterItems(items) {
         let filtered = [...items];
@@ -1708,94 +1812,94 @@ h1 {
     };
 
     window.displayList = function() {
-    const container = document.getElementById("listContainer");
-    
-    if (!currentUser) {
-        container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
-        updateStats([], 0);
+        const container = document.getElementById("listContainer");
+        
+        if (!currentUser) {
+            container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
+            updateStats([], 0);
+            renderFoldersBar();
+            return;
+        }
+        
         renderFoldersBar();
-        return;
-    }
-    
-    renderFoldersBar();
-    const items = getCurrentItems();
-    const totalItems = items.length;
-    
-    if (totalItems === 0) {
-        const folderText = currentFolder ? ` nella cartella "${currentFolder}"` : '';
-        container.innerHTML = `<div class="empty-state">📭 La tua lista${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
-        updateStats([], 0);
-        return;
-    }
-    
-    let filtered = filterItems(items);
-    if (currentStatusFilter !== "completed") {
-        filtered = sortItems(filtered);
-    }
-    
-    updateStats(filtered, totalItems);
-    
-    if (filtered.length === 0) {
-        const emptyMsg = currentStatusFilter === "completed" ? 
-            '😕 Nessun elemento completato' : 
-            '😕 Nessun elemento da guardare';
-        container.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
-        return;
-    }
-    
-    container.innerHTML = `
-        <div class="grid">
-            ${filtered.map(item => {
-                const key = `${item.id}_${item.type}`;
-                const isSelected = selectedItems.has(key);
-                const detailsUrl = `${item.type === 'movie' ? 'movie' : 'tv'}.html?id=${item.id}`;
-                const isCompleted = item.completed === true;
-                const mediaType = item.type === 'movie' ? 'Film' : 'Serie TV';
-                
-                // Formatta la data di uscita precisa
-                let releaseDate = '';
-                if (item.release_date) {
-                    releaseDate = formatDate(item.release_date);
-                } else if (item.first_air_date) {
-                    releaseDate = formatDate(item.first_air_date);
-                } else if (item.year) {
-                    releaseDate = String(item.year);
-                } else {
-                    releaseDate = 'N/D';
-                }
-                
-                return `
-                    <div class="card ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed-card' : ''}" 
-                         data-id="${item.id}"
-                         data-type="${item.type}"
-                         onclick="${multiSelectMode ? `toggleSelectItem(${item.id}, '${item.type}')` : ''}">
-                        <a href="${detailsUrl}" ${multiSelectMode ? 'onclick="return false;"' : ''}>
-                            <img src="${item.poster || 'https://via.placeholder.com/500x750/302b63/8892b0?text=No+Image'}" 
-                                 alt="${item.title}" 
-                                 loading="lazy">
-                        </a>
-                        <div class="card-content">
-                            <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
-                                ${mediaType}
-                            </span>
-                            ${isCompleted ? `<div class="completed-badge">✅ Completato <span class="date">📅 ${formatDate(item.completedDate)}</span></div>` : ''}
-                            <h4>${escapeHtml(item.title)}</h4>
-                            <p>⭐ ${item.rating || "N/A"}/10</p>
-                            <p>📅 ${releaseDate}</p>
-                            ${!multiSelectMode ? `
-                                <button class="mark-completed-btn ${isCompleted ? 'completed' : ''}" onclick="event.stopPropagation(); markAsCompleted(${item.id}, '${item.type}', event)">
-                                    ${isCompleted ? '↩️ Da completare' : '✅ Segna come completato'}
-                                </button>
-                                <button class="move-folder-btn" onclick='event.stopPropagation(); moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
-                                <button onclick="event.stopPropagation(); removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
-                            ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
+        const items = getCurrentItems();
+        const totalItems = items.length;
+        
+        if (totalItems === 0) {
+            const folderText = currentFolder ? ` nella cartella "${currentFolder}"` : '';
+            container.innerHTML = `<div class="empty-state">📭 La tua lista${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
+            updateStats([], 0);
+            return;
+        }
+        
+        let filtered = filterItems(items);
+        if (currentStatusFilter !== "completed") {
+            filtered = sortItems(filtered);
+        }
+        
+        updateStats(filtered, totalItems);
+        
+        if (filtered.length === 0) {
+            const emptyMsg = currentStatusFilter === "completed" ? 
+                '😕 Nessun elemento completato' : 
+                '😕 Nessun elemento da guardare';
+            container.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
+            return;
+        }
+        
+        container.innerHTML = `
+            <div class="grid">
+                ${filtered.map(item => {
+                    const key = `${item.id}_${item.type}`;
+                    const isSelected = selectedItems.has(key);
+                    const detailsUrl = `${item.type === 'movie' ? 'movie' : 'tv'}.html?id=${item.id}`;
+                    const isCompleted = item.completed === true;
+                    const mediaType = item.type === 'movie' ? 'Film' : 'Serie TV';
+                    
+                    // Formatta la data di uscita precisa
+                    let releaseDate = '';
+                    if (item.release_date) {
+                        releaseDate = formatDate(item.release_date);
+                    } else if (item.first_air_date) {
+                        releaseDate = formatDate(item.first_air_date);
+                    } else if (item.year) {
+                        releaseDate = String(item.year);
+                    } else {
+                        releaseDate = 'N/D';
+                    }
+                    
+                    return `
+                        <div class="card ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed-card' : ''}" 
+                             data-id="${item.id}"
+                             data-type="${item.type}"
+                             onclick="${multiSelectMode ? `toggleSelectItem(${item.id}, '${item.type}')` : ''}">
+                            <a href="${detailsUrl}" ${multiSelectMode ? 'onclick="return false;"' : ''}>
+                                <img src="${item.poster || 'https://via.placeholder.com/500x750/302b63/8892b0?text=No+Image'}" 
+                                     alt="${item.title}" 
+                                     loading="lazy">
+                            </a>
+                            <div class="card-content">
+                                <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
+                                    ${mediaType}
+                                </span>
+                                ${isCompleted ? `<div class="completed-badge">✅ Completato <span class="date">📅 ${formatDate(item.completedDate)}</span></div>` : ''}
+                                <h4>${escapeHtml(item.title)}</h4>
+                                <p>⭐ ${item.rating || "N/A"}/10</p>
+                                <p>📅 ${releaseDate}</p>
+                                ${!multiSelectMode ? `
+                                    <button class="mark-completed-btn ${isCompleted ? 'completed' : ''}" onclick="event.stopPropagation(); markAsCompleted(${item.id}, '${item.type}', event)">
+                                        ${isCompleted ? '↩️ Da completare' : '✅ Segna come completato'}
+                                    </button>
+                                    <button class="move-folder-btn" onclick='event.stopPropagation(); moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
+                                    <button onclick="event.stopPropagation(); removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
+                                ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
+                            </div>
                         </div>
-                    </div>
-                `;
-            }).join("")}
-        </div>
-    `;
-};
+                    `;
+                }).join("")}
+            </div>
+        `;
+    };
 
     window.clearAll = async function() {
         const confirmMsg = currentFolder ? `⚠️ Sei sicuro di voler svuotare la cartella "${currentFolder}"?` : "⚠️ Sei sicuro di voler svuotare tutta la lista?";
