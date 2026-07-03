@@ -287,6 +287,11 @@ h1 {
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 20px;
+    display: none; /* Nascondi di default */
+}
+
+.import-completed-section.visible {
+    display: block;
 }
 
 .import-completed-section h3 {
@@ -383,6 +388,35 @@ h1 {
     color: #10b981;
     font-size: 16px;
 }
+
+/* ===== PULSANTE MOSTRA/NASCONDI IMPORT ===== */
+.toggle-import-btn {
+    background: rgba(16, 185, 129, 0.8);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    margin-bottom: 15px;
+}
+
+.toggle-import-btn:hover {
+    background: #059669;
+    transform: translateY(-2px);
+}
+
+.toggle-import-btn.active {
+    background: rgba(239, 68, 68, 0.8);
+}
+
+.toggle-import-btn.active:hover {
+    background: #dc2626;
+}
+/* ===== FINE PULSANTE ===== */
+
 /* ===== FINE STILI IMPORT COMPLETATI ===== */
 
 .completed-badge {
@@ -402,7 +436,7 @@ h1 {
     margin-left: 5px;
 }
 
-/* ===== NUOVI FILTRI COMPLETATI MODIFICATI ===== */
+/* ===== FILTRI ===== */
 .status-filter-btn {
     background: rgba(124, 58, 237, 0.3);
     border: 1px solid rgba(124, 58, 237, 0.5);
@@ -430,7 +464,7 @@ h1 {
 .status-filter-btn:hover {
     transform: translateY(-2px);
 }
-/* ===== FINE NUOVI FILTRI ===== */
+/* ===== FINE FILTRI ===== */
 
 .completed-stats {
     display: flex;
@@ -561,6 +595,7 @@ h1 {
     .lista-title { margin-bottom: 30px; gap: 20px; }
     .lista-title h2 { font-size: 28px; }
     .title-btn { padding: 8px 20px; font-size: 14px; }
+    .toggle-import-btn { padding: 10px 20px; font-size: 14px; }
     .filters-bar { padding: 20px; margin-bottom: 30px; border-radius: 20px; }
     .filter-label { font-size: 13px; }
     .sort-btn, .type-btn { padding: 8px 16px; font-size: 13px; }
@@ -676,8 +711,13 @@ h1 {
 </div>
 
 <div class="container">
+    <!-- ===== PULSANTE MOSTRA/NASCONDI IMPORT ===== -->
+    <button class="toggle-import-btn" onclick="toggleImportSection()">
+        📥 Mostra Importazione
+    </button>
+    
     <!-- ===== SEZIONE IMPORT COMPLETATI ===== -->
-    <div class="import-completed-section">
+    <div class="import-completed-section" id="importSection">
         <h3>✅ Importa Completati da TV Time</h3>
         <div class="subtitle">
             Carica i file esportati da TV Time per importare automaticamente i contenuti che hai già visto
@@ -744,7 +784,7 @@ h1 {
                 <button class="type-btn" data-type="tv" onclick="filterByType('tv')">📺 Serie TV</button>
             </div>
         </div>
-        <!-- ===== NUOVI FILTRI: SOLO "DA GUARDARE" E "COMPLETATI" ===== -->
+        <!-- ===== FILTRI STATO ===== -->
         <div class="filter-group">
             <div class="filter-label">📋 Stato:</div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -752,7 +792,7 @@ h1 {
                 <button class="status-filter-btn" data-status="completed" onclick="filterByStatus('completed')">✅ Completati</button>
             </div>
         </div>
-        <!-- ===== FINE NUOVI FILTRI ===== -->
+        <!-- ===== FINE FILTRI STATO ===== -->
         
         <!-- ===== STATISTICHE COMPLETATI ===== -->
         <div class="completed-stats" id="completedStats">
@@ -797,12 +837,28 @@ h1 {
     let currentUsername = "";
     let currentSort = "addedDate";
     let currentTypeFilter = "all";
-    let currentStatusFilter = "all"; // 'all' = da guardare, 'completed' = completati
+    let currentStatusFilter = "all";
     let pendingMoveItem = null;
     
     // Variabili per selezione multipla
     let multiSelectMode = false;
     let selectedItems = new Set();
+
+    // ===== TOGGLE SEZIONE IMPORT =====
+    window.toggleImportSection = function() {
+        const section = document.getElementById('importSection');
+        const btn = document.querySelector('.toggle-import-btn');
+        
+        if (section.classList.contains('visible')) {
+            section.classList.remove('visible');
+            btn.textContent = '📥 Mostra Importazione';
+            btn.classList.remove('active');
+        } else {
+            section.classList.add('visible');
+            btn.textContent = '📥 Nascondi Importazione';
+            btn.classList.add('active');
+        }
+    };
 
     // ===== FUNZIONE PER RECUPERARE I DATI DA TMDB =====
     async function fetchMovieData(title, year, type) {
@@ -1156,12 +1212,17 @@ h1 {
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    // ===== NUOVO FILTRO PER STATO =====
+    // ===== FILTRO PER STATO =====
     window.filterByStatus = function(status) {
         currentStatusFilter = status;
         document.querySelectorAll(".status-filter-btn").forEach(btn => btn.classList.remove("active"));
         const btn = document.querySelector(`.status-filter-btn[data-status="${status}"]`);
-        if (btn) btn.classList.add("active");
+        if (btn) {
+            btn.classList.add("active");
+            if (status === 'completed') {
+                btn.classList.add("completed-active");
+            }
+        }
         displayList();
     };
 
@@ -1530,7 +1591,6 @@ h1 {
             filtered = filtered.filter(item => item.type === currentTypeFilter);
         }
         
-        // ===== NUOVO FILTRO PER STATO =====
         if (currentStatusFilter === "completed") {
             filtered = filtered.filter(item => item.completed === true);
             // Ordina per data di completamento (dal più recente al più vecchio)
@@ -1540,7 +1600,6 @@ h1 {
                 return dateB.localeCompare(dateA);
             });
         } else {
-            // "Da guardare" - mostra solo quelli NON completati
             filtered = filtered.filter(item => item.completed !== true);
         }
         
@@ -1624,11 +1683,9 @@ h1 {
         }
         
         let filtered = filterItems(items);
-        // Se non è il filtro "completati", applica l'ordinamento normale
         if (currentStatusFilter !== "completed") {
             filtered = sortItems(filtered);
         }
-        // Se è "completati", l'ordinamento è già stato fatto in filterItems per data
         
         updateStats(filtered, totalItems);
         
