@@ -1690,82 +1690,97 @@ h1 {
     };
 
     window.displayList = function() {
-        const container = document.getElementById("listContainer");
-        
-        if (!currentUser) {
-            container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
-            updateStats([], 0);
-            renderFoldersBar();
-            return;
-        }
-        
+    const container = document.getElementById("listContainer");
+    
+    if (!currentUser) {
+        container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
+        updateStats([], 0);
         renderFoldersBar();
-        const items = getCurrentItems();
-        const totalItems = items.length;
-        
-        if (totalItems === 0) {
-            const folderText = currentFolder ? ` nella cartella "${currentFolder}"` : '';
-            container.innerHTML = `<div class="empty-state">📭 La tua lista${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
-            updateStats([], 0);
-            return;
-        }
-        
-        let filtered = filterItems(items);
-        if (currentStatusFilter !== "completed") {
-            filtered = sortItems(filtered);
-        }
-        
-        updateStats(filtered, totalItems);
-        
-        if (filtered.length === 0) {
-            const emptyMsg = currentStatusFilter === "completed" ? 
-                '😕 Nessun elemento completato' : 
-                '😕 Nessun elemento da guardare';
-            container.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
-            return;
-        }
-        
-        container.innerHTML = `
-            <div class="grid">
-                ${filtered.map(item => {
-                    const key = `${item.id}_${item.type}`;
-                    const isSelected = selectedItems.has(key);
-                    const detailsUrl = `${item.type === 'movie' ? 'movie' : 'tv'}.html?id=${item.id}`;
-                    const isCompleted = item.completed === true;
-                    const mediaType = item.type === 'movie' ? 'Film' : 'Serie TV';
-                    
-                    return `
-                        <div class="card ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed-card' : ''}" 
-                             data-id="${item.id}"
-                             data-type="${item.type}"
-                             onclick="${multiSelectMode ? `toggleSelectItem(${item.id}, '${item.type}')` : ''}">
-                            <a href="${detailsUrl}" ${multiSelectMode ? 'onclick="return false;"' : ''}>
-                                <img src="${item.poster || 'https://via.placeholder.com/500x750/302b63/8892b0?text=No+Image'}" 
-                                     alt="${item.title}" 
-                                     loading="lazy">
-                            </a>
-                            <div class="card-content">
-                                <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
-                                    ${mediaType}
-                                </span>
-                                ${isCompleted ? `<div class="completed-badge">✅ Completato <span class="date">📅 ${formatDate(item.completedDate)}</span></div>` : ''}
-                                <h4>${escapeHtml(item.title)}</h4>
-                                <p>⭐ ${item.rating || "N/A"}/10</p>
-                                <p>📅 ${item.year || "N/D"}</p>
-                                ${!multiSelectMode ? `
-                                    <button class="mark-completed-btn ${isCompleted ? 'completed' : ''}" onclick="event.stopPropagation(); markAsCompleted(${item.id}, '${item.type}', event)">
-                                        ${isCompleted ? '↩️ Da completare' : '✅ Segna come completato'}
-                                    </button>
-                                    <button class="move-folder-btn" onclick='event.stopPropagation(); moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
-                                    <button onclick="event.stopPropagation(); removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
-                                ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
-                            </div>
+        return;
+    }
+    
+    renderFoldersBar();
+    const items = getCurrentItems();
+    const totalItems = items.length;
+    
+    if (totalItems === 0) {
+        const folderText = currentFolder ? ` nella cartella "${currentFolder}"` : '';
+        container.innerHTML = `<div class="empty-state">📭 La tua lista${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
+        updateStats([], 0);
+        return;
+    }
+    
+    let filtered = filterItems(items);
+    if (currentStatusFilter !== "completed") {
+        filtered = sortItems(filtered);
+    }
+    
+    updateStats(filtered, totalItems);
+    
+    if (filtered.length === 0) {
+        const emptyMsg = currentStatusFilter === "completed" ? 
+            '😕 Nessun elemento completato' : 
+            '😕 Nessun elemento da guardare';
+        container.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="grid">
+            ${filtered.map(item => {
+                const key = `${item.id}_${item.type}`;
+                const isSelected = selectedItems.has(key);
+                const detailsUrl = `${item.type === 'movie' ? 'movie' : 'tv'}.html?id=${item.id}`;
+                const isCompleted = item.completed === true;
+                const mediaType = item.type === 'movie' ? 'Film' : 'Serie TV';
+                
+                // ⭐ FORMATTA LA DATA PRECISA ⭐
+                let releaseDate = '';
+                if (item.release_date) {
+                    // Per i film - usa release_date
+                    releaseDate = formatDate(item.release_date);
+                } else if (item.first_air_date) {
+                    // Per le serie TV - usa first_air_date
+                    releaseDate = formatDate(item.first_air_date);
+                } else if (item.year) {
+                    // Fallback: usa solo l'anno
+                    releaseDate = String(item.year);
+                } else {
+                    releaseDate = 'N/D';
+                }
+                
+                return `
+                    <div class="card ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed-card' : ''}" 
+                         data-id="${item.id}"
+                         data-type="${item.type}"
+                         onclick="${multiSelectMode ? `toggleSelectItem(${item.id}, '${item.type}')` : ''}">
+                        <a href="${detailsUrl}" ${multiSelectMode ? 'onclick="return false;"' : ''}>
+                            <img src="${item.poster || 'https://via.placeholder.com/500x750/302b63/8892b0?text=No+Image'}" 
+                                 alt="${item.title}" 
+                                 loading="lazy">
+                        </a>
+                        <div class="card-content">
+                            <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
+                                ${mediaType}
+                            </span>
+                            ${isCompleted ? `<div class="completed-badge">✅ Completato <span class="date">📅 ${formatDate(item.completedDate)}</span></div>` : ''}
+                            <h4>${escapeHtml(item.title)}</h4>
+                            <p>⭐ ${item.rating || "N/A"}/10</p>
+                            <p>📅 ${releaseDate}</p>
+                            ${!multiSelectMode ? `
+                                <button class="mark-completed-btn ${isCompleted ? 'completed' : ''}" onclick="event.stopPropagation(); markAsCompleted(${item.id}, '${item.type}', event)">
+                                    ${isCompleted ? '↩️ Da completare' : '✅ Segna come completato'}
+                                </button>
+                                <button class="move-folder-btn" onclick='event.stopPropagation(); moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
+                                <button onclick="event.stopPropagation(); removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
+                            ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
                         </div>
-                    `;
-                }).join("")}
-            </div>
-        `;
-    };
+                    </div>
+                `;
+            }).join("")}
+        </div>
+    `;
+};
 
     window.clearAll = async function() {
         const confirmMsg = currentFolder ? `⚠️ Sei sicuro di voler svuotare la cartella "${currentFolder}"?` : "⚠️ Sei sicuro di voler svuotare tutta la lista?";
