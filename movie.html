@@ -207,7 +207,6 @@ h1 {
 .collection-poster, .similar-poster { width: 100%; height: 160px; object-fit: cover; }
 .collection-info, .similar-info { padding: 8px; }
 .collection-title, .similar-title { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.collection-year, .similar-year { font-size: 10px; color: #aaa; }
 
 .player-modal, .trailer-modal {
     position: fixed;
@@ -619,7 +618,7 @@ h1 {
                 poster: window.movieData.poster_path ? IMG_BASE + window.movieData.poster_path : "",
                 rating: window.movieData.vote_average,
                 year: window.movieData.release_date ? window.movieData.release_date.split("-")[0] : "N/D",
-                release_date: window.movieData.release_date || null,
+                release_date: window.movieData.release_date || null, // <-- AGGIUNTO
                 type: "movie",
                 mediaType: "Film",
                 addedAt: Date.now(),
@@ -944,7 +943,6 @@ function displayCollection(movies, collectionName) {
             <h3 class="section-title">📀 ${escapeHtml(collectionName)}</h3>
             <div class="collection-grid">
                 ${sortedMovies.map(movie => {
-                    // Formatta la data precisa per ogni film della collezione
                     let releaseDate = formatDate(movie.release_date);
                     if (!releaseDate && movie.release_date) {
                         releaseDate = movie.release_date.split("-")[0];
@@ -976,7 +974,6 @@ function loadSimilar(similar) {
             <h3 class="section-title">🎬 Ti potrebbe piacere</h3>
             <div class="similar-grid">
                 ${similarMovies.map(movie => {
-                    // Formatta la data precisa per ogni film simile
                     let releaseDate = formatDate(movie.release_date);
                     if (!releaseDate && movie.release_date) {
                         releaseDate = movie.release_date.split("-")[0];
@@ -1067,7 +1064,7 @@ async function toggleListFromDetails() {
         poster: movieData.poster_path ? IMG_BASE + movieData.poster_path : "",
         rating: movieData.vote_average,
         year: movieData.release_date ? movieData.release_date.split("-")[0] : "N/D",
-        release_date: movieData.release_date || null,  // ← AGGIUNTO: salva la data precisa
+        release_date: movieData.release_date || null, // <-- AGGIUNTO - SALVA LA DATA PRECISA
         type: "movie",
         mediaType: "Film",
         addedAt: Date.now()
