@@ -147,7 +147,7 @@ h1 {
 .genres { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 16px 0; }
 .genre-tag { background: rgba(124, 58, 237, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 11px; }
 .watch-buttons { display: flex; gap: 12px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
-.watch-btn, .list-toggle-btn, .trailer-btn { 
+.watch-btn, .list-toggle-btn, .trailer-btn, .completed-toggle-btn { 
     padding: 10px 20px; 
     border: none; 
     border-radius: 30px; 
@@ -158,6 +158,19 @@ h1 {
 .watch-btn { background: #ef4444; color: white; }
 .list-toggle-btn { background: #7c3aed; color: white; }
 .trailer-btn { background: #ff0000; color: white; }
+.completed-toggle-btn { background: #10b981; color: white; }
+.completed-toggle-btn.completed { background: #f59e0b; }
+
+.completed-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #10b981;
+    color: white;
+    margin-top: 8px;
+}
 
 .info-section, .collection-section, .similar-section, .cast-section {
     background: rgba(31, 27, 58, 0.6);
@@ -249,7 +262,7 @@ h1 {
     .overview { font-size: 16px; }
     .genres { justify-content: flex-start; }
     .watch-buttons { justify-content: flex-start; }
-    .watch-btn, .list-toggle-btn, .trailer-btn { padding: 12px 30px; font-size: 16px; }
+    .watch-btn, .list-toggle-btn, .trailer-btn, .completed-toggle-btn { padding: 12px 30px; font-size: 16px; }
     .info-section, .collection-section, .similar-section, .cast-section { padding: 30px; margin-top: 30px; border-radius: 20px; }
     .section-title { font-size: 24px; }
     .info-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
@@ -361,6 +374,7 @@ h1 {
     let currentUser = null;
     let userList = [];
     let currentUsername = "";
+    let isCompleted = false;
     
     window.updateMovieButton = function() {
         if (!window.movieData) return;
@@ -370,7 +384,48 @@ h1 {
             btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
             btn.style.background = inList ? "#ef4444" : "#7c3aed";
         }
+        updateCompletedStatus();
     };
+
+    async function updateCompletedStatus() {
+        if (!currentUser || !window.movieData) return;
+        try {
+            const list = await loadUserList();
+            const item = list.find(i => i.id === window.movieData.id && i.type === "movie");
+            isCompleted = item && item.completed === true;
+            
+            const btn = document.getElementById("completedBtn");
+            if (btn) {
+                if (isCompleted) {
+                    btn.innerHTML = "↩️ Da completare";
+                    btn.classList.add("completed");
+                } else {
+                    btn.innerHTML = "✅ Segna come completato";
+                    btn.classList.remove("completed");
+                }
+            }
+            
+            // Mostra badge se completato
+            const container = document.getElementById("movieDetails");
+            const existingBadge = container.querySelector('.completed-badge');
+            if (isCompleted) {
+                if (!existingBadge) {
+                    const badge = document.createElement('div');
+                    badge.className = 'completed-badge';
+                    badge.id = 'completedBadge';
+                    badge.innerHTML = `✅ Completato ${item.completedDate ? '📅 ' + item.completedDate : ''}`;
+                    const watchButtons = container.querySelector('.watch-buttons');
+                    if (watchButtons) {
+                        watchButtons.parentNode.insertBefore(badge, watchButtons);
+                    }
+                }
+            } else {
+                if (existingBadge) existingBadge.remove();
+            }
+        } catch (error) {
+            console.error('Errore aggiornamento stato completato:', error);
+        }
+    }
 
     window.saveMovieProgressCloud = async function(seconds) {
         if (!currentUser) return;
@@ -530,6 +585,60 @@ h1 {
         return !exists;
     }
 
+    // ===== FUNZIONE PER TOGGLE COMPLETATO =====
+    window.toggleCompleted = async function() {
+        if (!currentUser) {
+            window.openLoginModal();
+            return;
+        }
+        if (!window.movieData) return;
+        
+        const currentList = await loadUserList();
+        const itemIndex = currentList.findIndex(item => item.id === window.movieData.id && item.type === "movie");
+        
+        let newList = [...currentList];
+        
+        if (itemIndex !== -1) {
+            // L'elemento esiste già nella lista
+            const item = newList[itemIndex];
+            if (item.completed) {
+                // Rimuovi lo stato completato
+                item.completed = false;
+                item.completedDate = null;
+            } else {
+                // Aggiungi stato completato
+                item.completed = true;
+                item.completedDate = new Date().toISOString().split('T')[0];
+            }
+        } else {
+            // L'elemento non è nella lista, aggiungilo con stato completato
+            const itemData = {
+                id: window.movieData.id,
+                title: window.movieData.title,
+                poster: window.movieData.poster_path ? IMG_BASE + window.movieData.poster_path : "",
+                rating: window.movieData.vote_average,
+                year: window.movieData.release_date ? window.movieData.release_date.split("-")[0] : "N/D",
+                type: "movie",
+                mediaType: "Film",
+                addedAt: Date.now(),
+                completed: true,
+                completedDate: new Date().toISOString().split('T')[0]
+            };
+            newList.push(itemData);
+        }
+        
+        await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
+        userList = newList;
+        
+        // Aggiorna lo stato
+        const item = newList.find(i => i.id === window.movieData.id && i.type === "movie");
+        isCompleted = item && item.completed === true;
+        
+        // Aggiorna pulsanti e badge
+        if (window.updateMovieButton) window.updateMovieButton();
+        await updateCompletedStatus();
+    };
+
     onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         const authButtons = document.getElementById('authButtons');
@@ -562,6 +671,7 @@ h1 {
     window.toggleCloudList = toggleCloudList;
     window.getCurrentUser = () => currentUser;
     window.loadUserList = loadUserList;
+    window.loadUserData = loadUserData;
     
     function escapeHtml(text) {
         if (!text) return "";
@@ -628,9 +738,13 @@ async function displayMovieDetails(movie) {
     const link = `https://vixsrc.to/movie/${movie.id}?lang=it&primaryColor=302b63&secondaryColor=24243e`;
     
     let initialInList = false;
+    let initialCompleted = false;
     if (window.userList) {
-        initialInList = window.userList.some(item => item.id === movie.id && item.type === "movie");
+        const item = window.userList.find(i => i.id === movie.id && i.type === "movie");
+        initialInList = !!item;
+        initialCompleted = item && item.completed === true;
     }
+    isCompleted = initialCompleted;
     
     const html = `
         <div class="movie-header">
@@ -648,6 +762,7 @@ async function displayMovieDetails(movie) {
                 <div class="genres">
                     ${movie.genres ? movie.genres.map(g => `<span class="genre-tag">${g.name}</span>`).join("") : ""}
                 </div>
+                ${initialCompleted ? `<div class="completed-badge" id="completedBadge">✅ Completato ${new Date().toISOString().split('T')[0]}</div>` : ''}
                 <div class="overview">
                     <strong>Trama:</strong><br>
                     ${movie.overview || "Trama non disponibile."}
@@ -657,6 +772,9 @@ async function displayMovieDetails(movie) {
                     <button class="trailer-btn" onclick="openTrailer()">🎬 Trailer</button>
                     <button class="list-toggle-btn" id="listBtn" onclick="toggleListFromDetails()">
                         ${initialInList ? "❌ Rimuovi" : "❤️ Aggiungi"}
+                    </button>
+                    <button class="completed-toggle-btn ${initialCompleted ? 'completed' : ''}" id="completedBtn" onclick="window.toggleCompleted()">
+                        ${initialCompleted ? "↩️ Da completare" : "✅ Segna come completato"}
                     </button>
                 </div>
             </div>
@@ -675,7 +793,6 @@ async function displayMovieDetails(movie) {
 async function openTrailer() {
     if (!movieData) return;
     
-    // Cerca il trailer dai video già presenti nei dati del film
     if (movieData.videos && movieData.videos.results && movieData.videos.results.length > 0) {
         const trailer = movieData.videos.results.find(v => v.type === "Trailer" && v.site === "YouTube");
         if (trailer) {
@@ -685,7 +802,6 @@ async function openTrailer() {
         }
     }
     
-    // Se non trova, cerca con l'API di YouTube
     const modal = document.getElementById("trailerModal");
     const frame = document.getElementById("trailerFrame");
     const searchQuery = `${movieData.title} trailer ufficiale`;
