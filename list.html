@@ -280,24 +280,6 @@ h1 {
 .sort-btn.active, .type-btn.active { background: #7c3aed; border-color: #7c3aed; }
 .stats { font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
 
-.update-dates-btn {
-    background: rgba(59, 130, 246, 0.8);
-    border: none;
-    padding: 8px 16px;
-    border-radius: 30px;
-    color: white;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    margin-top: 5px;
-}
-
-.update-dates-btn:hover {
-    background: rgba(59, 130, 246, 1);
-    transform: translateY(-2px);
-}
-
 /* ===== STILI PER IMPORT COMPLETATI ===== */
 .import-completed-section {
     background: rgba(16, 185, 129, 0.1);
@@ -305,7 +287,7 @@ h1 {
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 20px;
-    display: none;
+    display: none; /* Nascondi di default */
 }
 
 .import-completed-section.visible {
@@ -407,6 +389,7 @@ h1 {
     font-size: 16px;
 }
 
+/* ===== PULSANTE MOSTRA/NASCONDI IMPORT ===== */
 .toggle-import-btn {
     background: rgba(16, 185, 129, 0.8);
     border: none;
@@ -432,7 +415,11 @@ h1 {
 .toggle-import-btn.active:hover {
     background: #dc2626;
 }
+/* ===== FINE PULSANTE ===== */
 
+/* ===== FINE STILI IMPORT COMPLETATI ===== */
+
+/* ===== BADGE COMPLETATI MODIFICATO ===== */
 .completed-badge {
     display: flex;
     flex-direction: column;
@@ -453,7 +440,9 @@ h1 {
     font-size: 8px;
     opacity: 0.85;
 }
+/* ===== FINE BADGE COMPLETATI ===== */
 
+/* ===== FILTRI ===== */
 .status-filter-btn {
     background: rgba(124, 58, 237, 0.3);
     border: 1px solid rgba(124, 58, 237, 0.5);
@@ -481,6 +470,7 @@ h1 {
 .status-filter-btn:hover {
     transform: translateY(-2px);
 }
+/* ===== FINE FILTRI ===== */
 
 .completed-stats {
     display: flex;
@@ -584,13 +574,6 @@ h1 {
     padding: 8px;
 }
 
-.loading {
-    text-align: center;
-    padding: 40px;
-    font-size: 13px;
-    color: #c084fc;
-}
-
 #tornaSu {
     position: fixed;
     bottom: 20px;
@@ -642,7 +625,6 @@ h1 {
     .selection-count { font-size: 14px; }
     .selection-action-btn { padding: 8px 16px; font-size: 13px; }
     .selection-hint { font-size: 13px; }
-    .update-dates-btn { font-size: 14px; padding: 10px 20px; }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
@@ -735,12 +717,12 @@ h1 {
 </div>
 
 <div class="container">
-    <!-- PULSANTE MOSTRA/NASCONDI IMPORT -->
+    <!-- ===== PULSANTE MOSTRA/NASCONDI IMPORT ===== -->
     <button class="toggle-import-btn" onclick="toggleImportSection()">
         📥 Mostra Importazione
     </button>
     
-    <!-- SEZIONE IMPORT COMPLETATI -->
+    <!-- ===== SEZIONE IMPORT COMPLETATI ===== -->
     <div class="import-completed-section" id="importSection">
         <h3>✅ Importa Completati da TV Time</h3>
         <div class="subtitle">
@@ -778,6 +760,7 @@ h1 {
             </div>
         </div>
     </div>
+    <!-- ===== FINE SEZIONE IMPORT COMPLETATI ===== -->
 
     <div class="lista-title">
         <button id="addFolderBtn" class="title-btn add-folder" onclick="openAddFolderModal()">📁 Nuova Cartella</button>
@@ -807,6 +790,7 @@ h1 {
                 <button class="type-btn" data-type="tv" onclick="filterByType('tv')">📺 Serie TV</button>
             </div>
         </div>
+        <!-- ===== FILTRI STATO ===== -->
         <div class="filter-group">
             <div class="filter-label">📋 Stato:</div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -814,17 +798,15 @@ h1 {
                 <button class="status-filter-btn" data-status="completed" onclick="filterByStatus('completed')">✅ Completati</button>
             </div>
         </div>
+        <!-- ===== FINE FILTRI STATO ===== -->
         
-        <!-- Pulsante Aggiorna Date -->
-        <div class="filter-group">
-            <button class="update-dates-btn" onclick="forceUpdateDates()">🔄 Aggiorna Date Precise</button>
-        </div>
-        
+        <!-- ===== STATISTICHE COMPLETATI ===== -->
         <div class="completed-stats" id="completedStats">
             <span>✅ Completati: <span class="number" id="completedCount">0</span></span>
             <span>⏳ Da guardare: <span class="number" id="notCompletedCount">0</span></span>
             <span>📊 Completati: <span class="number" id="completionPercentage">0</span>%</span>
         </div>
+        <!-- ===== FINE STATISTICHE ===== -->
         <div class="stats" id="stats"></div>
     </div>
 
@@ -863,7 +845,6 @@ h1 {
     let currentTypeFilter = "all";
     let currentStatusFilter = "all";
     let pendingMoveItem = null;
-    let isUpdatingDates = false;
     
     // Variabili per selezione multipla
     let multiSelectMode = false;
@@ -879,7 +860,9 @@ h1 {
             const options = { 
                 day: '2-digit', 
                 month: 'short', 
-                year: 'numeric'
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
             };
             return date.toLocaleDateString('it-IT', options);
         } catch (e) {
@@ -937,8 +920,6 @@ h1 {
                     year: bestMatch.release_date ? parseInt(bestMatch.release_date.split('-')[0]) : 
                           bestMatch.first_air_date ? parseInt(bestMatch.first_air_date.split('-')[0]) : 
                           (year ? parseInt(year) : null),
-                    release_date: bestMatch.release_date || null,
-                    first_air_date: bestMatch.first_air_date || null,
                     overview: bestMatch.overview || null,
                     genres: bestMatch.genre_ids || [],
                     tmdb_id: bestMatch.id
@@ -950,87 +931,6 @@ h1 {
             return null;
         }
     }
-
-    // ===== FUNZIONE PER AGGIORNARE LE DATE DEGLI ELEMENTI ESISTENTI =====
-    async function updateItemDates() {
-        if (!currentUser || isUpdatingDates) return;
-        isUpdatingDates = true;
-        
-        let updated = false;
-        const itemsToUpdate = [];
-        
-        // Raccogli tutti gli elementi che necessitano di aggiornamento
-        const allItems = [...currentList];
-        for (const folderName in currentFolders) {
-            allItems.push(...currentFolders[folderName]);
-        }
-        
-        // Filtra gli elementi senza data precisa
-        for (const item of allItems) {
-            if (!item.release_date && !item.first_air_date && item.tmdb_id) {
-                itemsToUpdate.push(item);
-            }
-        }
-        
-        if (itemsToUpdate.length === 0) {
-            isUpdatingDates = false;
-            return;
-        }
-        
-        // Mostra un indicatore di caricamento
-        const container = document.getElementById("listContainer");
-        container.innerHTML = `<div class="loading">⏳ Aggiornamento date in corso (0/${itemsToUpdate.length})...</div>`;
-        
-        let processed = 0;
-        for (const item of itemsToUpdate) {
-            processed++;
-            container.innerHTML = `<div class="loading">⏳ Aggiornamento date in corso (${processed}/${itemsToUpdate.length})...</div>`;
-            
-            try {
-                const type = item.type === 'movie' ? 'movie' : 'tv';
-                const url = `https://api.themoviedb.org/3/${type}/${item.tmdb_id}?api_key=${API_KEY}&language=it-IT`;
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                if (data) {
-                    if (type === 'movie' && data.release_date) {
-                        item.release_date = data.release_date;
-                        item.year = parseInt(data.release_date.split('-')[0]);
-                    } else if (type === 'tv' && data.first_air_date) {
-                        item.first_air_date = data.first_air_date;
-                        item.year = parseInt(data.first_air_date.split('-')[0]);
-                    }
-                    
-                    // Aggiorna anche altri dati se necessario
-                    if (data.vote_average) {
-                        item.rating = parseFloat(data.vote_average.toFixed(1));
-                    }
-                    if (data.poster_path) {
-                        item.poster = IMG_BASE + data.poster_path;
-                    }
-                    
-                    updated = true;
-                }
-            } catch (error) {
-                console.error(`Errore aggiornamento per ${item.title}:`, error);
-            }
-        }
-        
-        if (updated) {
-            await saveAllData();
-        }
-        
-        isUpdatingDates = false;
-        displayList();
-    }
-
-    window.forceUpdateDates = async function() {
-        if (!currentUser) {
-            alert("Devi prima accedere!");
-            return;
-        }
-        await updateItemDates();
-    };
 
     // ===== FUNZIONI PER IMPORTARE COMPLETATI =====
     
@@ -1174,7 +1074,6 @@ h1 {
                     title: movie.title || 'Film senza titolo',
                     type: 'movie',
                     year: movieData?.year || movie.year || null,
-                    release_date: movieData?.release_date || null,
                     poster: movieData?.poster || null,
                     rating: movieData?.rating || null,
                     overview: movieData?.overview || null,
@@ -1224,7 +1123,6 @@ h1 {
                     title: series.title || 'Serie senza titolo',
                     type: 'tv',
                     year: seriesData?.year || null,
-                    first_air_date: seriesData?.first_air_date || null,
                     poster: seriesData?.poster || null,
                     rating: seriesData?.rating || null,
                     overview: seriesData?.overview || null,
@@ -1340,7 +1238,7 @@ h1 {
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    // ===== FILTRO PER STATO =====
+    // ===== FILTRO PER STATO (CORRETTO) =====
     window.filterByStatus = function(status) {
         currentStatusFilter = status;
         document.querySelectorAll(".status-filter-btn").forEach(btn => {
@@ -1633,12 +1531,6 @@ h1 {
             const data = userDoc.data();
             currentList = data.list || [];
             currentFolders = data.folders || {};
-            
-            // Aggiorna le date degli elementi esistenti in background
-            setTimeout(() => {
-                updateItemDates();
-            }, 1000);
-            
             return data;
         }
         return null;
@@ -1710,21 +1602,7 @@ h1 {
                 sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
                 break;
             case "date":
-                // Ordinamento per data di uscita precisa (dal più recente al più vecchio)
-                sorted.sort((a, b) => {
-                    const dateA = a.release_date || a.first_air_date || '';
-                    const dateB = b.release_date || b.first_air_date || '';
-                    
-                    // Se entrambe hanno date precise, confrontale
-                    if (dateA && dateB) {
-                        return dateB.localeCompare(dateA);
-                    }
-                    // Se una ha data precisa e l'altra no
-                    if (dateA) return -1;
-                    if (dateB) return 1;
-                    // Se nessuna ha data precisa, usa l'anno
-                    return (b.year || 0) - (a.year || 0);
-                });
+                sorted.sort((a, b) => (b.year || 0) - (a.year || 0));
                 break;
             case "addedDate":
             default:
@@ -1856,18 +1734,6 @@ h1 {
                     const isCompleted = item.completed === true;
                     const mediaType = item.type === 'movie' ? 'Film' : 'Serie TV';
                     
-                    // Formatta la data di uscita precisa
-                    let releaseDate = '';
-                    if (item.release_date) {
-                        releaseDate = formatDate(item.release_date);
-                    } else if (item.first_air_date) {
-                        releaseDate = formatDate(item.first_air_date);
-                    } else if (item.year) {
-                        releaseDate = String(item.year);
-                    } else {
-                        releaseDate = 'N/D';
-                    }
-                    
                     return `
                         <div class="card ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed-card' : ''}" 
                              data-id="${item.id}"
@@ -1885,7 +1751,7 @@ h1 {
                                 ${isCompleted ? `<div class="completed-badge">✅ Completato <span class="date">📅 ${formatDate(item.completedDate)}</span></div>` : ''}
                                 <h4>${escapeHtml(item.title)}</h4>
                                 <p>⭐ ${item.rating || "N/A"}/10</p>
-                                <p>📅 ${releaseDate}</p>
+                                <p>📅 ${item.year || "N/D"}</p>
                                 ${!multiSelectMode ? `
                                     <button class="mark-completed-btn ${isCompleted ? 'completed' : ''}" onclick="event.stopPropagation(); markAsCompleted(${item.id}, '${item.type}', event)">
                                         ${isCompleted ? '↩️ Da completare' : '✅ Segna come completato'}
