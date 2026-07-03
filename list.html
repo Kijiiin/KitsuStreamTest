@@ -760,6 +760,9 @@ h1 {
 <button id="tornaSu" title="Torna su">↑</button>
 
 <script type="module">
+    const API_KEY = "7fe396e6f50677047459e8c173f2bd9d";
+    const IMG_BASE = "https://image.tmdb.org/t/p/w500";
+
     const firebaseConfig = {
         apiKey: "AIzaSyCeM7KVc9lZsdd8HM5b-PAfhx0usN8Aubo",
         authDomain: "kitsustream-454e8.firebaseapp.com",
@@ -790,6 +793,258 @@ h1 {
     // Variabili per selezione multipla
     let multiSelectMode = false;
     let selectedItems = new Set();
+
+    // ===== FUNZIONE PER CERCARE IL POSTER SU TMDB =====
+    async function fetchPoster(title, year, type) {
+        try {
+            let searchType = type === 'movie' ? 'movie' : 'tv';
+            let url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(title)}&language=it-IT&year=${year || ''}`;
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.results && data.results.length > 0) {
+                // Cerca quello con l'anno più vicino
+                let bestMatch = data.results[0];
+                if (year) {
+                    const yearNum = parseInt(year);
+                    for (const result of data.results) {
+                        const resultYear = result.release_date ? parseInt(result.release_date.split('-')[0]) : 
+                                          result.first_air_date ? parseInt(result.first_air_date.split('-')[0]) : 0;
+                        if (resultYear === yearNum) {
+                            bestMatch = result;
+                            break;
+                        }
+                    }
+                }
+                return bestMatch.poster_path ? IMG_BASE + bestMatch.poster_path : null;
+            }
+            return null;
+        } catch (error) {
+            console.error(`Errore nel recupero poster per ${title}:`, error);
+            return null;
+        }
+    }
+
+    // ===== FUNZIONI PER IMPORTARE COMPLETATI =====
+    
+    // Gestione import film completati
+    document.getElementById('moviesCompletedInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        importCompletedItems(file, 'movies', 'moviesCompletedStatus');
+        this.value = '';
+    });
+
+    // Gestione import serie completate
+    document.getElementById('seriesCompletedInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        importCompletedItems(file, 'series', 'seriesCompletedStatus');
+        this.value = '';
+    });
+
+    async function importCompletedItems(file, type, statusId) {
+        const statusDiv = document.getElementById(statusId);
+        statusDiv.textContent = '⏳ Elaborazione in corso...';
+        statusDiv.style.color = '#667eea';
+
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            try {
+                const jsonData = JSON.parse(event.target.result);
+                
+                let completedItems = [];
+                
+                if (type === 'movies') {
+                    if (Array.isArray(jsonData)) {
+                        completedItems = jsonData.filter(item => item.is_watched === true);
+                    } else if (jsonData.movies && Array.isArray(jsonData.movies)) {
+                        completedItems = jsonData.movies.filter(item => item.is_watched === true);
+                    }
+                } else if (type === 'series') {
+                    if (Array.isArray(jsonData)) {
+                        completedItems = jsonData.filter(series => {
+                            return isSeriesCompleted(series);
+                        });
+                    } else if (jsonData.series && Array.isArray(jsonData.series)) {
+                        completedItems = jsonData.series.filter(series => {
+                            return isSeriesCompleted(series);
+                        });
+                    }
+                }
+
+                if (completedItems.length === 0) {
+                    statusDiv.textContent = '❌ Nessun contenuto completato trovato nel file.';
+                    statusDiv.style.color = '#f87171';
+                    return;
+                }
+
+                statusDiv.textContent = `🖼️ Recupero poster per ${completedItems.length} elementi...`;
+                statusDiv.style.color = '#667eea';
+
+                const convertedItems = await convertToWatchTrackerFormat(completedItems, type, statusDiv);
+                
+                let addedCount = 0;
+                const existingIds = new Set(currentList.map(item => 
+                    `${item.id}_${item.type}`
+                ));
+                
+                for (const folderName in currentFolders) {
+                    currentFolders[folderName].forEach(item => {
+                        existingIds.add(`${item.id}_${item.type}`);
+                    });
+                }
+
+                convertedItems.forEach(item => {
+                    const key = `${item.id}_${item.type}`;
+                    if (!existingIds.has(key)) {
+                        item.completed = true;
+                        item.completedDate = item.watched_at || new Date().toISOString().split('T')[0];
+                        currentList.push(item);
+                        existingIds.add(key);
+                        addedCount++;
+                    }
+                });
+
+                await saveAllData();
+                updateImportStats();
+                
+                statusDiv.textContent = `✅ Importati ${addedCount} ${type === 'movies' ? 'film' : 'serie'} completati!`;
+                statusDiv.style.color = '#4ade80';
+                
+                displayList();
+                document.getElementById('importCompletedStats').style.display = 'flex';
+
+            } catch (error) {
+                statusDiv.textContent = `❌ Errore: ${error.message}`;
+                statusDiv.style.color = '#f87171';
+                console.error('Errore parsing JSON:', error);
+            }
+        };
+
+        reader.onerror = function() {
+            statusDiv.textContent = '❌ Errore nella lettura del file';
+            statusDiv.style.color = '#f87171';
+        };
+
+        reader.readAsText(file);
+    }
+
+    function isSeriesCompleted(series) {
+        if (!series.seasons || !Array.isArray(series.seasons)) return false;
+        
+        let totalEpisodes = 0;
+        let watchedEpisodes = 0;
+        
+        series.seasons.forEach(season => {
+            if (season.episodes && Array.isArray(season.episodes)) {
+                season.episodes.forEach(ep => {
+                    totalEpisodes++;
+                    if (ep.is_watched === true) {
+                        watchedEpisodes++;
+                    }
+                });
+            }
+        });
+        
+        return totalEpisodes > 0 && watchedEpisodes === totalEpisodes;
+    }
+
+    async function convertToWatchTrackerFormat(items, type, statusDiv) {
+        const converted = [];
+        let processed = 0;
+        const total = items.length;
+        
+        if (type === 'movies') {
+            for (const movie of items) {
+                processed++;
+                if (statusDiv) {
+                    statusDiv.textContent = `🖼️ Recupero poster (${processed}/${total})...`;
+                }
+                
+                const poster = await fetchPoster(movie.title, movie.year, 'movie');
+                
+                converted.push({
+                    id: movie.id?.imdb || movie.uuid || `movie_${Date.now()}_${Math.random()}`,
+                    title: movie.title || 'Film senza titolo',
+                    type: 'movie',
+                    year: movie.year || null,
+                    poster: poster,
+                    watched: true,
+                    watched_at: movie.watched_at,
+                    rating: null,
+                    genres: [],
+                    addedAt: Date.now(),
+                    completed: true,
+                    completedDate: movie.watched_at || new Date().toISOString().split('T')[0],
+                    mediaType: 'Film'
+                });
+            }
+        } else if (type === 'series') {
+            for (const series of items) {
+                processed++;
+                if (statusDiv) {
+                    statusDiv.textContent = `🖼️ Recupero poster (${processed}/${total})...`;
+                }
+                
+                const poster = await fetchPoster(series.title, null, 'tv');
+                
+                let totalEpisodes = 0;
+                let watchedEpisodes = 0;
+                let lastWatchedDate = null;
+                
+                if (series.seasons) {
+                    series.seasons.forEach(season => {
+                        if (season.episodes) {
+                            season.episodes.forEach(ep => {
+                                totalEpisodes++;
+                                if (ep.is_watched === true) {
+                                    watchedEpisodes++;
+                                    if (ep.watched_at) {
+                                        if (!lastWatchedDate || ep.watched_at > lastWatchedDate) {
+                                            lastWatchedDate = ep.watched_at;
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                converted.push({
+                    id: series.id?.tvdb || series.uuid || `series_${Date.now()}_${Math.random()}`,
+                    title: series.title || 'Serie senza titolo',
+                    type: 'tv',
+                    year: null,
+                    poster: poster,
+                    totalEpisodes: totalEpisodes,
+                    watchedEpisodes: watchedEpisodes,
+                    status: 'completed',
+                    genres: [],
+                    seasons: series.seasons || [],
+                    addedAt: Date.now(),
+                    completed: true,
+                    completedDate: lastWatchedDate || series.created_at || new Date().toISOString().split('T')[0],
+                    mediaType: 'Serie TV'
+                });
+            }
+        }
+        
+        return converted;
+    }
+
+    function updateImportStats() {
+        const allCompleted = currentList.filter(item => item.completed === true);
+        const moviesCompleted = allCompleted.filter(item => item.type === 'movie');
+        const seriesCompleted = allCompleted.filter(item => item.type === 'tv' || item.type === 'series');
+        
+        document.getElementById('importedMoviesCount').textContent = moviesCompleted.length;
+        document.getElementById('importedSeriesCount').textContent = seriesCompleted.length;
+        document.getElementById('importedTotalCount').textContent = allCompleted.length;
+    }
+
+    // ===== FINE FUNZIONI IMPORT COMPLETATI =====
 
     // Funzioni di autenticazione
     window.login = async function() {
@@ -915,207 +1170,6 @@ h1 {
         document.getElementById('notCompletedCount').textContent = notCompleted;
         document.getElementById('completionPercentage').textContent = percentage;
     }
-
-    // ===== FUNZIONI PER IMPORTARE COMPLETATI =====
-    
-    // Gestione import film completati
-    document.getElementById('moviesCompletedInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        importCompletedItems(file, 'movies', 'moviesCompletedStatus');
-        this.value = '';
-    });
-
-    // Gestione import serie completate
-    document.getElementById('seriesCompletedInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        importCompletedItems(file, 'series', 'seriesCompletedStatus');
-        this.value = '';
-    });
-
-    function importCompletedItems(file, type, statusId) {
-        const statusDiv = document.getElementById(statusId);
-        statusDiv.textContent = '⏳ Elaborazione in corso...';
-        statusDiv.style.color = '#667eea';
-
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            try {
-                const jsonData = JSON.parse(event.target.result);
-                
-                let completedItems = [];
-                
-                if (type === 'movies') {
-                    if (Array.isArray(jsonData)) {
-                        completedItems = jsonData.filter(item => item.is_watched === true);
-                    } else if (jsonData.movies && Array.isArray(jsonData.movies)) {
-                        completedItems = jsonData.movies.filter(item => item.is_watched === true);
-                    }
-                } else if (type === 'series') {
-                    if (Array.isArray(jsonData)) {
-                        completedItems = jsonData.filter(series => {
-                            return isSeriesCompleted(series);
-                        });
-                    } else if (jsonData.series && Array.isArray(jsonData.series)) {
-                        completedItems = jsonData.series.filter(series => {
-                            return isSeriesCompleted(series);
-                        });
-                    }
-                }
-
-                if (completedItems.length === 0) {
-                    statusDiv.textContent = '❌ Nessun contenuto completato trovato nel file.';
-                    statusDiv.style.color = '#f87171';
-                    return;
-                }
-
-                const convertedItems = convertToWatchTrackerFormat(completedItems, type);
-                
-                let addedCount = 0;
-                const existingIds = new Set(currentList.map(item => 
-                    `${item.id}_${item.type}`
-                ));
-                
-                for (const folderName in currentFolders) {
-                    currentFolders[folderName].forEach(item => {
-                        existingIds.add(`${item.id}_${item.type}`);
-                    });
-                }
-
-                convertedItems.forEach(item => {
-                    const key = `${item.id}_${item.type}`;
-                    if (!existingIds.has(key)) {
-                        item.completed = true;
-                        item.completedDate = item.watched_at || new Date().toISOString().split('T')[0];
-                        currentList.push(item);
-                        existingIds.add(key);
-                        addedCount++;
-                    }
-                });
-
-                saveAllData();
-                updateImportStats();
-                
-                statusDiv.textContent = `✅ Importati ${addedCount} ${type === 'movies' ? 'film' : 'serie'} completati!`;
-                statusDiv.style.color = '#4ade80';
-                
-                displayList();
-                document.getElementById('importCompletedStats').style.display = 'flex';
-
-            } catch (error) {
-                statusDiv.textContent = `❌ Errore: ${error.message}`;
-                statusDiv.style.color = '#f87171';
-                console.error('Errore parsing JSON:', error);
-            }
-        };
-
-        reader.onerror = function() {
-            statusDiv.textContent = '❌ Errore nella lettura del file';
-            statusDiv.style.color = '#f87171';
-        };
-
-        reader.readAsText(file);
-    }
-
-    function isSeriesCompleted(series) {
-        if (!series.seasons || !Array.isArray(series.seasons)) return false;
-        
-        let totalEpisodes = 0;
-        let watchedEpisodes = 0;
-        
-        series.seasons.forEach(season => {
-            if (season.episodes && Array.isArray(season.episodes)) {
-                season.episodes.forEach(ep => {
-                    totalEpisodes++;
-                    if (ep.is_watched === true) {
-                        watchedEpisodes++;
-                    }
-                });
-            }
-        });
-        
-        return totalEpisodes > 0 && watchedEpisodes === totalEpisodes;
-    }
-
-    function convertToWatchTrackerFormat(items, type) {
-        const converted = [];
-        
-        if (type === 'movies') {
-            items.forEach(movie => {
-                converted.push({
-                    id: movie.id?.imdb || movie.uuid || `movie_${Date.now()}_${Math.random()}`,
-                    title: movie.title || 'Film senza titolo',
-                    type: 'movie',
-                    year: movie.year || null,
-                    poster: null,
-                    watched: true,
-                    watched_at: movie.watched_at,
-                    rating: null,
-                    genres: [],
-                    addedAt: Date.now(),
-                    completed: true,
-                    completedDate: movie.watched_at || new Date().toISOString().split('T')[0],
-                    mediaType: 'Film'
-                });
-            });
-        } else if (type === 'series') {
-            items.forEach(series => {
-                let totalEpisodes = 0;
-                let watchedEpisodes = 0;
-                let lastWatchedDate = null;
-                
-                if (series.seasons) {
-                    series.seasons.forEach(season => {
-                        if (season.episodes) {
-                            season.episodes.forEach(ep => {
-                                totalEpisodes++;
-                                if (ep.is_watched === true) {
-                                    watchedEpisodes++;
-                                    if (ep.watched_at) {
-                                        if (!lastWatchedDate || ep.watched_at > lastWatchedDate) {
-                                            lastWatchedDate = ep.watched_at;
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-                
-                converted.push({
-                    id: series.id?.tvdb || series.uuid || `series_${Date.now()}_${Math.random()}`,
-                    title: series.title || 'Serie senza titolo',
-                    type: 'tv',
-                    year: null,
-                    poster: null,
-                    totalEpisodes: totalEpisodes,
-                    watchedEpisodes: watchedEpisodes,
-                    status: 'completed',
-                    genres: [],
-                    seasons: series.seasons || [],
-                    addedAt: Date.now(),
-                    completed: true,
-                    completedDate: lastWatchedDate || series.created_at || new Date().toISOString().split('T')[0],
-                    mediaType: 'Serie TV'
-                });
-            });
-        }
-        
-        return converted;
-    }
-
-    function updateImportStats() {
-        const allCompleted = currentList.filter(item => item.completed === true);
-        const moviesCompleted = allCompleted.filter(item => item.type === 'movie');
-        const seriesCompleted = allCompleted.filter(item => item.type === 'tv' || item.type === 'series');
-        
-        document.getElementById('importedMoviesCount').textContent = moviesCompleted.length;
-        document.getElementById('importedSeriesCount').textContent = seriesCompleted.length;
-        document.getElementById('importedTotalCount').textContent = allCompleted.length;
-    }
-
-    // ===== FINE FUNZIONI IMPORT COMPLETATI =====
 
     // Funzioni per cartelle
     window.openAddFolderModal = function() {
@@ -1556,7 +1610,7 @@ h1 {
                              data-type="${item.type}"
                              onclick="${multiSelectMode ? `toggleSelectItem(${item.id}, '${item.type}')` : ''}">
                             <a href="${detailsUrl}" ${multiSelectMode ? 'onclick="return false;"' : ''}>
-                                <img src="${item.poster || 'https://via.placeholder.com/500x750'}" 
+                                <img src="${item.poster || 'https://via.placeholder.com/500x750/302b63/8892b0?text=No+Image'}" 
                                      alt="${item.title}" 
                                      loading="lazy">
                             </a>
