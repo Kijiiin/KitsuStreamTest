@@ -515,6 +515,7 @@ h1 {
                 poster: window.tvData.poster_path ? IMG_BASE + window.tvData.poster_path : "",
                 rating: window.tvData.vote_average,
                 year: window.tvData.first_air_date ? window.tvData.first_air_date.split("-")[0] : "N/D",
+                first_air_date: window.tvData.first_air_date || null, // <-- AGGIUNTO
                 type: "tv",
                 mediaType: "Serie TV",
                 seasons: window.tvData.number_of_seasons,
@@ -716,6 +717,24 @@ let tvData = null;
 let selectedSeason = 1;
 let currentVideoUrl = "";
 
+// ===== FUNZIONE PER FORMARE LA DATA (SENZA ORARIO) =====
+function formatDate(dateString) {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+        
+        const options = { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric'
+        };
+        return date.toLocaleDateString('it-IT', options);
+    } catch (e) {
+        return dateString;
+    }
+}
+
 function getTVIdFromURL() {
     const params = new URLSearchParams(window.location.search);
     return params.get('id');
@@ -871,6 +890,12 @@ async function displayTVDetails(tv) {
     }
     isCompleted = initialCompleted;
     
+    // Formatta la data precisa
+    let releaseDate = formatDate(tv.first_air_date);
+    if (!releaseDate && tv.first_air_date) {
+        releaseDate = tv.first_air_date.split("-")[0];
+    }
+    
     const html = `
         <div class="tv-header">
             <div class="tv-poster">
@@ -879,7 +904,7 @@ async function displayTVDetails(tv) {
             <div class="tv-info">
                 <h2 class="tv-title">${escapeHtml(tv.name)}</h2>
                 <div class="tv-meta">
-                    <span>📅 ${tv.first_air_date ? tv.first_air_date.split("-")[0] : "N/D"}</span>
+                    <span>📅 ${releaseDate || "N/D"}</span>
                     <span>⭐ <span class="rating">${tv.vote_average ? tv.vote_average.toFixed(1) : "N/A"}/10</span></span>
                     <span>🎬 ${tv.number_of_seasons} stagioni</span>
                     <span>📺 ${tv.number_of_episodes} episodi</span>
@@ -916,6 +941,12 @@ async function displayTVDetails(tv) {
 }
 
 function loadAdditionalInfo(tv) {
+    // Formatta la data precisa per le informazioni
+    let releaseDate = formatDate(tv.first_air_date);
+    if (!releaseDate && tv.first_air_date) {
+        releaseDate = tv.first_air_date.split("-")[0];
+    }
+    
     const infoHtml = `
         <div class="info-section">
             <h3 class="section-title">ℹ️ Informazioni</h3>
@@ -923,6 +954,10 @@ function loadAdditionalInfo(tv) {
                 <div class="info-card">
                     <div class="info-label">Titolo originale</div>
                     <div class="info-value">${escapeHtml(tv.original_name || "N/D")}</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Data di prima messa in onda</div>
+                    <div class="info-value">${releaseDate || "N/D"}</div>
                 </div>
                 <div class="info-card">
                     <div class="info-label">Stato</div>
@@ -980,15 +1015,21 @@ function displayCollection(shows, collectionName) {
         <div class="collection-section">
             <h3 class="section-title">📀 ${escapeHtml(collectionName)}</h3>
             <div class="collection-grid">
-                ${sortedShows.map(show => `
-                    <div class="collection-card" onclick="openTVPage(${show.id})">
-                        <img class="collection-poster" src="${show.poster_path ? IMG_BASE + show.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}" alt="${show.name}" loading="lazy">
-                        <div class="collection-info">
-                            <div class="collection-title">${escapeHtml(show.name)}</div>
-                            <div class="collection-year">${show.first_air_date ? show.first_air_date.split("-")[0] : "N/D"} | ⭐ ${show.vote_average ? show.vote_average.toFixed(1) : "N/A"}</div>
+                ${sortedShows.map(show => {
+                    let releaseDate = formatDate(show.first_air_date);
+                    if (!releaseDate && show.first_air_date) {
+                        releaseDate = show.first_air_date.split("-")[0];
+                    }
+                    return `
+                        <div class="collection-card" onclick="openTVPage(${show.id})">
+                            <img class="collection-poster" src="${show.poster_path ? IMG_BASE + show.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}" alt="${show.name}" loading="lazy">
+                            <div class="collection-info">
+                                <div class="collection-title">${escapeHtml(show.name)}</div>
+                                <div class="collection-year">${releaseDate || "N/D"} | ⭐ ${show.vote_average ? show.vote_average.toFixed(1) : "N/A"}</div>
+                            </div>
                         </div>
-                    </div>
-                `).join("")}
+                    `;
+                }).join("")}
             </div>
         </div>
     `;
@@ -1076,15 +1117,21 @@ function loadSimilar(similar) {
         <div class="similar-section">
             <h3 class="section-title">📺 Serie simili</h3>
             <div class="similar-grid">
-                ${similarShows.map(show => `
-                    <div class="similar-card" onclick="openTVPage(${show.id})">
-                        <img class="similar-poster" src="${show.poster_path ? IMG_BASE + show.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}" alt="${show.name}" loading="lazy">
-                        <div class="similar-info">
-                            <div class="similar-title">${escapeHtml(show.name)}</div>
-                            <div class="similar-year">${show.first_air_date ? show.first_air_date.split("-")[0] : "N/D"} | ⭐ ${show.vote_average ? show.vote_average.toFixed(1) : "N/A"}</div>
+                ${similarShows.map(show => {
+                    let releaseDate = formatDate(show.first_air_date);
+                    if (!releaseDate && show.first_air_date) {
+                        releaseDate = show.first_air_date.split("-")[0];
+                    }
+                    return `
+                        <div class="similar-card" onclick="openTVPage(${show.id})">
+                            <img class="similar-poster" src="${show.poster_path ? IMG_BASE + show.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}" alt="${show.name}" loading="lazy">
+                            <div class="similar-info">
+                                <div class="similar-title">${escapeHtml(show.name)}</div>
+                                <div class="similar-year">${releaseDate || "N/D"} | ⭐ ${show.vote_average ? show.vote_average.toFixed(1) : "N/A"}</div>
+                            </div>
                         </div>
-                    </div>
-                `).join("")}
+                    `;
+                }).join("")}
             </div>
         </div>
     `;
@@ -1177,6 +1224,7 @@ async function toggleListFromDetails() {
         poster: tvData.poster_path ? IMG_BASE + tvData.poster_path : "",
         rating: tvData.vote_average,
         year: tvData.first_air_date ? tvData.first_air_date.split("-")[0] : "N/D",
+        first_air_date: tvData.first_air_date || null, // <-- AGGIUNTO - SALVA LA DATA PRECISA
         type: "tv",
         mediaType: "Serie TV",
         seasons: tvData.number_of_seasons,
