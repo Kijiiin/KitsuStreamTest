@@ -147,7 +147,7 @@ h1 {
 .genres { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 16px 0; }
 .genre-tag { background: rgba(124, 58, 237, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 11px; }
 .watch-buttons { display: flex; gap: 12px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
-.watch-btn, .list-toggle-btn, .reset-progress-btn { 
+.watch-btn, .list-toggle-btn, .reset-progress-btn, .completed-toggle-btn { 
     padding: 10px 20px; 
     border: none; 
     border-radius: 30px; 
@@ -158,6 +158,19 @@ h1 {
 .watch-btn { background: #ef4444; color: white; }
 .list-toggle-btn { background: #7c3aed; color: white; }
 .reset-progress-btn { background: #555; color: white; font-size: 12px; }
+.completed-toggle-btn { background: #10b981; color: white; }
+.completed-toggle-btn.completed { background: #f59e0b; }
+
+.completed-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #10b981;
+    color: white;
+    margin-top: 8px;
+}
 
 .info-section, .collection-section, .seasons-section, .episodes-section, .similar-section, .cast-section {
     background: rgba(31, 27, 58, 0.6);
@@ -258,7 +271,7 @@ h1 {
     .overview { font-size: 16px; }
     .genres { justify-content: flex-start; }
     .watch-buttons { justify-content: flex-start; }
-    .watch-btn, .list-toggle-btn, .reset-progress-btn { padding: 12px 30px; font-size: 16px; }
+    .watch-btn, .list-toggle-btn, .reset-progress-btn, .completed-toggle-btn { padding: 12px 30px; font-size: 16px; }
     .reset-progress-btn { font-size: 14px; }
     .info-section, .collection-section, .seasons-section, .episodes-section, .similar-section, .cast-section { padding: 30px; margin-top: 30px; border-radius: 20px; }
     .section-title { font-size: 24px; }
@@ -365,6 +378,7 @@ h1 {
     let currentUser = null;
     let userList = [];
     let currentUsername = "";
+    let isCompleted = false;
     
     // Funzione globale per aggiornare il bottone
     window.updateTVButton = function() {
@@ -375,7 +389,48 @@ h1 {
             btn.innerHTML = inList ? "❌ Rimuovi" : "❤️ Aggiungi";
             btn.style.background = inList ? "#ef4444" : "#7c3aed";
         }
+        updateCompletedStatus();
     };
+
+    async function updateCompletedStatus() {
+        if (!currentUser || !window.tvData) return;
+        try {
+            const list = await loadUserList();
+            const item = list.find(i => i.id === window.tvData.id && i.type === "tv");
+            isCompleted = item && item.completed === true;
+            
+            const btn = document.getElementById("completedBtn");
+            if (btn) {
+                if (isCompleted) {
+                    btn.innerHTML = "↩️ Da completare";
+                    btn.classList.add("completed");
+                } else {
+                    btn.innerHTML = "✅ Segna come completato";
+                    btn.classList.remove("completed");
+                }
+            }
+            
+            // Mostra badge se completato
+            const container = document.getElementById("tvDetails");
+            const existingBadge = container.querySelector('.completed-badge');
+            if (isCompleted) {
+                if (!existingBadge) {
+                    const badge = document.createElement('div');
+                    badge.className = 'completed-badge';
+                    badge.id = 'completedBadge';
+                    badge.innerHTML = `✅ Completato ${item.completedDate ? '📅 ' + item.completedDate : ''}`;
+                    const watchButtons = container.querySelector('.watch-buttons');
+                    if (watchButtons) {
+                        watchButtons.parentNode.insertBefore(badge, watchButtons);
+                    }
+                }
+            } else {
+                if (existingBadge) existingBadge.remove();
+            }
+        } catch (error) {
+            console.error('Errore aggiornamento stato completato:', error);
+        }
+    }
 
     // ========== FUNZIONI PER IL SALVATAGGIO DEL PROGRESSO SERIE TV SU CLOUD ==========
     window.saveTVProgressCloud = async function(seasonNum, episodeNum) {
@@ -426,6 +481,61 @@ h1 {
         }
     };
     // =======================================================================
+
+    // ===== FUNZIONE PER TOGGLE COMPLETATO =====
+    window.toggleCompleted = async function() {
+        if (!currentUser) {
+            window.openLoginModal();
+            return;
+        }
+        if (!window.tvData) return;
+        
+        const currentList = await loadUserList();
+        const itemIndex = currentList.findIndex(item => item.id === window.tvData.id && item.type === "tv");
+        
+        let newList = [...currentList];
+        
+        if (itemIndex !== -1) {
+            // L'elemento esiste già nella lista
+            const item = newList[itemIndex];
+            if (item.completed) {
+                // Rimuovi lo stato completato
+                item.completed = false;
+                item.completedDate = null;
+            } else {
+                // Aggiungi stato completato
+                item.completed = true;
+                item.completedDate = new Date().toISOString().split('T')[0];
+            }
+        } else {
+            // L'elemento non è nella lista, aggiungilo con stato completato
+            const itemData = {
+                id: window.tvData.id,
+                title: window.tvData.name,
+                poster: window.tvData.poster_path ? IMG_BASE + window.tvData.poster_path : "",
+                rating: window.tvData.vote_average,
+                year: window.tvData.first_air_date ? window.tvData.first_air_date.split("-")[0] : "N/D",
+                type: "tv",
+                mediaType: "Serie TV",
+                seasons: window.tvData.number_of_seasons,
+                addedAt: Date.now(),
+                completed: true,
+                completedDate: new Date().toISOString().split('T')[0]
+            };
+            newList.push(itemData);
+        }
+        
+        await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
+        userList = newList;
+        
+        // Aggiorna lo stato
+        const item = newList.find(i => i.id === window.tvData.id && i.type === "tv");
+        isCompleted = item && item.completed === true;
+        
+        // Aggiorna pulsanti e badge
+        if (window.updateTVButton) window.updateTVButton();
+        await updateCompletedStatus();
+    };
 
     window.login = async function() {
         const email = document.getElementById('loginEmail').value;
@@ -753,9 +863,13 @@ async function displayTVDetails(tv) {
     
     // Determina lo stato iniziale del bottone
     let initialInList = false;
+    let initialCompleted = false;
     if (window.userList) {
-        initialInList = window.userList.some(item => item.id === tv.id && item.type === "tv");
+        const item = window.userList.find(i => i.id === tv.id && i.type === "tv");
+        initialInList = !!item;
+        initialCompleted = item && item.completed === true;
     }
+    isCompleted = initialCompleted;
     
     const html = `
         <div class="tv-header">
@@ -773,6 +887,7 @@ async function displayTVDetails(tv) {
                 <div class="genres">
                     ${tv.genres ? tv.genres.map(g => `<span class="genre-tag">${g.name}</span>`).join("") : ""}
                 </div>
+                ${initialCompleted ? `<div class="completed-badge" id="completedBadge">✅ Completato ${new Date().toISOString().split('T')[0]}</div>` : ''}
                 <div class="overview">
                     <strong>Trama:</strong><br>
                     ${tv.overview || "Trama non disponibile."}
@@ -783,6 +898,9 @@ async function displayTVDetails(tv) {
                         ${initialInList ? "❌ Rimuovi" : "❤️ Aggiungi"}
                     </button>
                     ${progress ? `<button class="reset-progress-btn" onclick="resetSeriesProgress()">🗑 Reset</button>` : ''}
+                    <button class="completed-toggle-btn ${initialCompleted ? 'completed' : ''}" id="completedBtn" onclick="window.toggleCompleted()">
+                        ${initialCompleted ? "↩️ Da completare" : "✅ Segna come completato"}
+                    </button>
                 </div>
             </div>
         </div>
