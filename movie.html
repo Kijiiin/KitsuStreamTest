@@ -1067,7 +1067,7 @@ async function toggleListFromDetails() {
         poster: movieData.poster_path ? IMG_BASE + movieData.poster_path : "",
         rating: movieData.vote_average,
         year: movieData.release_date ? movieData.release_date.split("-")[0] : "N/D",
-        release_date: movieData.release_date || null,
+        release_date: movieData.release_date || null,  // ← AGGIUNTO: salva la data precisa
         type: "movie",
         mediaType: "Film",
         addedAt: Date.now()
