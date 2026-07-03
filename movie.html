@@ -207,6 +207,7 @@ h1 {
 .collection-poster, .similar-poster { width: 100%; height: 160px; object-fit: cover; }
 .collection-info, .similar-info { padding: 8px; }
 .collection-title, .similar-title { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.collection-year, .similar-year { font-size: 10px; color: #aaa; }
 
 .player-modal, .trailer-modal {
     position: fixed;
@@ -618,6 +619,7 @@ h1 {
                 poster: window.movieData.poster_path ? IMG_BASE + window.movieData.poster_path : "",
                 rating: window.movieData.vote_average,
                 year: window.movieData.release_date ? window.movieData.release_date.split("-")[0] : "N/D",
+                release_date: window.movieData.release_date || null,
                 type: "movie",
                 mediaType: "Film",
                 addedAt: Date.now(),
@@ -691,6 +693,24 @@ let movieId = null;
 let movieData = null;
 let currentVideoUrl = "";
 
+// ===== FUNZIONE PER FORMARE LA DATA =====
+function formatDate(dateString) {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+        
+        const options = { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric'
+        };
+        return date.toLocaleDateString('it-IT', options);
+    } catch (e) {
+        return dateString;
+    }
+}
+
 function getMovieIdFromURL() {
     const params = new URLSearchParams(window.location.search);
     return params.get('id');
@@ -746,6 +766,12 @@ async function displayMovieDetails(movie) {
     }
     isCompleted = initialCompleted;
     
+    // Formatta la data precisa
+    let releaseDate = formatDate(movie.release_date);
+    if (!releaseDate && movie.release_date) {
+        releaseDate = movie.release_date;
+    }
+    
     const html = `
         <div class="movie-header">
             <div class="movie-poster">
@@ -754,7 +780,7 @@ async function displayMovieDetails(movie) {
             <div class="movie-info">
                 <h2 class="movie-title">${escapeHtml(movie.title)}</h2>
                 <div class="movie-meta">
-                    <span>📅 ${movie.release_date ? movie.release_date.split("-")[0] : "N/D"}</span>
+                    <span>📅 ${releaseDate || "N/D"}</span>
                     <span>⭐ <span class="rating">${movie.vote_average ? movie.vote_average.toFixed(1) : "N/A"}/10</span></span>
                     <span>⏱️ ${movie.runtime ? movie.runtime + " min" : "N/D"}</span>
                     <span>🎬 ${movie.status || "N/D"}</span>
@@ -843,6 +869,12 @@ function closeTrailerOutside(e) {
 }
 
 function loadAdditionalInfo(movie) {
+    // Formatta la data precisa per le informazioni
+    let releaseDate = formatDate(movie.release_date);
+    if (!releaseDate && movie.release_date) {
+        releaseDate = movie.release_date;
+    }
+    
     const infoHtml = `
         <div class="info-section">
             <h3 class="section-title">ℹ️ Informazioni</h3>
@@ -850,6 +882,10 @@ function loadAdditionalInfo(movie) {
                 <div class="info-card">
                     <div class="info-label">Titolo originale</div>
                     <div class="info-value">${escapeHtml(movie.original_title || "N/D")}</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Data di uscita</div>
+                    <div class="info-value">${releaseDate || "N/D"}</div>
                 </div>
                 <div class="info-card">
                     <div class="info-label">Budget</div>
@@ -907,15 +943,22 @@ function displayCollection(movies, collectionName) {
         <div class="collection-section">
             <h3 class="section-title">📀 ${escapeHtml(collectionName)}</h3>
             <div class="collection-grid">
-                ${sortedMovies.map(movie => `
-                    <div class="collection-card" onclick="openMoviePage(${movie.id})">
-                        <img class="collection-poster" src="${movie.poster_path ? IMG_BASE + movie.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}" alt="${movie.title}" loading="lazy">
-                        <div class="collection-info">
-                            <div class="collection-title">${escapeHtml(movie.title)}</div>
-                            <div class="collection-year">${movie.release_date ? movie.release_date.split("-")[0] : "N/D"} | ⭐ ${movie.vote_average ? movie.vote_average.toFixed(1) : "N/A"}</div>
+                ${sortedMovies.map(movie => {
+                    // Formatta la data precisa per ogni film della collezione
+                    let releaseDate = formatDate(movie.release_date);
+                    if (!releaseDate && movie.release_date) {
+                        releaseDate = movie.release_date.split("-")[0];
+                    }
+                    return `
+                        <div class="collection-card" onclick="openMoviePage(${movie.id})">
+                            <img class="collection-poster" src="${movie.poster_path ? IMG_BASE + movie.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}" alt="${movie.title}" loading="lazy">
+                            <div class="collection-info">
+                                <div class="collection-title">${escapeHtml(movie.title)}</div>
+                                <div class="collection-year">${releaseDate || "N/D"} | ⭐ ${movie.vote_average ? movie.vote_average.toFixed(1) : "N/A"}</div>
+                            </div>
                         </div>
-                    </div>
-                `).join("")}
+                    `;
+                }).join("")}
             </div>
         </div>
     `;
@@ -932,15 +975,22 @@ function loadSimilar(similar) {
         <div class="similar-section">
             <h3 class="section-title">🎬 Ti potrebbe piacere</h3>
             <div class="similar-grid">
-                ${similarMovies.map(movie => `
-                    <div class="similar-card" onclick="openMoviePage(${movie.id})">
-                        <img class="similar-poster" src="${movie.poster_path ? IMG_BASE + movie.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}" alt="${movie.title}" loading="lazy">
-                        <div class="similar-info">
-                            <div class="similar-title">${escapeHtml(movie.title)}</div>
-                            <div class="similar-year">${movie.release_date ? movie.release_date.split("-")[0] : "N/D"} | ⭐ ${movie.vote_average ? movie.vote_average.toFixed(1) : "N/A"}</div>
+                ${similarMovies.map(movie => {
+                    // Formatta la data precisa per ogni film simile
+                    let releaseDate = formatDate(movie.release_date);
+                    if (!releaseDate && movie.release_date) {
+                        releaseDate = movie.release_date.split("-")[0];
+                    }
+                    return `
+                        <div class="similar-card" onclick="openMoviePage(${movie.id})">
+                            <img class="similar-poster" src="${movie.poster_path ? IMG_BASE + movie.poster_path : 'https://via.placeholder.com/150x225?text=No+Poster'}" alt="${movie.title}" loading="lazy">
+                            <div class="similar-info">
+                                <div class="similar-title">${escapeHtml(movie.title)}</div>
+                                <div class="similar-year">${releaseDate || "N/D"} | ⭐ ${movie.vote_average ? movie.vote_average.toFixed(1) : "N/A"}</div>
+                            </div>
                         </div>
-                    </div>
-                `).join("")}
+                    `;
+                }).join("")}
             </div>
         </div>
     `;
@@ -1017,6 +1067,7 @@ async function toggleListFromDetails() {
         poster: movieData.poster_path ? IMG_BASE + movieData.poster_path : "",
         rating: movieData.vote_average,
         year: movieData.release_date ? movieData.release_date.split("-")[0] : "N/D",
+        release_date: movieData.release_date || null,
         type: "movie",
         mediaType: "Film",
         addedAt: Date.now()
