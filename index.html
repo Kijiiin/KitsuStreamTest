@@ -634,6 +634,29 @@ const tvGenres = [
     { id: "37", name: "Western" }
 ];
 
+// ===== FUNZIONE PER FORMARE LA DATA (FORMATO ITALIANO - SENZA ORARIO) =====
+function formatDate(dateString) {
+    if (!dateString) return 'N/D';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            // Se la data non è valida, prova a estrarre l'anno
+            const year = dateString.split("-")[0];
+            return year || 'N/D';
+        }
+        
+        const options = { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric'
+        };
+        return date.toLocaleDateString('it-IT', options);
+    } catch (e) {
+        const year = dateString.split("-")[0];
+        return year || 'N/D';
+    }
+}
+
 window.onload = function() {
     renderGenres();
     loadContent();
@@ -710,7 +733,6 @@ async function loadContent() {
             const searchType = currentMediaType === "movie" ? "movie" : "tv";
             let sortParam = "";
             if (currentOrder === 'latest') {
-                // Per le ultime uscite, usa l'ordinamento per data di rilascio
                 if (currentMediaType === 'movie') {
                     sortParam = `&sort_by=release_date.desc`;
                 } else {
@@ -729,7 +751,6 @@ async function loadContent() {
             if (currentOrder === 'top_rated') {
                 sortBy = 'vote_average.desc';
             } else if (currentOrder === 'latest') {
-                // Per le ultime uscite con generi
                 if (currentMediaType === 'movie') {
                     sortBy = 'release_date.desc';
                 } else {
@@ -742,11 +763,9 @@ async function loadContent() {
             if (currentOrder === 'top_rated') {
                 url = `https://api.themoviedb.org/3/${currentMediaType}/top_rated?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
             } else if (currentOrder === 'latest') {
-                // Per le ultime uscite senza filtri
                 if (currentMediaType === 'movie') {
                     url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=release_date.desc&vote_count.gte=50`;
                 } else {
-                    // Per le serie TV, usa discover con ordinamento per data di prima messa in onda
                     url = `https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=first_air_date.desc&vote_count.gte=50`;
                 }
             } else {
@@ -783,28 +802,8 @@ async function displayItems(items) {
         const title = currentMediaType === "movie" ? item.title : item.name;
         const date = currentMediaType === "movie" ? item.release_date : item.first_air_date;
         
-        // Mostra la data completa se disponibile, altrimenti mostra "N/D"
-        let releaseDate = "N/D";
-        if (date) {
-            try {
-                const dateObj = new Date(date);
-                if (!isNaN(dateObj.getTime())) {
-                    releaseDate = dateObj.toLocaleDateString('it-IT', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                    });
-                } else {
-                    // Se la data non è valida, mostra l'anno
-                    const year = date.split("-")[0];
-                    releaseDate = year || "N/D";
-                }
-            } catch (e) {
-                // In caso di errore, mostra l'anno
-                const year = date.split("-")[0];
-                releaseDate = year || "N/D";
-            }
-        }
+        // Formatta la data in italiano (giorno/mese in lettere/anno)
+        const releaseDate = formatDate(date);
         
         const rating = item.vote_average ? item.vote_average.toFixed(1) : "N/A";
         
@@ -813,6 +812,10 @@ async function displayItems(items) {
             const list = await window.getUserList();
             inList = list.some(i => i.id === item.id && i.type === currentMediaType);
         }
+        
+        // Prepara i dati per il salvataggio nella lista
+        const releaseDateForSave = currentMediaType === "movie" ? item.release_date : item.first_air_date;
+        const year = date ? date.split("-")[0] : "N/D";
         
         itemsHtml.push(`
             <div class="card">
@@ -825,7 +828,7 @@ async function displayItems(items) {
                     <p>📅 ${releaseDate}</p>
                     <button 
                         id="btn-${item.id}"
-                        onclick="window.toggleListGlobal(${item.id}, '${escapeHtml(title)}', '${posterUrl}', ${item.vote_average || 0}, '${releaseDate}', '${currentMediaType}', '${currentMediaType === "movie" ? "Film" : "Serie TV"}')"
+                        onclick="window.toggleListGlobal(${item.id}, '${escapeHtml(title)}', '${posterUrl}', ${item.vote_average || 0}, '${year}', '${currentMediaType}', '${currentMediaType === "movie" ? "Film" : "Serie TV"}', '${releaseDateForSave || ''}')"
                         style="background:${inList ? '#ef4444' : '#7c3aed'}"
                     >
                         ${inList ? "❌ Rimuovi" : "❤️ Aggiungi"}
@@ -838,8 +841,25 @@ async function displayItems(items) {
     resultsDiv.innerHTML = itemsHtml.join("");
 }
 
-window.toggleListGlobal = async function(id, title, poster, rating, year, type, mediaType) {
-    const itemData = { id, title, poster, rating, year, type, mediaType };
+window.toggleListGlobal = async function(id, title, poster, rating, year, type, mediaType, releaseDateForSave) {
+    // Crea l'oggetto con i dati corretti
+    const itemData = { 
+        id, 
+        title, 
+        poster, 
+        rating, 
+        year, 
+        type, 
+        mediaType 
+    };
+    
+    // Aggiungi la data precisa in base al tipo
+    if (type === 'movie' && releaseDateForSave) {
+        itemData.release_date = releaseDateForSave;
+    } else if (type === 'tv' && releaseDateForSave) {
+        itemData.first_air_date = releaseDateForSave;
+    }
+    
     const added = await window.toggleCloudList(itemData);
     
     const btn = document.getElementById(`btn-${id}`);
