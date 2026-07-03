@@ -794,18 +794,24 @@ h1 {
     let multiSelectMode = false;
     let selectedItems = new Set();
 
-    // ===== FUNZIONE PER CERCARE IL POSTER SU TMDB =====
-    async function fetchPoster(title, year, type) {
+    // ===== FUNZIONE PER RECUPERARE I DATI DA TMDB =====
+    async function fetchMovieData(title, year, type) {
         try {
             let searchType = type === 'movie' ? 'movie' : 'tv';
-            let url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(title)}&language=it-IT&year=${year || ''}`;
+            let url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(title)}&language=it-IT`;
+            
+            // Aggiungi l'anno se presente per migliorare la ricerca
+            if (year) {
+                url += `&year=${year}`;
+            }
             
             const response = await fetch(url);
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {
-                // Cerca quello con l'anno più vicino
                 let bestMatch = data.results[0];
+                
+                // Cerca il match migliore per anno
                 if (year) {
                     const yearNum = parseInt(year);
                     for (const result of data.results) {
@@ -817,11 +823,21 @@ h1 {
                         }
                     }
                 }
-                return bestMatch.poster_path ? IMG_BASE + bestMatch.poster_path : null;
+                
+                return {
+                    poster: bestMatch.poster_path ? IMG_BASE + bestMatch.poster_path : null,
+                    rating: bestMatch.vote_average ? parseFloat(bestMatch.vote_average.toFixed(1)) : null,
+                    year: bestMatch.release_date ? parseInt(bestMatch.release_date.split('-')[0]) : 
+                          bestMatch.first_air_date ? parseInt(bestMatch.first_air_date.split('-')[0]) : 
+                          (year ? parseInt(year) : null),
+                    overview: bestMatch.overview || null,
+                    genres: bestMatch.genre_ids || [],
+                    tmdb_id: bestMatch.id
+                };
             }
             return null;
         } catch (error) {
-            console.error(`Errore nel recupero poster per ${title}:`, error);
+            console.error(`Errore nel recupero dati per ${title}:`, error);
             return null;
         }
     }
@@ -880,7 +896,7 @@ h1 {
                     return;
                 }
 
-                statusDiv.textContent = `🖼️ Recupero poster per ${completedItems.length} elementi...`;
+                statusDiv.textContent = `🖼️ Recupero dati da TMDB (0/${completedItems.length})...`;
                 statusDiv.style.color = '#667eea';
 
                 const convertedItems = await convertToWatchTrackerFormat(completedItems, type, statusDiv);
@@ -960,21 +976,33 @@ h1 {
             for (const movie of items) {
                 processed++;
                 if (statusDiv) {
-                    statusDiv.textContent = `🖼️ Recupero poster (${processed}/${total})...`;
+                    statusDiv.textContent = `🖼️ Recuperando ${movie.title} (${processed}/${total})...`;
                 }
                 
-                const poster = await fetchPoster(movie.title, movie.year, 'movie');
+                const movieData = await fetchMovieData(movie.title, movie.year, 'movie');
+                
+                // Usa i dati del JSON come fallback
+                const title = movie.title || 'Film senza titolo';
+                const year = movieData?.year || movie.year || null;
+                const poster = movieData?.poster || null;
+                const rating = movieData?.rating || null;
+                const overview = movieData?.overview || null;
+                
+                // Cerca l'IMDB ID dai dati di TV Time
+                const imdbId = movie.id?.imdb || null;
                 
                 converted.push({
-                    id: movie.id?.imdb || movie.uuid || `movie_${Date.now()}_${Math.random()}`,
-                    title: movie.title || 'Film senza titolo',
+                    id: imdbId || movie.uuid || `movie_${Date.now()}_${Math.random()}`,
+                    title: title,
                     type: 'movie',
-                    year: movie.year || null,
+                    year: year,
                     poster: poster,
+                    rating: rating,
+                    overview: overview,
                     watched: true,
                     watched_at: movie.watched_at,
-                    rating: null,
-                    genres: [],
+                    genres: movieData?.genres || [],
+                    tmdb_id: movieData?.tmdb_id || null,
                     addedAt: Date.now(),
                     completed: true,
                     completedDate: movie.watched_at || new Date().toISOString().split('T')[0],
@@ -985,10 +1013,15 @@ h1 {
             for (const series of items) {
                 processed++;
                 if (statusDiv) {
-                    statusDiv.textContent = `🖼️ Recupero poster (${processed}/${total})...`;
+                    statusDiv.textContent = `🖼️ Recuperando ${series.title} (${processed}/${total})...`;
                 }
                 
-                const poster = await fetchPoster(series.title, null, 'tv');
+                const seriesData = await fetchMovieData(series.title, null, 'tv');
+                
+                const title = series.title || 'Serie senza titolo';
+                const poster = seriesData?.poster || null;
+                const rating = seriesData?.rating || null;
+                const overview = seriesData?.overview || null;
                 
                 let totalEpisodes = 0;
                 let watchedEpisodes = 0;
@@ -1012,17 +1045,22 @@ h1 {
                     });
                 }
                 
+                const tvdbId = series.id?.tvdb || null;
+                
                 converted.push({
-                    id: series.id?.tvdb || series.uuid || `series_${Date.now()}_${Math.random()}`,
-                    title: series.title || 'Serie senza titolo',
+                    id: tvdbId || series.uuid || `series_${Date.now()}_${Math.random()}`,
+                    title: title,
                     type: 'tv',
-                    year: null,
+                    year: seriesData?.year || null,
                     poster: poster,
+                    rating: rating,
+                    overview: overview,
                     totalEpisodes: totalEpisodes,
                     watchedEpisodes: watchedEpisodes,
                     status: 'completed',
-                    genres: [],
+                    genres: seriesData?.genres || [],
                     seasons: series.seasons || [],
+                    tmdb_id: seriesData?.tmdb_id || null,
                     addedAt: Date.now(),
                     completed: true,
                     completedDate: lastWatchedDate || series.created_at || new Date().toISOString().split('T')[0],
