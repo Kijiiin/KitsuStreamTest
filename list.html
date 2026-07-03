@@ -860,7 +860,9 @@ h1 {
             const options = { 
                 day: '2-digit', 
                 month: 'short', 
-                year: 'numeric'
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
             };
             return date.toLocaleDateString('it-IT', options);
         } catch (e) {
@@ -1591,24 +1593,39 @@ h1 {
     }
 
     function sortItems(items) {
-        const sorted = [...items];
-        switch(currentSort) {
-            case "rating":
-                sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-                break;
-            case "title":
-                sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-                break;
-            case "date":
-                sorted.sort((a, b) => (b.year || 0) - (a.year || 0));
-                break;
-            case "addedDate":
-            default:
-                sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-                break;
-        }
-        return sorted;
+    const sorted = [...items];
+    switch(currentSort) {
+        case "rating":
+            sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+            break;
+        case "title":
+            sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+            break;
+        case "date":
+            // ⭐ ORDINAMENTO PER DATA PRECISA (GIORNO/MESE/ANNO) ⭐
+            sorted.sort((a, b) => {
+                // Ottieni le date precise
+                const dateA = a.release_date || a.first_air_date || '';
+                const dateB = b.release_date || b.first_air_date || '';
+                
+                // Se entrambe hanno date precise, confrontale (dal più recente al più vecchio)
+                if (dateA && dateB) {
+                    return dateB.localeCompare(dateA);
+                }
+                // Se una ha data precisa e l'altra no, quella con data precisa va prima
+                if (dateA) return -1;
+                if (dateB) return 1;
+                // Se nessuna ha data precisa, usa l'anno
+                return (b.year || 0) - (a.year || 0);
+            });
+            break;
+        case "addedDate":
+        default:
+            sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+            break;
     }
+    return sorted;
+}
 
     function filterItems(items) {
         let filtered = [...items];
