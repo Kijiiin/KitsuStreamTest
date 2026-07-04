@@ -44,20 +44,8 @@ body {
     z-index: 100;
 }
 
-.topbar-left, .topbar-right { 
-    display: flex; 
-    gap: 8px; 
-    align-items: center;
-    flex: 1;
-    min-width: 0;
-}
-.topbar-left { justify-content: flex-start; }
-.topbar-right { justify-content: flex-end; }
-.topbar-center { 
-    flex: 0 1 auto;
-    text-align: center;
-    min-width: 0;
-}
+.topbar-left, .topbar-right { display: flex; gap: 8px; align-items: center; }
+.topbar-center { flex: 1; text-align: center; }
 
 h1 {
     margin: 0;
@@ -603,6 +591,7 @@ h1 {
 
 @media (min-width: 769px) {
     .topbar { padding: 20px 40px; background: rgba(0,0,0,0.3); }
+    h1 { font-size: 28px; }
     .clear-all-btn, .login-btn, .logout-btn { padding: 10px 20px; font-size: 14px; }
     .container { padding: 30px; }
     .lista-title { margin-bottom: 30px; gap: 20px; }
