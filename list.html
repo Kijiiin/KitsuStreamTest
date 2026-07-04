@@ -44,8 +44,20 @@ body {
     z-index: 100;
 }
 
-.topbar-left, .topbar-right { display: flex: 1; gap: 8px; align-items: center; }
-.topbar-center { flex: 1; text-align: center; }
+.topbar-left, .topbar-right { 
+    display: flex; 
+    gap: 8px; 
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+.topbar-left { justify-content: flex-start; }
+.topbar-right { justify-content: flex-end; }
+.topbar-center { 
+    flex: 0 1 auto;
+    text-align: center;
+    min-width: 0;
+}
 
 h1 {
     margin: 0;
