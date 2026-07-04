@@ -287,7 +287,7 @@ h1 {
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 20px;
-    display: none; /* Nascondi di default */
+    display: none;
 }
 
 .import-completed-section.visible {
@@ -389,7 +389,6 @@ h1 {
     font-size: 16px;
 }
 
-/* ===== PULSANTE MOSTRA/NASCONDI IMPORT ===== */
 .toggle-import-btn {
     background: rgba(16, 185, 129, 0.8);
     border: none;
@@ -415,34 +414,31 @@ h1 {
 .toggle-import-btn.active:hover {
     background: #dc2626;
 }
-/* ===== FINE PULSANTE ===== */
 
-/* ===== FINE STILI IMPORT COMPLETATI ===== */
-
-/* ===== BADGE COMPLETATI MODIFICATO ===== */
 .completed-badge {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 4px 12px;
+    padding: 8px 18px;
     border-radius: 20px;
-    font-size: 9px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
     background: #10b981;
     color: white;
-    margin-bottom: 6px;
-    gap: 2px;
+    margin-bottom: 8px;
+    gap: 4px;
     width: fit-content;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    border: 1px solid rgba(255,255,255,0.15);
 }
 
 .completed-badge .date {
     font-weight: 400;
-    font-size: 8px;
-    opacity: 0.85;
+    font-size: 11px;
+    opacity: 0.95;
+    color: #e8f5e9;
 }
-/* ===== FINE BADGE COMPLETATI ===== */
 
-/* ===== FILTRI ===== */
 .status-filter-btn {
     background: rgba(124, 58, 237, 0.3);
     border: 1px solid rgba(124, 58, 237, 0.5);
@@ -470,7 +466,6 @@ h1 {
 .status-filter-btn:hover {
     transform: translateY(-2px);
 }
-/* ===== FINE FILTRI ===== */
 
 .completed-stats {
     display: flex;
@@ -614,8 +609,8 @@ h1 {
     .card-content { padding: 15px; }
     .card h4 { font-size: 14px; }
     .media-badge { padding: 3px 10px; font-size: 10px; }
-    .completed-badge { font-size: 10px; padding: 5px 14px; }
-    .completed-badge .date { font-size: 9px; }
+    .completed-badge { font-size: 15px; padding: 10px 22px; }
+    .completed-badge .date { font-size: 13px; }
     .card p { font-size: 11px; }
     .move-folder-btn, .card button { padding: 8px 12px; font-size: 12px; }
     .mark-completed-btn { padding: 8px 12px !important; font-size: 12px !important; }
@@ -638,6 +633,8 @@ h1 {
 
 <div class="topbar">
     <div class="topbar-left">
+        <button class="clear-all-btn" onclick="window.exportList()" style="background: #10b981;">💾 Backup</button>
+        <button class="clear-all-btn" onclick="window.importList()" style="background: #f59e0b;">📂 Ripristina</button>
         <button class="clear-all-btn" onclick="clearAll()">🗑 Svuota</button>
     </div>
     <div class="topbar-center">
@@ -860,9 +857,7 @@ h1 {
             const options = { 
                 day: '2-digit', 
                 month: 'short', 
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                year: 'numeric'
             };
             return date.toLocaleDateString('it-IT', options);
         } catch (e) {
@@ -1570,6 +1565,90 @@ h1 {
         displayList();
     }
 
+    // ===== FUNZIONI BACKUP E RIPRISTINO =====
+    
+    // Esporta la lista come file JSON
+    window.exportList = function() {
+        if (!currentUser) {
+            alert("Devi essere loggato!");
+            return;
+        }
+        
+        // Raccogli tutti i dati
+        const data = {
+            user: {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                username: currentUsername
+            },
+            list: currentList,
+            folders: currentFolders,
+            exportedAt: new Date().toISOString(),
+            totalItems: currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0)
+        };
+        
+        // Crea e scarica il file
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_kitsustream_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert(`✅ Backup creato! (${data.totalItems} elementi salvati)`);
+    };
+
+    // Importa un backup da file JSON
+    window.importList = function() {
+        if (!currentUser) {
+            alert("Devi essere loggato!");
+            return;
+        }
+        
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    
+                    // Verifica che il file sia valido
+                    if (!data.list || !Array.isArray(data.list)) {
+                        alert("❌ File non valido! Assicurati di aver selezionato un backup di KitsuStream.");
+                        return;
+                    }
+                    
+                    // Conferma il ripristino
+                    const confirmMsg = `Stai per ripristinare ${data.list.length} elementi dalla lista principale e ${Object.keys(data.folders || {}).length} cartelle.\n\nQuesto SOSTITUIRÀ la lista attuale (${currentList.length} elementi).\n\nProcedere?`;
+                    if (!confirm(confirmMsg)) return;
+                    
+                    // Ripristina i dati
+                    currentList = data.list || [];
+                    currentFolders = data.folders || {};
+                    
+                    await saveAllData();
+                    displayList();
+                    
+                    alert(`✅ Ripristinato! ${currentList.length} elementi nella lista principale e ${Object.keys(currentFolders).length} cartelle.`);
+                    
+                } catch (error) {
+                    alert("❌ Errore nella lettura del file: " + error.message);
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    };
+
     // Funzioni UI
     window.changeSort = function(sort) {
         currentSort = sort;
@@ -1593,39 +1672,34 @@ h1 {
     }
 
     function sortItems(items) {
-    const sorted = [...items];
-    switch(currentSort) {
-        case "rating":
-            sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-            break;
-        case "title":
-            sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-            break;
-        case "date":
-            // ⭐ ORDINAMENTO PER DATA PRECISA (GIORNO/MESE/ANNO) ⭐
-            sorted.sort((a, b) => {
-                // Ottieni le date precise
-                const dateA = a.release_date || a.first_air_date || '';
-                const dateB = b.release_date || b.first_air_date || '';
-                
-                // Se entrambe hanno date precise, confrontale (dal più recente al più vecchio)
-                if (dateA && dateB) {
-                    return dateB.localeCompare(dateA);
-                }
-                // Se una ha data precisa e l'altra no, quella con data precisa va prima
-                if (dateA) return -1;
-                if (dateB) return 1;
-                // Se nessuna ha data precisa, usa l'anno
-                return (b.year || 0) - (a.year || 0);
-            });
-            break;
-        case "addedDate":
-        default:
-            sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-            break;
+        const sorted = [...items];
+        switch(currentSort) {
+            case "rating":
+                sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                break;
+            case "title":
+                sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+                break;
+            case "date":
+                sorted.sort((a, b) => {
+                    const dateA = a.release_date || a.first_air_date || '';
+                    const dateB = b.release_date || b.first_air_date || '';
+                    
+                    if (dateA && dateB) {
+                        return dateB.localeCompare(dateA);
+                    }
+                    if (dateA) return -1;
+                    if (dateB) return 1;
+                    return (b.year || 0) - (a.year || 0);
+                });
+                break;
+            case "addedDate":
+            default:
+                sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+                break;
+        }
+        return sorted;
     }
-    return sorted;
-}
 
     function filterItems(items) {
         let filtered = [...items];
@@ -1636,7 +1710,6 @@ h1 {
         
         if (currentStatusFilter === "completed") {
             filtered = filtered.filter(item => item.completed === true);
-            // Ordina per data di completamento (dal più recente al più vecchio)
             filtered.sort((a, b) => {
                 const dateA = a.completedDate || a.watched_at || '';
                 const dateB = b.completedDate || b.watched_at || '';
@@ -1705,97 +1778,93 @@ h1 {
     };
 
     window.displayList = function() {
-    const container = document.getElementById("listContainer");
-    
-    if (!currentUser) {
-        container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
-        updateStats([], 0);
+        const container = document.getElementById("listContainer");
+        
+        if (!currentUser) {
+            container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
+            updateStats([], 0);
+            renderFoldersBar();
+            return;
+        }
+        
         renderFoldersBar();
-        return;
-    }
-    
-    renderFoldersBar();
-    const items = getCurrentItems();
-    const totalItems = items.length;
-    
-    if (totalItems === 0) {
-        const folderText = currentFolder ? ` nella cartella "${currentFolder}"` : '';
-        container.innerHTML = `<div class="empty-state">📭 La tua lista${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
-        updateStats([], 0);
-        return;
-    }
-    
-    let filtered = filterItems(items);
-    if (currentStatusFilter !== "completed") {
-        filtered = sortItems(filtered);
-    }
-    
-    updateStats(filtered, totalItems);
-    
-    if (filtered.length === 0) {
-        const emptyMsg = currentStatusFilter === "completed" ? 
-            '😕 Nessun elemento completato' : 
-            '😕 Nessun elemento da guardare';
-        container.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
-        return;
-    }
-    
-    container.innerHTML = `
-        <div class="grid">
-            ${filtered.map(item => {
-                const key = `${item.id}_${item.type}`;
-                const isSelected = selectedItems.has(key);
-                const detailsUrl = `${item.type === 'movie' ? 'movie' : 'tv'}.html?id=${item.id}`;
-                const isCompleted = item.completed === true;
-                const mediaType = item.type === 'movie' ? 'Film' : 'Serie TV';
-                
-                // ⭐ FORMATTA LA DATA PRECISA ⭐
-                let releaseDate = '';
-                if (item.release_date) {
-                    // Per i film - usa release_date
-                    releaseDate = formatDate(item.release_date);
-                } else if (item.first_air_date) {
-                    // Per le serie TV - usa first_air_date
-                    releaseDate = formatDate(item.first_air_date);
-                } else if (item.year) {
-                    // Fallback: usa solo l'anno
-                    releaseDate = String(item.year);
-                } else {
-                    releaseDate = 'N/D';
-                }
-                
-                return `
-                    <div class="card ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed-card' : ''}" 
-                         data-id="${item.id}"
-                         data-type="${item.type}"
-                         onclick="${multiSelectMode ? `toggleSelectItem(${item.id}, '${item.type}')` : ''}">
-                        <a href="${detailsUrl}" ${multiSelectMode ? 'onclick="return false;"' : ''}>
-                            <img src="${item.poster || 'https://via.placeholder.com/500x750/302b63/8892b0?text=No+Image'}" 
-                                 alt="${item.title}" 
-                                 loading="lazy">
-                        </a>
-                        <div class="card-content">
-                            <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
-                                ${mediaType}
-                            </span>
-                            ${isCompleted ? `<div class="completed-badge">✅ Completato <span class="date">📅 ${formatDate(item.completedDate)}</span></div>` : ''}
-                            <h4>${escapeHtml(item.title)}</h4>
-                            <p>⭐ ${item.rating || "N/A"}/10</p>
-                            <p>📅 ${releaseDate}</p>
-                            ${!multiSelectMode ? `
-                                <button class="mark-completed-btn ${isCompleted ? 'completed' : ''}" onclick="event.stopPropagation(); markAsCompleted(${item.id}, '${item.type}', event)">
-                                    ${isCompleted ? '↩️ Da completare' : '✅ Segna come completato'}
-                                </button>
-                                <button class="move-folder-btn" onclick='event.stopPropagation(); moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
-                                <button onclick="event.stopPropagation(); removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
-                            ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
+        const items = getCurrentItems();
+        const totalItems = items.length;
+        
+        if (totalItems === 0) {
+            const folderText = currentFolder ? ` nella cartella "${currentFolder}"` : '';
+            container.innerHTML = `<div class="empty-state">📭 La tua lista${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
+            updateStats([], 0);
+            return;
+        }
+        
+        let filtered = filterItems(items);
+        if (currentStatusFilter !== "completed") {
+            filtered = sortItems(filtered);
+        }
+        
+        updateStats(filtered, totalItems);
+        
+        if (filtered.length === 0) {
+            const emptyMsg = currentStatusFilter === "completed" ? 
+                '😕 Nessun elemento completato' : 
+                '😕 Nessun elemento da guardare';
+            container.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
+            return;
+        }
+        
+        container.innerHTML = `
+            <div class="grid">
+                ${filtered.map(item => {
+                    const key = `${item.id}_${item.type}`;
+                    const isSelected = selectedItems.has(key);
+                    const detailsUrl = `${item.type === 'movie' ? 'movie' : 'tv'}.html?id=${item.id}`;
+                    const isCompleted = item.completed === true;
+                    const mediaType = item.type === 'movie' ? 'Film' : 'Serie TV';
+                    
+                    let releaseDate = '';
+                    if (item.release_date) {
+                        releaseDate = formatDate(item.release_date);
+                    } else if (item.first_air_date) {
+                        releaseDate = formatDate(item.first_air_date);
+                    } else if (item.year) {
+                        releaseDate = String(item.year);
+                    } else {
+                        releaseDate = 'N/D';
+                    }
+                    
+                    return `
+                        <div class="card ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed-card' : ''}" 
+                             data-id="${item.id}"
+                             data-type="${item.type}"
+                             onclick="${multiSelectMode ? `toggleSelectItem(${item.id}, '${item.type}')` : ''}">
+                            <a href="${detailsUrl}" ${multiSelectMode ? 'onclick="return false;"' : ''}>
+                                <img src="${item.poster || 'https://via.placeholder.com/500x750/302b63/8892b0?text=No+Image'}" 
+                                     alt="${item.title}" 
+                                     loading="lazy">
+                            </a>
+                            <div class="card-content">
+                                <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
+                                    ${mediaType}
+                                </span>
+                                ${isCompleted ? `<div class="completed-badge">✅ Completato <span class="date">📅 ${formatDate(item.completedDate)}</span></div>` : ''}
+                                <h4>${escapeHtml(item.title)}</h4>
+                                <p>⭐ ${item.rating || "N/A"}/10</p>
+                                <p>📅 ${releaseDate}</p>
+                                ${!multiSelectMode ? `
+                                    <button class="mark-completed-btn ${isCompleted ? 'completed' : ''}" onclick="event.stopPropagation(); markAsCompleted(${item.id}, '${item.type}', event)">
+                                        ${isCompleted ? '↩️ Da completare' : '✅ Segna come completato'}
+                                    </button>
+                                    <button class="move-folder-btn" onclick='event.stopPropagation(); moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
+                                    <button onclick="event.stopPropagation(); removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
+                                ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
+                            </div>
                         </div>
-                    </div>
-                `;
-            }).join("")}
-        </div>
-    `;
-};
+                    `;
+                }).join("")}
+            </div>
+        `;
+    };
 
     window.clearAll = async function() {
         const confirmMsg = currentFolder ? `⚠️ Sei sicuro di voler svuotare la cartella "${currentFolder}"?` : "⚠️ Sei sicuro di voler svuotare tutta la lista?";
