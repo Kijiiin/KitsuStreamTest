@@ -83,6 +83,94 @@ h1 {
 }
 .username { font-weight: bold; color: #c084fc; }
 
+/* Dropdown menu per Backup/Ripristina */
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-btn {
+    background: rgba(16, 185, 129, 0.9);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.dropdown-btn:hover {
+    transform: translateY(-1px);
+}
+
+.dropdown-btn .arrow {
+    font-size: 10px;
+    transition: transform 0.3s ease;
+}
+
+.dropdown-btn.open .arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: rgba(31, 27, 58, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 12px;
+    padding: 6px;
+    min-width: 140px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    z-index: 1000;
+}
+
+.dropdown-menu.show {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+.dropdown-menu button {
+    background: transparent;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    width: 100%;
+    text-align: left;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dropdown-menu button:hover {
+    background: rgba(124, 58, 237, 0.3);
+}
+
+.dropdown-menu button.export-btn {
+    color: #4ade80;
+}
+
+.dropdown-menu button.import-btn {
+    color: #fbbf24;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* Modal styles */
 .modal {
     display: none;
@@ -593,6 +681,8 @@ h1 {
     .topbar { padding: 20px 40px; background: rgba(0,0,0,0.3); }
     h1 { font-size: 28px; }
     .clear-all-btn, .login-btn, .logout-btn { padding: 10px 20px; font-size: 14px; }
+    .dropdown-btn { padding: 10px 20px; font-size: 14px; }
+    .dropdown-menu button { padding: 12px 20px; font-size: 14px; }
     .container { padding: 30px; }
     .lista-title { margin-bottom: 30px; gap: 20px; }
     .lista-title h2 { font-size: 28px; }
@@ -634,8 +724,20 @@ h1 {
 
 <div class="topbar">
     <div class="topbar-left">
-        <button class="clear-all-btn" onclick="window.exportList()" style="background: #10b981;">💾 Backup</button>
-        <button class="clear-all-btn" onclick="window.importList()" style="background: #f59e0b;">📂 Ripristina</button>
+        <!-- Menu a tendina per Backup/Ripristina -->
+        <div class="dropdown-container" id="backupDropdown">
+            <button class="dropdown-btn" onclick="toggleDropdown()">
+                💾 Backup <span class="arrow">▾</span>
+            </button>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <button class="export-btn" onclick="window.exportList(); closeDropdown();">
+                    💾 Backup lista
+                </button>
+                <button class="import-btn" onclick="window.importList(); closeDropdown();">
+                    📂 Ripristina da backup
+                </button>
+            </div>
+        </div>
         <button class="clear-all-btn" onclick="clearAll()">🗑 Svuota</button>
     </div>
     <div class="topbar-center">
@@ -865,6 +967,29 @@ h1 {
             return dateString;
         }
     }
+
+    // ===== FUNZIONI DROPDOWN =====
+    window.toggleDropdown = function() {
+        const menu = document.getElementById('dropdownMenu');
+        const btn = document.querySelector('.dropdown-btn');
+        menu.classList.toggle('show');
+        btn.classList.toggle('open');
+    };
+
+    window.closeDropdown = function() {
+        const menu = document.getElementById('dropdownMenu');
+        const btn = document.querySelector('.dropdown-btn');
+        menu.classList.remove('show');
+        btn.classList.remove('open');
+    };
+
+    // Chiudi il dropdown se si clicca fuori
+    document.addEventListener('click', function(event) {
+        const container = document.getElementById('backupDropdown');
+        if (!container.contains(event.target)) {
+            closeDropdown();
+        }
+    });
 
     // ===== TOGGLE SEZIONE IMPORT =====
     window.toggleImportSection = function() {
