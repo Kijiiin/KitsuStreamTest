@@ -1529,6 +1529,7 @@ h1 {
         return sorted;
     }
 
+    // 🔥 FUNZIONE MODIFICATA - I COMPLETATI VENGONO ORDINATI PER DATA DI AGGIUNTA (addedAt)
     function filterItems(items) {
         let filtered = [...items];
         
@@ -1538,11 +1539,8 @@ h1 {
         
         if (currentStatusFilter === "completed") {
             filtered = filtered.filter(item => item.completed === true);
-            filtered.sort((a, b) => {
-                const dateA = a.completedDate || a.watched_at || '';
-                const dateB = b.completedDate || b.watched_at || '';
-                return dateB.localeCompare(dateA);
-            });
+            // 🔥 ORDINA PER DATA DI AGGIUNTA (addedAt) - IL PIÙ RECENTE IN CIMA
+            filtered.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
         } else {
             filtered = filtered.filter(item => item.completed !== true);
         }
