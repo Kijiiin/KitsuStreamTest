@@ -440,7 +440,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     let currentUser = null;
     let userList = [];
     let currentUsername = "";
-    let currentFolders = {}; // Per il backup
+    let currentFolders = {};
 
     window.login = async function() {
         const email = document.getElementById('loginEmail').value;
@@ -554,10 +554,12 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
             return false;
         }
 
-        // 🔥 SALVA BACKUP PRIMA DELLA MODIFICA
+        // 🔥 DETERMINA SE L'ELEMENTO ESISTE GIA' NELLA LISTA
         const exists = userList.some(item => item.id === itemData.id && item.type === itemData.type);
         const action = exists ? 'remove' : 'add';
         const details = `"${itemData.title}" (${itemData.type === 'movie' ? 'Film' : 'Serie TV'})`;
+        
+        // 🔥 SALVA BACKUP PRIMA DELLA MODIFICA (con la lista ATTUALE)
         await saveBackup(action, details, 'index', currentUser, userList, currentFolders);
 
         const userRef = doc(db, 'users', currentUser.uid);
