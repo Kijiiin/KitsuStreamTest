@@ -363,9 +363,10 @@ h1 {
         appId: "1:1008216243036:web:73dfb15639862757b0df99"
     };
 
+    // 🔥 IMPORTA runTransaction
     import { initializeApp } from 'firebase/app';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-    import { getFirestore, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -405,7 +406,6 @@ h1 {
                 }
             }
             
-            // Mostra badge se completato
             const container = document.getElementById("movieDetails");
             const existingBadge = container.querySelector('.completed-badge');
             if (isCompleted) {
@@ -564,80 +564,125 @@ h1 {
         return userDoc.exists() ? (userDoc.data().list || []) : [];
     }
 
+    // ============================================================
+    // 🔥 TOGGLE LISTA CON TRANSAZIONE
+    // ============================================================
     async function toggleCloudList(itemData) {
         if (!currentUser) {
             window.openLoginModal();
             return false;
         }
-        
-        const currentList = await loadUserList();
-        const exists = currentList.some(item => item.id === itemData.id && item.type === itemData.type);
-        let newList;
-        if (exists) {
-            newList = currentList.filter(item => !(item.id === itemData.id && item.type === itemData.type));
-        } else {
-            newList = [...currentList, itemData];
+
+        const userRef = doc(db, 'users', currentUser.uid);
+
+        try {
+            const result = await runTransaction(db, async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+
+                if (!userDoc.exists()) {
+                    throw new Error("Utente non trovato");
+                }
+
+                const currentList = userDoc.data().list || [];
+                const exists = currentList.some(item => 
+                    item.id === itemData.id && item.type === itemData.type
+                );
+
+                let newList;
+                if (exists) {
+                    newList = currentList.filter(item => 
+                        !(item.id === itemData.id && item.type === itemData.type)
+                    );
+                } else {
+                    itemData.addedAt = Date.now();
+                    newList = [...currentList, itemData];
+                }
+
+                transaction.update(userRef, { list: newList });
+                return { newList, added: !exists };
+            });
+
+            userList = result.newList;
+            if (window.updateMovieButton) window.updateMovieButton();
+            return result.added;
+
+        } catch (error) {
+            console.error("Errore transazione:", error);
+            alert("Errore durante il salvataggio. Riprova.");
+            return false;
         }
-        
-        await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
-        userList = newList;
-        if (window.updateMovieButton) window.updateMovieButton();
-        return !exists;
     }
 
-    // ===== FUNZIONE PER TOGGLE COMPLETATO =====
+    // ============================================================
+    // 🔥 TOGGLE COMPLETATO CON TRANSAZIONE
+    // ============================================================
     window.toggleCompleted = async function() {
         if (!currentUser) {
             window.openLoginModal();
             return;
         }
         if (!window.movieData) return;
-        
-        const currentList = await loadUserList();
-        const itemIndex = currentList.findIndex(item => item.id === window.movieData.id && item.type === "movie");
-        
-        let newList = [...currentList];
-        
-        if (itemIndex !== -1) {
-            // L'elemento esiste già nella lista
-            const item = newList[itemIndex];
-            if (item.completed) {
-                // Rimuovi lo stato completato
-                item.completed = false;
-                item.completedDate = null;
-            } else {
-                // Aggiungi stato completato
-                item.completed = true;
-                item.completedDate = new Date().toISOString().split('T')[0];
-            }
-        } else {
-            // L'elemento non è nella lista, aggiungilo con stato completato
-            const itemData = {
-                id: window.movieData.id,
-                title: window.movieData.title,
-                poster: window.movieData.poster_path ? IMG_BASE + window.movieData.poster_path : "",
-                rating: window.movieData.vote_average,
-                year: window.movieData.release_date ? window.movieData.release_date.split("-")[0] : "N/D",
-                release_date: window.movieData.release_date || null, // <-- AGGIUNTO
-                type: "movie",
-                mediaType: "Film",
-                addedAt: Date.now(),
-                completed: true,
-                completedDate: new Date().toISOString().split('T')[0]
-            };
-            newList.push(itemData);
+
+        const userRef = doc(db, 'users', currentUser.uid);
+
+        try {
+            const result = await runTransaction(db, async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+
+                if (!userDoc.exists()) {
+                    throw new Error("Utente non trovato");
+                }
+
+                let currentList = userDoc.data().list || [];
+                const itemIndex = currentList.findIndex(item => 
+                    item.id === window.movieData.id && item.type === "movie"
+                );
+
+                let newList = [...currentList];
+
+                if (itemIndex !== -1) {
+                    const item = newList[itemIndex];
+                    if (item.completed) {
+                        item.completed = false;
+                        item.completedDate = null;
+                    } else {
+                        item.completed = true;
+                        item.completedDate = new Date().toISOString().split('T')[0];
+                    }
+                } else {
+                    const itemData = {
+                        id: window.movieData.id,
+                        title: window.movieData.title,
+                        poster: window.movieData.poster_path ? IMG_BASE + window.movieData.poster_path : "",
+                        rating: window.movieData.vote_average,
+                        year: window.movieData.release_date ? window.movieData.release_date.split("-")[0] : "N/D",
+                        release_date: window.movieData.release_date || null,
+                        type: "movie",
+                        mediaType: "Film",
+                        addedAt: Date.now(),
+                        completed: true,
+                        completedDate: new Date().toISOString().split('T')[0]
+                    };
+                    newList.push(itemData);
+                }
+
+                transaction.update(userRef, { list: newList });
+                return newList;
+            });
+
+            userList = result;
+            
+            // Aggiorna lo stato
+            const item = result.find(i => i.id === window.movieData.id && i.type === "movie");
+            isCompleted = item && item.completed === true;
+            
+            if (window.updateMovieButton) window.updateMovieButton();
+            await updateCompletedStatus();
+
+        } catch (error) {
+            console.error("Errore transazione:", error);
+            alert("Errore durante il salvataggio. Riprova.");
         }
-        
-        await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
-        userList = newList;
-        
-        // Aggiorna lo stato
-        const item = newList.find(i => i.id === window.movieData.id && i.type === "movie");
-        isCompleted = item && item.completed === true;
-        
-        // Aggiorna pulsanti e badge
-        if (window.updateMovieButton) window.updateMovieButton();
-        await updateCompletedStatus();
     };
 
     onAuthStateChanged(auth, async (user) => {
@@ -765,7 +810,6 @@ async function displayMovieDetails(movie) {
     }
     isCompleted = initialCompleted;
     
-    // Formatta la data precisa
     let releaseDate = formatDate(movie.release_date);
     if (!releaseDate && movie.release_date) {
         releaseDate = movie.release_date;
@@ -868,7 +912,6 @@ function closeTrailerOutside(e) {
 }
 
 function loadAdditionalInfo(movie) {
-    // Formatta la data precisa per le informazioni
     let releaseDate = formatDate(movie.release_date);
     if (!releaseDate && movie.release_date) {
         releaseDate = movie.release_date;
@@ -1050,6 +1093,9 @@ function goToActors() {
     window.location.href = "actors.html";
 }
 
+// ============================================================
+// 🔥 TOGGLE LISTA - CHIAMA LA FUNZIONE CON TRANSAZIONE
+// ============================================================
 async function toggleListFromDetails() {
     if (!movieData) return;
     
@@ -1064,7 +1110,7 @@ async function toggleListFromDetails() {
         poster: movieData.poster_path ? IMG_BASE + movieData.poster_path : "",
         rating: movieData.vote_average,
         year: movieData.release_date ? movieData.release_date.split("-")[0] : "N/D",
-        release_date: movieData.release_date || null, // <-- AGGIUNTO - SALVA LA DATA PRECISA
+        release_date: movieData.release_date || null,
         type: "movie",
         mediaType: "Film",
         addedAt: Date.now()
