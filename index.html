@@ -763,16 +763,40 @@ async function loadContent() {
             if (currentOrder === 'top_rated') {
                 url = `https://api.themoviedb.org/3/${currentMediaType}/top_rated?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
             } else if (currentOrder === 'latest') {
+                // ===== MODIFICA: FILM ITALIANI CON TUTTI I TIPI DI USCITA =====
                 if (currentMediaType === 'movie') {
-                    url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=release_date.desc&vote_count.gte=50`;
+                    // Ottieni la data di oggi e 60 giorni fa per avere un buon range
+                    const oggi = new Date();
+                    const sessantaGiorniFa = new Date(oggi);
+                    sessantaGiorniFa.setDate(oggi.getDate() - 60);
+                    
+                    const oggiStr = oggi.toISOString().split('T')[0];
+                    const sessantaGiorniFaStr = sessantaGiorniFa.toISOString().split('T')[0];
+                    
+                    // Filtri:
+                    // - with_release_type=1|2|3|4|5|6 (tutti i tipi: Premiere, Theatrical, Digital, Physical, TV, ecc.)
+                    // - region=IT (priorità alle date di uscita italiane)
+                    // - release_date.gte e .lte per gli ultimi 60 giorni
+                    // - sort_by=release_date.desc (dal più recente)
+                    url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=release_date.desc&with_release_type=1|2|3|4|5|6&release_date.gte=${sessantaGiorniFaStr}&release_date.lte=${oggiStr}&region=IT&vote_count.gte=10`;
                 } else {
-                    url = `https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=first_air_date.desc&vote_count.gte=50`;
+                    // Per le serie TV, usa le date di prima messa in onda in Italia
+                    const oggi = new Date();
+                    const sessantaGiorniFa = new Date(oggi);
+                    sessantaGiorniFa.setDate(oggi.getDate() - 60);
+                    
+                    const oggiStr = oggi.toISOString().split('T')[0];
+                    const sessantaGiorniFaStr = sessantaGiorniFa.toISOString().split('T')[0];
+                    
+                    // Per le serie TV usiamo with_networks o semplicemente first_air_date
+                    url = `https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=first_air_date.desc&first_air_date.gte=${sessantaGiorniFaStr}&first_air_date.lte=${oggiStr}&vote_count.gte=10`;
                 }
             } else {
                 url = `https://api.themoviedb.org/3/${currentMediaType}/popular?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
             }
         }
         
+        console.log("URL:", url); // Per debug
         const response = await fetch(url);
         const data = await response.json();
         
