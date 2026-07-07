@@ -126,7 +126,7 @@ h1 {
     backdrop-filter: blur(15px);
     border-radius: 12px;
     padding: 6px;
-    min-width: 140px;
+    min-width: 200px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.5);
     border: 1px solid rgba(255,255,255,0.1);
     z-index: 1000;
@@ -164,6 +164,14 @@ h1 {
 
 .dropdown-menu button.import-btn {
     color: #fbbf24;
+}
+
+.dropdown-menu button.restore-btn {
+    color: #f472b6;
+}
+
+.dropdown-menu button.history-btn {
+    color: #60a5fa;
 }
 
 @keyframes fadeIn {
@@ -735,6 +743,12 @@ h1 {
                 <button class="import-btn" onclick="window.importList(); closeDropdown();">
                     📂 Ripristina da backup
                 </button>
+                <button class="restore-btn" onclick="window.restoreLastBackup(); closeDropdown();">
+                    ⏪ Ripristina ultimo backup
+                </button>
+                <button class="history-btn" onclick="window.showBackupHistory(); closeDropdown();">
+                    📚 Storico backup
+                </button>
             </div>
         </div>
         <button class="clear-all-btn" onclick="clearAll()">🗑 Svuota</button>
@@ -973,6 +987,226 @@ h1 {
         }
     });
 
+    // ============================================================
+    // 🔥 BACKUP CON VERSIONI - SALVA LO STATO ATTUALE
+    // ============================================================
+    window.exportList = function() {
+        if (!currentUser) {
+            alert("Devi essere loggato!");
+            return;
+        }
+
+        const totalItems = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
+        
+        const snapshotData = {
+            user: {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                username: currentUsername
+            },
+            list: JSON.parse(JSON.stringify(currentList)), // COPIA PROFONDA
+            folders: JSON.parse(JSON.stringify(currentFolders)), // COPIA PROFONDA
+            exportedAt: new Date().toISOString(),
+            totalItems: totalItems,
+            version: Date.now(),
+            type: "backup_snapshot"
+        };
+
+        // 🔥 SALVA NEL LOCALSTORAGE COME "ULTIMO BACKUP"
+        localStorage.setItem('kitsustream_last_backup', JSON.stringify(snapshotData));
+
+        // 🔥 SALVA NELLO STORICO (ultimi 20 backup)
+        const backupHistory = JSON.parse(localStorage.getItem('kitsustream_backup_history') || '[]');
+        backupHistory.push({
+            timestamp: snapshotData.exportedAt,
+            version: snapshotData.version,
+            totalItems: snapshotData.totalItems,
+            preview: snapshotData.list.slice(0, 5).map(i => i.title).join(', ')
+        });
+        // Mantieni solo gli ultimi 20 backup
+        while (backupHistory.length > 20) {
+            backupHistory.shift();
+        }
+        localStorage.setItem('kitsustream_backup_history', JSON.stringify(backupHistory));
+
+        // 🔥 SCARICA IL FILE
+        const blob = new Blob([JSON.stringify(snapshotData, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_kitsustream_${new Date().toISOString().split('T')[0]}_v${snapshotData.version}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        alert(`✅ Backup creato! (${snapshotData.totalItems} elementi salvati)\n💡 Versione salvata come "ultimo backup" e nello storico.`);
+    };
+
+    // ============================================================
+    // 🔥 RIPRISTINA ULTIMO BACKUP
+    // ============================================================
+    window.restoreLastBackup = function() {
+        if (!currentUser) {
+            alert("Devi essere loggato!");
+            return;
+        }
+
+        const lastBackup = localStorage.getItem('kitsustream_last_backup');
+        if (!lastBackup) {
+            alert("❌ Nessun backup trovato! Crea prima un backup.");
+            return;
+        }
+
+        try {
+            const data = JSON.parse(lastBackup);
+            
+            if (!data.list || !Array.isArray(data.list)) {
+                alert("❌ Backup corrotto!");
+                return;
+            }
+
+            const currentTotal = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
+            
+            const confirmMsg = `📋 Ripristinare il backup del ${new Date(data.exportedAt).toLocaleString('it-IT')}?\n\n` +
+                              `📦 Elementi nel backup: ${data.totalItems}\n` +
+                              `📦 Elementi attuali: ${currentTotal}\n` +
+                              `📂 Cartelle nel backup: ${Object.keys(data.folders || {}).length}\n` +
+                              `📂 Cartelle attuali: ${Object.keys(currentFolders).length}\n\n` +
+                              `⚠️ Questo SOSTITUIRÀ COMPLETAMENTE la lista attuale!\n\n` +
+                              `Procedere?`;
+            
+            if (!confirm(confirmMsg)) return;
+
+            // 🔥 RIPRISTINA I DATI
+            currentList = data.list || [];
+            currentFolders = data.folders || {};
+            
+            saveAllData();
+            displayList();
+            
+            alert(`✅ Ripristinato! ${currentList.length} elementi nella lista principale e ${Object.keys(currentFolders).length} cartelle.`);
+            
+        } catch (error) {
+            alert("❌ Errore nel ripristino: " + error.message);
+            console.error(error);
+        }
+    };
+
+    // ============================================================
+    // 🔥 MOSTRA STORICO BACKUP
+    // ============================================================
+    window.showBackupHistory = function() {
+        const history = JSON.parse(localStorage.getItem('kitsustream_backup_history') || '[]');
+        
+        if (history.length === 0) {
+            alert("📭 Nessun backup storico trovato.\n\nCrea un backup con '💾 Backup lista' per iniziare.");
+            return;
+        }
+
+        let msg = "📚 STORICO BACKUP:\n\n";
+        msg += "─".repeat(40) + "\n";
+        
+        history.forEach((backup, index) => {
+            const date = new Date(backup.timestamp).toLocaleString('it-IT');
+            const preview = backup.preview || `${backup.totalItems} elementi`;
+            msg += `${index + 1}. ${date}\n`;
+            msg += `   📦 ${backup.totalItems} elementi`;
+            if (backup.totalItems > 0) {
+                msg += ` (${preview}${backup.totalItems > 5 ? '...' : ''})`;
+            }
+            msg += "\n\n";
+        });
+        
+        msg += "─".repeat(40) + "\n";
+        msg += `📊 ${history.length} backup salvati (max 20).\n`;
+        msg += `💡 Usa "⏪ Ripristina ultimo backup" per tornare all'ultima versione.`;
+        
+        alert(msg);
+    };
+
+    // ============================================================
+    // 🔥 BACKUP AUTOMATICO PRIMA DELLE MODIFICHE
+    // ============================================================
+    async function autoBackupBeforeChange(description = "modifica") {
+        if (!currentUser) return;
+        
+        const totalItems = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
+        
+        const autoBackup = {
+            user: {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                username: currentUsername
+            },
+            list: JSON.parse(JSON.stringify(currentList)),
+            folders: JSON.parse(JSON.stringify(currentFolders)),
+            exportedAt: new Date().toISOString(),
+            totalItems: totalItems,
+            version: Date.now(),
+            type: "auto_backup",
+            description: description
+        };
+        
+        // Salva come ultimo backup automatico
+        localStorage.setItem('kitsustream_last_auto_backup', JSON.stringify(autoBackup));
+        
+        // Salva nello storico automatico (ultimi 10)
+        const autoBackups = JSON.parse(localStorage.getItem('kitsustream_auto_backups') || '[]');
+        autoBackups.push({
+            timestamp: autoBackup.exportedAt,
+            version: autoBackup.version,
+            totalItems: autoBackup.totalItems,
+            description: description
+        });
+        while (autoBackups.length > 10) {
+            autoBackups.shift();
+        }
+        localStorage.setItem('kitsustream_auto_backups', JSON.stringify(autoBackups));
+    }
+
+    // ============================================================
+    // 🔥 RIPRISTINA ULTIMO BACKUP AUTOMATICO
+    // ============================================================
+    window.restoreAutoBackup = function() {
+        const lastAuto = localStorage.getItem('kitsustream_last_auto_backup');
+        if (!lastAuto) {
+            alert("❌ Nessun backup automatico trovato!");
+            return;
+        }
+        
+        try {
+            const data = JSON.parse(lastAuto);
+            
+            if (!data.list || !Array.isArray(data.list)) {
+                alert("❌ Backup automatico corrotto!");
+                return;
+            }
+
+            const currentTotal = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
+            
+            const confirmMsg = `📋 Ripristinare il backup automatico del ${new Date(data.exportedAt).toLocaleString('it-IT')}?\n\n` +
+                              `📦 Elementi nel backup: ${data.totalItems}\n` +
+                              `📦 Elementi attuali: ${currentTotal}\n` +
+                              `${data.description ? `📝 Descrizione: ${data.description}\n` : ''}\n` +
+                              `⚠️ Questo SOSTITUIRÀ COMPLETAMENTE la lista attuale!\n\n` +
+                              `Procedere?`;
+            
+            if (!confirm(confirmMsg)) return;
+
+            currentList = data.list || [];
+            currentFolders = data.folders || {};
+            
+            saveAllData();
+            displayList();
+            
+            alert(`✅ Ripristinato! ${currentList.length} elementi.`);
+            
+        } catch (error) {
+            alert("❌ Errore nel ripristino: " + error.message);
+        }
+    };
+
     window.toggleImportSection = function() {
         const section = document.getElementById('importSection');
         const btn = document.querySelector('.toggle-import-btn');
@@ -1051,6 +1285,9 @@ h1 {
         const statusDiv = document.getElementById(statusId);
         statusDiv.textContent = '⏳ Elaborazione in corso...';
         statusDiv.style.color = '#667eea';
+
+        // 🔥 BACKUP AUTOMATICO PRIMA DELL'IMPORTAZIONE
+        await autoBackupBeforeChange(`Importazione ${type === 'movies' ? 'film' : 'serie'} completati`);
 
         const reader = new FileReader();
         reader.onload = async function(event) {
@@ -1352,6 +1589,9 @@ h1 {
     window.markAsCompleted = async function(id, type, event) {
         event.stopPropagation();
         
+        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
+        await autoBackupBeforeChange(`Marcato come ${currentStatusFilter === 'completed' ? 'da completare' : 'completato'}`);
+        
         let items = getCurrentItems();
         let item = items.find(i => i.id == id && i.type === type);
         
@@ -1408,6 +1648,9 @@ h1 {
             return;
         }
         
+        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
+        await autoBackupBeforeChange(`Creata cartella "${folderName}"`);
+        
         currentFolders[folderName] = [];
         await saveAllData();
         closeFolderModal();
@@ -1417,6 +1660,9 @@ h1 {
 
     window.deleteFolder = async function(folderName) {
         if (confirm(`Eliminare la cartella "${folderName}"? I contenuti torneranno nella lista principale.`)) {
+            // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
+            await autoBackupBeforeChange(`Eliminata cartella "${folderName}"`);
+            
             const folderItems = currentFolders[folderName] || [];
             
             for (const item of folderItems) {
@@ -1527,6 +1773,9 @@ h1 {
         
         if (itemsToMove.length === 0) return;
         
+        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
+        await autoBackupBeforeChange(`Spostati ${itemsToMove.length} elementi in ${targetFolder || 'lista principale'}`);
+        
         if (currentFolder) {
             const folderItems = currentFolders[currentFolder] || [];
             currentFolders[currentFolder] = folderItems.filter(item => 
@@ -1581,6 +1830,9 @@ h1 {
     window.confirmSingleMove = async function() {
         const targetFolder = document.getElementById('folderSelect').value;
         if (!pendingMoveItem) return;
+        
+        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
+        await autoBackupBeforeChange(`Spostato "${pendingMoveItem.title}" in ${targetFolder || 'lista principale'}`);
         
         if (currentFolder) {
             const folderItems = currentFolders[currentFolder] || [];
@@ -1662,6 +1914,9 @@ h1 {
     async function removeFromCloudList(id, type) {
         if (!currentUser) return;
         
+        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
+        await autoBackupBeforeChange(`Rimosso elemento dalla lista`);
+        
         const userRef = doc(db, 'users', currentUser.uid);
         
         try {
@@ -1707,6 +1962,9 @@ h1 {
     async function clearCloudList() {
         if (!currentUser) return;
         
+        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
+        await autoBackupBeforeChange(`Svuotata ${currentFolder ? 'cartella "' + currentFolder + '"' : 'lista'}`);
+        
         const userRef = doc(db, 'users', currentUser.uid);
         
         try {
@@ -1743,40 +2001,6 @@ h1 {
     }
 
     // ============================================================
-    // 🔥 ESPORTA LISTA (BACKUP)
-    // ============================================================
-    window.exportList = function() {
-        if (!currentUser) {
-            alert("Devi essere loggato!");
-            return;
-        }
-        
-        const data = {
-            user: {
-                uid: currentUser.uid,
-                email: currentUser.email,
-                username: currentUsername
-            },
-            list: currentList,
-            folders: currentFolders,
-            exportedAt: new Date().toISOString(),
-            totalItems: currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0)
-        };
-        
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `backup_kitsustream_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        alert(`✅ Backup creato! (${data.totalItems} elementi salvati)`);
-    };
-
-    // ============================================================
     // 🔥 IMPORTA BACKUP
     // ============================================================
     window.importList = function() {
@@ -1802,8 +2026,20 @@ h1 {
                         return;
                     }
                     
-                    const confirmMsg = `Stai per ripristinare ${data.list.length} elementi dalla lista principale e ${Object.keys(data.folders || {}).length} cartelle.\n\nQuesto SOSTITUIRÀ la lista attuale (${currentList.length} elementi).\n\nProcedere?`;
+                    const currentTotal = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
+                    
+                    const confirmMsg = `📋 Ripristinare il backup del ${new Date(data.exportedAt).toLocaleString('it-IT')}?\n\n` +
+                                      `📦 Elementi nel backup: ${data.totalItems || data.list.length}\n` +
+                                      `📦 Elementi attuali: ${currentTotal}\n` +
+                                      `📂 Cartelle nel backup: ${Object.keys(data.folders || {}).length}\n` +
+                                      `📂 Cartelle attuali: ${Object.keys(currentFolders).length}\n\n` +
+                                      `⚠️ Questo SOSTITUIRÀ COMPLETAMENTE la lista attuale!\n\n` +
+                                      `Procedere?`;
+                    
                     if (!confirm(confirmMsg)) return;
+                    
+                    // 🔥 BACKUP AUTOMATICO PRIMA DEL RIPRISTINO
+                    await autoBackupBeforeChange(`Ripristino da backup esterno`);
                     
                     currentList = data.list || [];
                     currentFolders = data.folders || {};
