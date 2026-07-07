@@ -416,6 +416,9 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
 </div>
 
 <script type="module">
+    // 🔥 Importa le funzioni di backup
+    import { saveBackup } from './backup.js';
+
     // Configurazione Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyCeM7KVc9lZsdd8HM5b-PAfhx0usN8Aubo",
@@ -437,6 +440,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     let currentUser = null;
     let userList = [];
     let currentUsername = "";
+    let currentFolders = {}; // Per il backup
 
     window.login = async function() {
         const email = document.getElementById('loginEmail').value;
@@ -533,17 +537,28 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     async function loadUserData() {
         if (!currentUser) return null;
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        return userDoc.exists() ? userDoc.data() : null;
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            currentFolders = data.folders || {};
+            return data;
+        }
+        return null;
     }
 
     // ============================================================
-    // 🔥 TOGGLE LISTA CON TRANSAZIONE - RISOLVE IL BUG!
+    // 🔥 TOGGLE LISTA CON TRANSAZIONE E BACKUP
     // ============================================================
     async function toggleCloudList(itemData) {
         if (!currentUser) {
             window.openLoginModal();
             return false;
         }
+
+        // 🔥 SALVA BACKUP PRIMA DELLA MODIFICA
+        const exists = userList.some(item => item.id === itemData.id && item.type === itemData.type);
+        const action = exists ? 'remove' : 'add';
+        const details = `"${itemData.title}" (${itemData.type === 'movie' ? 'Film' : 'Serie TV'})`;
+        await saveBackup(action, details, 'index', currentUser, userList, currentFolders);
 
         const userRef = doc(db, 'users', currentUser.uid);
 
@@ -556,12 +571,12 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
                 }
 
                 const currentList = userDoc.data().list || [];
-                const exists = currentList.some(item => 
+                const existsInDb = currentList.some(item => 
                     item.id === itemData.id && item.type === itemData.type
                 );
 
                 let newList;
-                if (exists) {
+                if (existsInDb) {
                     newList = currentList.filter(item => 
                         !(item.id === itemData.id && item.type === itemData.type)
                     );
@@ -571,7 +586,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
                 }
 
                 transaction.update(userRef, { list: newList });
-                return { newList, added: !exists };
+                return { newList, added: !existsInDb };
             });
 
             // Aggiorna lo stato locale
