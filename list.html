@@ -724,7 +724,6 @@ h1 {
 
 <div class="topbar">
     <div class="topbar-left">
-        <!-- Menu a tendina per Backup/Ripristina -->
         <div class="dropdown-container" id="backupDropdown">
             <button class="dropdown-btn" onclick="toggleDropdown()">
                 💾 Backup <span class="arrow">▾</span>
@@ -748,7 +747,6 @@ h1 {
     </div>
 </div>
 
-<!-- Selection Bar per spostamento multiplo -->
 <div id="selectionBar" class="selection-bar">
     <div class="selection-count" id="selectionCount">0 selezionati</div>
     <div class="selection-actions">
@@ -757,7 +755,6 @@ h1 {
     </div>
 </div>
 
-<!-- Modale Login/Registrazione -->
 <div id="authModal" class="modal">
     <div class="modal-content">
         <div id="loginPanel">
@@ -781,7 +778,6 @@ h1 {
     </div>
 </div>
 
-<!-- Modale Aggiungi Cartella -->
 <div id="folderModal" class="modal">
     <div class="modal-content">
         <h2>📁 Nuova Cartella</h2>
@@ -792,7 +788,6 @@ h1 {
     </div>
 </div>
 
-<!-- Modale Sposta in Cartella -->
 <div id="moveModal" class="modal">
     <div class="modal-content">
         <h2>📂 Sposta in cartella</h2>
@@ -804,7 +799,6 @@ h1 {
     </div>
 </div>
 
-<!-- Modale Sposta Multipla in Cartella -->
 <div id="multiMoveModal" class="modal">
     <div class="modal-content">
         <h2>📂 Sposta elementi selezionati in cartella</h2>
@@ -817,12 +811,10 @@ h1 {
 </div>
 
 <div class="container">
-    <!-- ===== PULSANTE MOSTRA/NASCONDI IMPORT ===== -->
     <button class="toggle-import-btn" onclick="toggleImportSection()">
         📥 Mostra Importazione
     </button>
     
-    <!-- ===== SEZIONE IMPORT COMPLETATI ===== -->
     <div class="import-completed-section" id="importSection">
         <h3>✅ Importa Completati da TV Time</h3>
         <div class="subtitle">
@@ -860,7 +852,6 @@ h1 {
             </div>
         </div>
     </div>
-    <!-- ===== FINE SEZIONE IMPORT COMPLETATI ===== -->
 
     <div class="lista-title">
         <button id="addFolderBtn" class="title-btn add-folder" onclick="openAddFolderModal()">📁 Nuova Cartella</button>
@@ -869,7 +860,6 @@ h1 {
         <p>I tuoi film e serie TV organizzati in cartelle</p>
     </div>
 
-    <!-- Cartelle -->
     <div class="folders-bar" id="foldersBar"></div>
 
     <div class="filters-bar">
@@ -890,7 +880,6 @@ h1 {
                 <button class="type-btn" data-type="tv" onclick="filterByType('tv')">📺 Serie TV</button>
             </div>
         </div>
-        <!-- ===== FILTRI STATO ===== -->
         <div class="filter-group">
             <div class="filter-label">📋 Stato:</div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -898,15 +887,12 @@ h1 {
                 <button class="status-filter-btn" data-status="completed" onclick="filterByStatus('completed')">✅ Completati</button>
             </div>
         </div>
-        <!-- ===== FINE FILTRI STATO ===== -->
         
-        <!-- ===== STATISTICHE COMPLETATI ===== -->
         <div class="completed-stats" id="completedStats">
             <span>✅ Completati: <span class="number" id="completedCount">0</span></span>
             <span>⏳ Da guardare: <span class="number" id="notCompletedCount">0</span></span>
             <span>📊 Completati: <span class="number" id="completionPercentage">0</span>%</span>
         </div>
-        <!-- ===== FINE STATISTICHE ===== -->
         <div class="stats" id="stats"></div>
     </div>
 
@@ -930,7 +916,7 @@ h1 {
 
     import { initializeApp } from 'firebase/app';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-    import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+    import { getFirestore, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -946,11 +932,9 @@ h1 {
     let currentStatusFilter = "all";
     let pendingMoveItem = null;
     
-    // Variabili per selezione multipla
     let multiSelectMode = false;
     let selectedItems = new Set();
 
-    // ===== FUNZIONE PER FORMARE LA DATA =====
     function formatDate(dateString) {
         if (!dateString) return '';
         try {
@@ -968,7 +952,6 @@ h1 {
         }
     }
 
-    // ===== FUNZIONI DROPDOWN =====
     window.toggleDropdown = function() {
         const menu = document.getElementById('dropdownMenu');
         const btn = document.querySelector('.dropdown-btn');
@@ -983,7 +966,6 @@ h1 {
         btn.classList.remove('open');
     };
 
-    // Chiudi il dropdown se si clicca fuori
     document.addEventListener('click', function(event) {
         const container = document.getElementById('backupDropdown');
         if (!container.contains(event.target)) {
@@ -991,7 +973,6 @@ h1 {
         }
     });
 
-    // ===== TOGGLE SEZIONE IMPORT =====
     window.toggleImportSection = function() {
         const section = document.getElementById('importSection');
         const btn = document.querySelector('.toggle-import-btn');
@@ -1007,7 +988,6 @@ h1 {
         }
     };
 
-    // ===== FUNZIONE PER RECUPERARE I DATI DA TMDB =====
     async function fetchMovieData(title, year, type) {
         try {
             let searchType = type === 'movie' ? 'movie' : 'tv';
@@ -1053,8 +1033,6 @@ h1 {
         }
     }
 
-    // ===== FUNZIONI PER IMPORTARE COMPLETATI =====
-    
     document.getElementById('moviesCompletedInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -1275,9 +1253,6 @@ h1 {
         document.getElementById('importedTotalCount').textContent = allCompleted.length;
     }
 
-    // ===== FINE FUNZIONI IMPORT COMPLETATI =====
-
-    // Funzioni di autenticazione
     window.login = async function() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
@@ -1359,7 +1334,6 @@ h1 {
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    // ===== FILTRO PER STATO (CORRETTO) =====
     window.filterByStatus = function(status) {
         currentStatusFilter = status;
         document.querySelectorAll(".status-filter-btn").forEach(btn => {
@@ -1375,7 +1349,6 @@ h1 {
         displayList();
     };
 
-    // ===== FUNZIONE PER MARCARE COME COMPLETATO =====
     window.markAsCompleted = async function(id, type, event) {
         event.stopPropagation();
         
@@ -1397,7 +1370,6 @@ h1 {
         displayList();
     };
 
-    // ===== FUNZIONE PER AGGIORNARE STATISTICHE COMPLETATI =====
     function updateCompletedStats() {
         const items = getCurrentItems();
         const total = items.length;
@@ -1410,7 +1382,6 @@ h1 {
         document.getElementById('completionPercentage').textContent = percentage;
     }
 
-    // Funzioni per cartelle
     window.openAddFolderModal = function() {
         if (!currentUser) {
             alert("Devi prima accedere!");
@@ -1474,7 +1445,6 @@ h1 {
         displayList();
     };
 
-    // Funzioni per selezione multipla
     window.toggleMultiSelectMode = function() {
         multiSelectMode = !multiSelectMode;
         const btn = document.getElementById('multiMoveBtn');
@@ -1590,7 +1560,6 @@ h1 {
         displayList();
     };
 
-    // Funzioni per spostamento singolo
     window.moveItem = function(item) {
         if (multiSelectMode) return;
         pendingMoveItem = item;
@@ -1644,7 +1613,9 @@ h1 {
         displayList();
     };
 
-    // Funzioni per la lista
+    // ============================================================
+    // 🔥 CARICA DATI UTENTE
+    // ============================================================
     async function loadUserData() {
         if (!currentUser) return null;
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
@@ -1657,50 +1628,129 @@ h1 {
         return null;
     }
 
+    // ============================================================
+    // 🔥 SALVA DATI CON TRANSAZIONE
+    // ============================================================
     async function saveAllData() {
         if (!currentUser) return;
-        await setDoc(doc(db, 'users', currentUser.uid), { 
-            list: currentList,
-            folders: currentFolders,
-            lastUpdate: new Date()
-        }, { merge: true });
+        
+        const userRef = doc(db, 'users', currentUser.uid);
+        
+        try {
+            await runTransaction(db, async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+                
+                if (!userDoc.exists()) {
+                    throw new Error("Utente non trovato");
+                }
+                
+                transaction.update(userRef, { 
+                    list: currentList,
+                    folders: currentFolders,
+                    lastUpdate: new Date()
+                });
+            });
+        } catch (error) {
+            console.error("Errore transazione:", error);
+            alert("Errore durante il salvataggio. Riprova.");
+        }
     }
 
+    // ============================================================
+    // 🔥 RIMUOVI CON TRANSAZIONE
+    // ============================================================
     async function removeFromCloudList(id, type) {
         if (!currentUser) return;
         
-        if (currentFolder) {
-            const folderItems = currentFolders[currentFolder] || [];
-            currentFolders[currentFolder] = folderItems.filter(item => !(item.id === id && item.type === type));
-        } else {
-            currentList = currentList.filter(item => !(item.id === id && item.type === type));
+        const userRef = doc(db, 'users', currentUser.uid);
+        
+        try {
+            await runTransaction(db, async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+                
+                if (!userDoc.exists()) {
+                    throw new Error("Utente non trovato");
+                }
+                
+                let newList = userDoc.data().list || [];
+                let newFolders = userDoc.data().folders || {};
+                
+                if (currentFolder) {
+                    if (newFolders[currentFolder]) {
+                        newFolders[currentFolder] = newFolders[currentFolder].filter(
+                            item => !(item.id === id && item.type === type)
+                        );
+                    }
+                } else {
+                    newList = newList.filter(item => !(item.id === id && item.type === type));
+                }
+                
+                transaction.update(userRef, { 
+                    list: newList,
+                    folders: newFolders
+                });
+                
+                currentList = newList;
+                currentFolders = newFolders;
+            });
+            
+            displayList();
+        } catch (error) {
+            console.error("Errore transazione:", error);
+            alert("Errore durante la rimozione. Riprova.");
         }
-        await saveAllData();
-        displayList();
     }
 
+    // ============================================================
+    // 🔥 SVUOTA CON TRANSAZIONE
+    // ============================================================
     async function clearCloudList() {
         if (!currentUser) return;
         
-        if (currentFolder) {
-            currentFolders[currentFolder] = [];
-        } else {
-            currentList = [];
+        const userRef = doc(db, 'users', currentUser.uid);
+        
+        try {
+            await runTransaction(db, async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+                
+                if (!userDoc.exists()) {
+                    throw new Error("Utente non trovato");
+                }
+                
+                let newList = userDoc.data().list || [];
+                let newFolders = userDoc.data().folders || {};
+                
+                if (currentFolder) {
+                    newFolders[currentFolder] = [];
+                } else {
+                    newList = [];
+                }
+                
+                transaction.update(userRef, { 
+                    list: newList,
+                    folders: newFolders
+                });
+                
+                currentList = newList;
+                currentFolders = newFolders;
+            });
+            
+            displayList();
+        } catch (error) {
+            console.error("Errore transazione:", error);
+            alert("Errore durante lo svuotamento. Riprova.");
         }
-        await saveAllData();
-        displayList();
     }
 
-    // ===== FUNZIONI BACKUP E RIPRISTINO =====
-    
-    // Esporta la lista come file JSON
+    // ============================================================
+    // 🔥 ESPORTA LISTA (BACKUP)
+    // ============================================================
     window.exportList = function() {
         if (!currentUser) {
             alert("Devi essere loggato!");
             return;
         }
         
-        // Raccogli tutti i dati
         const data = {
             user: {
                 uid: currentUser.uid,
@@ -1713,7 +1763,6 @@ h1 {
             totalItems: currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0)
         };
         
-        // Crea e scarica il file
         const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1727,7 +1776,9 @@ h1 {
         alert(`✅ Backup creato! (${data.totalItems} elementi salvati)`);
     };
 
-    // Importa un backup da file JSON
+    // ============================================================
+    // 🔥 IMPORTA BACKUP
+    // ============================================================
     window.importList = function() {
         if (!currentUser) {
             alert("Devi essere loggato!");
@@ -1746,17 +1797,14 @@ h1 {
                 try {
                     const data = JSON.parse(event.target.result);
                     
-                    // Verifica che il file sia valido
                     if (!data.list || !Array.isArray(data.list)) {
                         alert("❌ File non valido! Assicurati di aver selezionato un backup di KitsuStream.");
                         return;
                     }
                     
-                    // Conferma il ripristino
                     const confirmMsg = `Stai per ripristinare ${data.list.length} elementi dalla lista principale e ${Object.keys(data.folders || {}).length} cartelle.\n\nQuesto SOSTITUIRÀ la lista attuale (${currentList.length} elementi).\n\nProcedere?`;
                     if (!confirm(confirmMsg)) return;
                     
-                    // Ripristina i dati
                     currentList = data.list || [];
                     currentFolders = data.folders || {};
                     
@@ -1775,7 +1823,9 @@ h1 {
         input.click();
     };
 
-    // Funzioni UI
+    // ============================================================
+    // 🔥 FUNZIONI UI
+    // ============================================================
     window.changeSort = function(sort) {
         currentSort = sort;
         document.querySelectorAll(".sort-btn").forEach(btn => btn.classList.remove("active"));
@@ -1903,7 +1953,10 @@ h1 {
         moveItem(item);
     };
 
-    window.displayList = function() {
+    // ============================================================
+    // 🔥 DISPLAY LISTA (RICARICA SEMPRE I DATI)
+    // ============================================================
+    window.displayList = async function() {
         const container = document.getElementById("listContainer");
         
         if (!currentUser) {
@@ -1912,6 +1965,9 @@ h1 {
             renderFoldersBar();
             return;
         }
+        
+        // 🔥 RICARICA SEMPRE I DATI FRESCHI
+        await loadUserData();
         
         renderFoldersBar();
         const items = getCurrentItems();
@@ -2010,7 +2066,9 @@ h1 {
         window.location.href = "index.html";
     };
 
-    // Stato autenticazione
+    // ============================================================
+    // 🔥 STATO AUTENTICAZIONE
+    // ============================================================
     onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         const authButtons = document.getElementById('authButtons');
@@ -2037,7 +2095,18 @@ h1 {
         }
     });
 
-    // Torna su
+    // ============================================================
+    // 🔥 AGGIORNA LISTA QUANDO LA PAGINA DIVENTA VISIBILE
+    // ============================================================
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && currentUser) {
+            displayList();
+        }
+    });
+
+    // ============================================================
+    // 🔥 TORNA SU
+    // ============================================================
     const tornaSuBtn = document.getElementById("tornaSu");
     window.addEventListener("scroll", function() {
         tornaSuBtn.style.display = window.scrollY > 300 ? "flex" : "none";
