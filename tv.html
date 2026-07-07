@@ -367,9 +367,10 @@ h1 {
         appId: "1:1008216243036:web:73dfb15639862757b0df99"
     };
 
+    // 🔥 IMPORTA runTransaction
     import { initializeApp } from 'firebase/app';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-    import { getFirestore, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -410,7 +411,6 @@ h1 {
                 }
             }
             
-            // Mostra badge se completato
             const container = document.getElementById("tvDetails");
             const existingBadge = container.querySelector('.completed-badge');
             if (isCompleted) {
@@ -482,60 +482,76 @@ h1 {
     };
     // =======================================================================
 
-    // ===== FUNZIONE PER TOGGLE COMPLETATO =====
+    // ============================================================
+    // 🔥 TOGGLE COMPLETATO CON TRANSAZIONE
+    // ============================================================
     window.toggleCompleted = async function() {
         if (!currentUser) {
             window.openLoginModal();
             return;
         }
         if (!window.tvData) return;
-        
-        const currentList = await loadUserList();
-        const itemIndex = currentList.findIndex(item => item.id === window.tvData.id && item.type === "tv");
-        
-        let newList = [...currentList];
-        
-        if (itemIndex !== -1) {
-            // L'elemento esiste già nella lista
-            const item = newList[itemIndex];
-            if (item.completed) {
-                // Rimuovi lo stato completato
-                item.completed = false;
-                item.completedDate = null;
-            } else {
-                // Aggiungi stato completato
-                item.completed = true;
-                item.completedDate = new Date().toISOString().split('T')[0];
-            }
-        } else {
-            // L'elemento non è nella lista, aggiungilo con stato completato
-            const itemData = {
-                id: window.tvData.id,
-                title: window.tvData.name,
-                poster: window.tvData.poster_path ? IMG_BASE + window.tvData.poster_path : "",
-                rating: window.tvData.vote_average,
-                year: window.tvData.first_air_date ? window.tvData.first_air_date.split("-")[0] : "N/D",
-                first_air_date: window.tvData.first_air_date || null, // <-- AGGIUNTO
-                type: "tv",
-                mediaType: "Serie TV",
-                seasons: window.tvData.number_of_seasons,
-                addedAt: Date.now(),
-                completed: true,
-                completedDate: new Date().toISOString().split('T')[0]
-            };
-            newList.push(itemData);
+
+        const userRef = doc(db, 'users', currentUser.uid);
+
+        try {
+            const result = await runTransaction(db, async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+
+                if (!userDoc.exists()) {
+                    throw new Error("Utente non trovato");
+                }
+
+                let currentList = userDoc.data().list || [];
+                const itemIndex = currentList.findIndex(item => 
+                    item.id === window.tvData.id && item.type === "tv"
+                );
+
+                let newList = [...currentList];
+
+                if (itemIndex !== -1) {
+                    const item = newList[itemIndex];
+                    if (item.completed) {
+                        item.completed = false;
+                        item.completedDate = null;
+                    } else {
+                        item.completed = true;
+                        item.completedDate = new Date().toISOString().split('T')[0];
+                    }
+                } else {
+                    const itemData = {
+                        id: window.tvData.id,
+                        title: window.tvData.name,
+                        poster: window.tvData.poster_path ? IMG_BASE + window.tvData.poster_path : "",
+                        rating: window.tvData.vote_average,
+                        year: window.tvData.first_air_date ? window.tvData.first_air_date.split("-")[0] : "N/D",
+                        first_air_date: window.tvData.first_air_date || null,
+                        type: "tv",
+                        mediaType: "Serie TV",
+                        seasons: window.tvData.number_of_seasons,
+                        addedAt: Date.now(),
+                        completed: true,
+                        completedDate: new Date().toISOString().split('T')[0]
+                    };
+                    newList.push(itemData);
+                }
+
+                transaction.update(userRef, { list: newList });
+                return newList;
+            });
+
+            userList = result;
+            
+            const item = result.find(i => i.id === window.tvData.id && i.type === "tv");
+            isCompleted = item && item.completed === true;
+            
+            if (window.updateTVButton) window.updateTVButton();
+            await updateCompletedStatus();
+
+        } catch (error) {
+            console.error("Errore transazione:", error);
+            alert("Errore durante il salvataggio. Riprova.");
         }
-        
-        await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
-        userList = newList;
-        
-        // Aggiorna lo stato
-        const item = newList.find(i => i.id === window.tvData.id && i.type === "tv");
-        isCompleted = item && item.completed === true;
-        
-        // Aggiorna pulsanti e badge
-        if (window.updateTVButton) window.updateTVButton();
-        await updateCompletedStatus();
     };
 
     window.login = async function() {
@@ -637,30 +653,53 @@ h1 {
         return userDoc.exists() ? (userDoc.data().list || []) : [];
     }
 
+    // ============================================================
+    // 🔥 TOGGLE LISTA CON TRANSAZIONE
+    // ============================================================
     async function toggleCloudList(itemData) {
         if (!currentUser) {
             window.openLoginModal();
             return false;
         }
-        
-        const currentList = await loadUserList();
-        
-        const exists = currentList.some(item => item.id === itemData.id && item.type === itemData.type);
-        
-        let newList;
-        if (exists) {
-            newList = currentList.filter(item => !(item.id === itemData.id && item.type === itemData.type));
-        } else {
-            newList = [...currentList, itemData];
+
+        const userRef = doc(db, 'users', currentUser.uid);
+
+        try {
+            const result = await runTransaction(db, async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+
+                if (!userDoc.exists()) {
+                    throw new Error("Utente non trovato");
+                }
+
+                const currentList = userDoc.data().list || [];
+                const exists = currentList.some(item => 
+                    item.id === itemData.id && item.type === itemData.type
+                );
+
+                let newList;
+                if (exists) {
+                    newList = currentList.filter(item => 
+                        !(item.id === itemData.id && item.type === itemData.type)
+                    );
+                } else {
+                    itemData.addedAt = Date.now();
+                    newList = [...currentList, itemData];
+                }
+
+                transaction.update(userRef, { list: newList });
+                return { newList, added: !exists };
+            });
+
+            userList = result.newList;
+            if (window.updateTVButton) window.updateTVButton();
+            return result.added;
+
+        } catch (error) {
+            console.error("Errore transazione:", error);
+            alert("Errore durante il salvataggio. Riprova.");
+            return false;
         }
-        
-        await setDoc(doc(db, 'users', currentUser.uid), { list: newList }, { merge: true });
-        userList = newList;
-        
-        // Aggiorna il bottone
-        if (window.updateTVButton) window.updateTVButton();
-        
-        return !exists;
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -681,7 +720,6 @@ h1 {
             
             userList = await loadUserList();
             
-            // Aggiorna il bottone se esiste già
             if (window.updateTVButton) window.updateTVButton();
         } else {
             authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
@@ -743,7 +781,6 @@ function getTVIdFromURL() {
 // ========== FUNZIONI PER IL SALVATAGGIO DEL PROGRESSO EPISODI (CON CLOUD) ==========
 async function saveSeriesProgress(seasonNum, episodeNum) {
     if (!tvData) return;
-    // Salva in locale (fallback)
     const key = `series_progress_${tvData.id}`;
     localStorage.setItem(key, JSON.stringify({
         lastSeason: seasonNum,
@@ -751,7 +788,6 @@ async function saveSeriesProgress(seasonNum, episodeNum) {
         timestamp: Date.now(),
         title: tvData.name
     }));
-    // Salva nel cloud
     if (window.saveTVProgressCloud) {
         await window.saveTVProgressCloud(seasonNum, episodeNum);
     }
@@ -759,14 +795,12 @@ async function saveSeriesProgress(seasonNum, episodeNum) {
 
 async function loadSeriesProgress() {
     if (!tvData) return null;
-    // Prova prima dal cloud (se utente loggato)
     if (window.loadTVProgressCloud && window.getCurrentUser && window.getCurrentUser()) {
         const cloudProgress = await window.loadTVProgressCloud();
         if (cloudProgress && cloudProgress.lastSeason) {
             return cloudProgress;
         }
     }
-    // Fallback al localStorage
     const key = `series_progress_${tvData.id}`;
     const saved = localStorage.getItem(key);
     if (saved) {
@@ -802,11 +836,9 @@ async function getNextEpisode() {
 async function resetSeriesProgress() {
     if (!tvData) return;
     if (confirm(`Resettare il progresso per "${tvData.name}"? Ricomincerai dall'episodio 1.`)) {
-        // Rimuovi dal cloud
         if (window.resetTVProgressCloud) {
             await window.resetTVProgressCloud();
         }
-        // Rimuovi dal localStorage
         const key = `series_progress_${tvData.id}`;
         localStorage.removeItem(key);
         await updateResumeButton();
@@ -861,7 +893,6 @@ async function loadTVDetails() {
         loadSimilar(data.similar);
         loadCast(data.credits);
         
-        // Aggiorna il bottone con la lista già caricata
         if (window.updateTVButton) {
             window.updateTVButton();
         }
@@ -880,7 +911,6 @@ async function displayTVDetails(tv) {
     
     const progress = await loadSeriesProgress();
     
-    // Determina lo stato iniziale del bottone
     let initialInList = false;
     let initialCompleted = false;
     if (window.userList) {
@@ -890,7 +920,6 @@ async function displayTVDetails(tv) {
     }
     isCompleted = initialCompleted;
     
-    // Formatta la data precisa
     let releaseDate = formatDate(tv.first_air_date);
     if (!releaseDate && tv.first_air_date) {
         releaseDate = tv.first_air_date.split("-")[0];
@@ -941,7 +970,6 @@ async function displayTVDetails(tv) {
 }
 
 function loadAdditionalInfo(tv) {
-    // Formatta la data precisa per le informazioni
     let releaseDate = formatDate(tv.first_air_date);
     if (!releaseDate && tv.first_air_date) {
         releaseDate = tv.first_air_date.split("-")[0];
@@ -1149,7 +1177,6 @@ function loadCast(credits) {
     
     let castList = [];
     
-    // 1. Aggiungi il regista come primo elemento (se disponibile)
     if (credits.crew && credits.crew.length > 0) {
         const director = credits.crew.find(member => member.job === "Director");
         if (director) {
@@ -1161,9 +1188,8 @@ function loadCast(credits) {
         }
     }
     
-    // 2. Aggiungi gli attori principali (max 11 per non superare i 12 totali)
     if (credits.cast && credits.cast.length > 0) {
-        const maxActors = 11; // +1 regista = 12 totali
+        const maxActors = 11;
         const mainCast = credits.cast.slice(0, maxActors);
         castList.push(...mainCast);
     }
@@ -1210,6 +1236,9 @@ async function playFirstEpisode() {
     }
 }
 
+// ============================================================
+// 🔥 TOGGLE LISTA - CHIAMA LA FUNZIONE CON TRANSAZIONE
+// ============================================================
 async function toggleListFromDetails() {
     if (!tvData) return;
     
@@ -1224,7 +1253,7 @@ async function toggleListFromDetails() {
         poster: tvData.poster_path ? IMG_BASE + tvData.poster_path : "",
         rating: tvData.vote_average,
         year: tvData.first_air_date ? tvData.first_air_date.split("-")[0] : "N/D",
-        first_air_date: tvData.first_air_date || null, // <-- AGGIUNTO - SALVA LA DATA PRECISA
+        first_air_date: tvData.first_air_date || null,
         type: "tv",
         mediaType: "Serie TV",
         seasons: tvData.number_of_seasons,
