@@ -57,7 +57,6 @@ h1 {
     background-clip: text !important;
 }
 
-
 .clear-all-btn, .login-btn, .logout-btn {
     background: rgba(124, 58, 237, 0.9);
     border: none;
@@ -166,10 +165,6 @@ h1 {
     color: #fbbf24;
 }
 
-.dropdown-menu button.restore-btn {
-    color: #f472b6;
-}
-
 .dropdown-menu button.history-btn {
     color: #60a5fa;
 }
@@ -179,7 +174,7 @@ h1 {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Modal styles */
+/* Modal storico backup */
 .modal {
     display: none;
     position: fixed;
@@ -197,10 +192,10 @@ h1 {
     background: #1e1b4b;
     padding: 30px;
     border-radius: 20px;
-    max-width: 400px;
-    width: 90%;
+    max-width: 700px;
+    width: 95%;
     text-align: center;
-    max-height: 80vh;
+    max-height: 85vh;
     overflow-y: auto;
 }
 
@@ -217,6 +212,135 @@ h1 {
 .modal-content button { margin: 5px; padding: 10px 20px; }
 .error-msg { color: #f87171; font-size: 12px; margin-top: 10px; }
 .success-msg { color: #4ade80; font-size: 12px; margin-top: 10px; }
+
+/* Stili per la lista dello storico */
+.backup-list {
+    max-height: 55vh;
+    overflow-y: auto;
+    margin: 10px 0;
+}
+
+.backup-item {
+    background: rgba(31, 27, 58, 0.6);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    border-left: 3px solid #10b981;
+}
+
+.backup-item .backup-info {
+    text-align: left;
+    flex: 1;
+    min-width: 150px;
+}
+
+.backup-item .backup-date {
+    font-size: 11px;
+    color: #8892b0;
+    font-weight: 500;
+}
+
+.backup-item .backup-date strong {
+    color: #c084fc;
+}
+
+.backup-item .backup-desc {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ccd6f6;
+    margin-top: 2px;
+}
+
+.backup-item .backup-count {
+    font-size: 11px;
+    color: #8892b0;
+    margin-top: 2px;
+}
+
+.backup-item .backup-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.backup-item .download-btn {
+    background: rgba(16, 185, 129, 0.8);
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.backup-item .download-btn:hover {
+    background: #10b981;
+    transform: translateY(-2px);
+}
+
+.backup-item .restore-btn {
+    background: rgba(245, 158, 11, 0.8);
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.backup-item .restore-btn:hover {
+    background: #f59e0b;
+    transform: translateY(-2px);
+}
+
+.backup-item .delete-backup-btn {
+    background: rgba(239, 68, 68, 0.6);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s ease;
+}
+
+.backup-item .delete-backup-btn:hover {
+    background: #ef4444;
+    transform: translateY(-2px);
+}
+
+.backup-item.current {
+    border-left-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+}
+
+.backup-item.current .backup-desc {
+    color: #fbbf24;
+}
+
+.backup-empty {
+    text-align: center;
+    padding: 30px;
+    color: #8892b0;
+    font-size: 13px;
+}
+
+.backup-stats {
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    font-size: 12px;
+    color: #8892b0;
+}
 
 .container { max-width: 1200px; margin: auto; padding: 16px; }
 
@@ -242,11 +366,6 @@ h1 {
     color: rgba(255,255,255,0.5); 
     margin-top: 4px;
     width: 100%;
-}
-.title-buttons {
-    display: flex;
-    gap: 10px;
-    align-items: center;
 }
 .title-btn {
     background: rgba(124, 58, 237, 0.9);
@@ -743,10 +862,7 @@ h1 {
                 <button class="import-btn" onclick="window.importList(); closeDropdown();">
                     📂 Ripristina da backup
                 </button>
-                <button class="restore-btn" onclick="window.restoreLastBackup(); closeDropdown();">
-                    ⏪ Ripristina ultimo backup
-                </button>
-                <button class="history-btn" onclick="window.showBackupHistory(); closeDropdown();">
+                <button class="history-btn" onclick="window.openBackupHistory(); closeDropdown();">
                     📚 Storico backup
                 </button>
             </div>
@@ -761,14 +877,22 @@ h1 {
     </div>
 </div>
 
-<div id="selectionBar" class="selection-bar">
-    <div class="selection-count" id="selectionCount">0 selezionati</div>
-    <div class="selection-actions">
-        <button class="selection-action-btn" onclick="moveSelectedToFolder()">📂 Sposta in cartella</button>
-        <button class="selection-action-btn cancel" onclick="cancelMultiSelect()">❌ Annulla</button>
+<!-- MODALE STORICO BACKUP -->
+<div id="historyModal" class="modal">
+    <div class="modal-content">
+        <h2>📚 Storico Backup</h2>
+        <p style="color: #8892b0; font-size: 12px; margin-bottom: 10px;">
+            Ogni modifica alla lista genera automaticamente un backup. Puoi scaricare o ripristinare qualsiasi versione.
+        </p>
+        <div id="backupHistoryList" class="backup-list">
+            <div class="backup-empty">⏳ Caricamento storico...</div>
+        </div>
+        <div id="backupStats" class="backup-stats"></div>
+        <button onclick="closeHistoryModal()" style="margin-top: 15px; background: rgba(124, 58, 237, 0.8); border: none; padding: 10px 30px; border-radius: 30px; color: white; cursor: pointer;">❌ Chiudi</button>
     </div>
 </div>
 
+<!-- MODALE LOGIN -->
 <div id="authModal" class="modal">
     <div class="modal-content">
         <div id="loginPanel">
@@ -792,6 +916,7 @@ h1 {
     </div>
 </div>
 
+<!-- MODALE CARTELLA -->
 <div id="folderModal" class="modal">
     <div class="modal-content">
         <h2>📁 Nuova Cartella</h2>
@@ -802,6 +927,7 @@ h1 {
     </div>
 </div>
 
+<!-- MODALE SPOSTA -->
 <div id="moveModal" class="modal">
     <div class="modal-content">
         <h2>📂 Sposta in cartella</h2>
@@ -813,6 +939,7 @@ h1 {
     </div>
 </div>
 
+<!-- MODALE SPOSTA MULTIPLA -->
 <div id="multiMoveModal" class="modal">
     <div class="modal-content">
         <h2>📂 Sposta elementi selezionati in cartella</h2>
@@ -966,6 +1093,29 @@ h1 {
         }
     }
 
+    function formatFullDate(dateString) {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+            
+            const options = { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            return date.toLocaleDateString('it-IT', options);
+        } catch (e) {
+            return dateString;
+        }
+    }
+
+    // ============================================================
+    // 🔥 GESTIONE DROPDOWN
+    // ============================================================
     window.toggleDropdown = function() {
         const menu = document.getElementById('dropdownMenu');
         const btn = document.querySelector('.dropdown-btn');
@@ -988,152 +1138,35 @@ h1 {
     });
 
     // ============================================================
-    // 🔥 BACKUP CON VERSIONI - SALVA LO STATO ATTUALE
+    // 🔥 FUNZIONI PER LO STORICO BACKUP
     // ============================================================
-    window.exportList = function() {
-        if (!currentUser) {
-            alert("Devi essere loggato!");
-            return;
-        }
-
-        const totalItems = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
-        
-        const snapshotData = {
-            user: {
-                uid: currentUser.uid,
-                email: currentUser.email,
-                username: currentUsername
-            },
-            list: JSON.parse(JSON.stringify(currentList)), // COPIA PROFONDA
-            folders: JSON.parse(JSON.stringify(currentFolders)), // COPIA PROFONDA
-            exportedAt: new Date().toISOString(),
-            totalItems: totalItems,
-            version: Date.now(),
-            type: "backup_snapshot"
+    
+    // Ottiene la descrizione dell'azione
+    function getActionDescription(action, details) {
+        const actions = {
+            'add': `➕ Aggiunto: ${details || 'elemento'}`,
+            'remove': `➖ Rimosso: ${details || 'elemento'}`,
+            'completed': `✅ Marcato come ${details || 'completato'}`,
+            'uncompleted': `↩️ Rimosso da completati: ${details || 'elemento'}`,
+            'move': `📂 Spostato: ${details || 'elemento'}`,
+            'folder_create': `📁 Creata cartella: ${details || 'senza nome'}`,
+            'folder_delete': `🗑 Eliminata cartella: ${details || 'senza nome'}`,
+            'clear': `🗑 Svuotata ${details || 'lista'}`,
+            'import': `📥 Importazione: ${details || 'contenuti'}`,
+            'restore': `⏪ Ripristino da backup: ${details || 'versione precedente'}`,
+            'manual': `💾 Backup manuale`,
+            'unknown': `🔄 Modifica generica`
         };
+        return actions[action] || actions['unknown'];
+    }
 
-        // 🔥 SALVA NEL LOCALSTORAGE COME "ULTIMO BACKUP"
-        localStorage.setItem('kitsustream_last_backup', JSON.stringify(snapshotData));
-
-        // 🔥 SALVA NELLO STORICO (ultimi 20 backup)
-        const backupHistory = JSON.parse(localStorage.getItem('kitsustream_backup_history') || '[]');
-        backupHistory.push({
-            timestamp: snapshotData.exportedAt,
-            version: snapshotData.version,
-            totalItems: snapshotData.totalItems,
-            preview: snapshotData.list.slice(0, 5).map(i => i.title).join(', ')
-        });
-        // Mantieni solo gli ultimi 20 backup
-        while (backupHistory.length > 20) {
-            backupHistory.shift();
-        }
-        localStorage.setItem('kitsustream_backup_history', JSON.stringify(backupHistory));
-
-        // 🔥 SCARICA IL FILE
-        const blob = new Blob([JSON.stringify(snapshotData, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `backup_kitsustream_${new Date().toISOString().split('T')[0]}_v${snapshotData.version}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        alert(`✅ Backup creato! (${snapshotData.totalItems} elementi salvati)\n💡 Versione salvata come "ultimo backup" e nello storico.`);
-    };
-
-    // ============================================================
-    // 🔥 RIPRISTINA ULTIMO BACKUP
-    // ============================================================
-    window.restoreLastBackup = function() {
-        if (!currentUser) {
-            alert("Devi essere loggato!");
-            return;
-        }
-
-        const lastBackup = localStorage.getItem('kitsustream_last_backup');
-        if (!lastBackup) {
-            alert("❌ Nessun backup trovato! Crea prima un backup.");
-            return;
-        }
-
-        try {
-            const data = JSON.parse(lastBackup);
-            
-            if (!data.list || !Array.isArray(data.list)) {
-                alert("❌ Backup corrotto!");
-                return;
-            }
-
-            const currentTotal = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
-            
-            const confirmMsg = `📋 Ripristinare il backup del ${new Date(data.exportedAt).toLocaleString('it-IT')}?\n\n` +
-                              `📦 Elementi nel backup: ${data.totalItems}\n` +
-                              `📦 Elementi attuali: ${currentTotal}\n` +
-                              `📂 Cartelle nel backup: ${Object.keys(data.folders || {}).length}\n` +
-                              `📂 Cartelle attuali: ${Object.keys(currentFolders).length}\n\n` +
-                              `⚠️ Questo SOSTITUIRÀ COMPLETAMENTE la lista attuale!\n\n` +
-                              `Procedere?`;
-            
-            if (!confirm(confirmMsg)) return;
-
-            // 🔥 RIPRISTINA I DATI
-            currentList = data.list || [];
-            currentFolders = data.folders || {};
-            
-            saveAllData();
-            displayList();
-            
-            alert(`✅ Ripristinato! ${currentList.length} elementi nella lista principale e ${Object.keys(currentFolders).length} cartelle.`);
-            
-        } catch (error) {
-            alert("❌ Errore nel ripristino: " + error.message);
-            console.error(error);
-        }
-    };
-
-    // ============================================================
-    // 🔥 MOSTRA STORICO BACKUP
-    // ============================================================
-    window.showBackupHistory = function() {
-        const history = JSON.parse(localStorage.getItem('kitsustream_backup_history') || '[]');
-        
-        if (history.length === 0) {
-            alert("📭 Nessun backup storico trovato.\n\nCrea un backup con '💾 Backup lista' per iniziare.");
-            return;
-        }
-
-        let msg = "📚 STORICO BACKUP:\n\n";
-        msg += "─".repeat(40) + "\n";
-        
-        history.forEach((backup, index) => {
-            const date = new Date(backup.timestamp).toLocaleString('it-IT');
-            const preview = backup.preview || `${backup.totalItems} elementi`;
-            msg += `${index + 1}. ${date}\n`;
-            msg += `   📦 ${backup.totalItems} elementi`;
-            if (backup.totalItems > 0) {
-                msg += ` (${preview}${backup.totalItems > 5 ? '...' : ''})`;
-            }
-            msg += "\n\n";
-        });
-        
-        msg += "─".repeat(40) + "\n";
-        msg += `📊 ${history.length} backup salvati (max 20).\n`;
-        msg += `💡 Usa "⏪ Ripristina ultimo backup" per tornare all'ultima versione.`;
-        
-        alert(msg);
-    };
-
-    // ============================================================
-    // 🔥 BACKUP AUTOMATICO PRIMA DELLE MODIFICHE
-    // ============================================================
-    async function autoBackupBeforeChange(description = "modifica") {
+    // Salva un backup nello storico
+    async function saveBackupToHistory(action, description = '') {
         if (!currentUser) return;
-        
+
         const totalItems = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
         
-        const autoBackup = {
+        const backupData = {
             user: {
                 uid: currentUser.uid,
                 email: currentUser.email,
@@ -1145,68 +1178,781 @@ h1 {
             totalItems: totalItems,
             version: Date.now(),
             type: "auto_backup",
-            description: description
+            action: action,
+            description: getActionDescription(action, description)
         };
+
+        // Salva nello storico
+        const historyKey = `kitsustream_backup_history_${currentUser.uid}`;
+        const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
         
-        // Salva come ultimo backup automatico
-        localStorage.setItem('kitsustream_last_auto_backup', JSON.stringify(autoBackup));
+        // Aggiungi il nuovo backup all'inizio
+        history.unshift(backupData);
         
-        // Salva nello storico automatico (ultimi 10)
-        const autoBackups = JSON.parse(localStorage.getItem('kitsustream_auto_backups') || '[]');
-        autoBackups.push({
-            timestamp: autoBackup.exportedAt,
-            version: autoBackup.version,
-            totalItems: autoBackup.totalItems,
-            description: description
-        });
-        while (autoBackups.length > 10) {
-            autoBackups.shift();
+        // Mantieni solo gli ultimi 50 backup
+        while (history.length > 50) {
+            history.pop();
         }
-        localStorage.setItem('kitsustream_auto_backups', JSON.stringify(autoBackups));
+        
+        localStorage.setItem(historyKey, JSON.stringify(history));
+        
+        // Salva anche come ultimo backup
+        localStorage.setItem(`kitsustream_last_backup_${currentUser.uid}`, JSON.stringify(backupData));
+    }
+
+    // Carica lo storico
+    function loadBackupHistory() {
+        if (!currentUser) return [];
+        const historyKey = `kitsustream_backup_history_${currentUser.uid}`;
+        return JSON.parse(localStorage.getItem(historyKey) || '[]');
+    }
+
+    // Scarica un backup specifico
+    window.downloadBackup = function(index) {
+        const history = loadBackupHistory();
+        if (index < 0 || index >= history.length) {
+            alert("❌ Backup non trovato!");
+            return;
+        }
+        
+        const data = history[index];
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const dateStr = new Date(data.exportedAt).toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        a.download = `backup_${dateStr}_v${data.version}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    // Ripristina un backup specifico
+    window.restoreBackup = async function(index) {
+        const history = loadBackupHistory();
+        if (index < 0 || index >= history.length) {
+            alert("❌ Backup non trovato!");
+            return;
+        }
+        
+        const data = history[index];
+        
+        if (!data.list || !Array.isArray(data.list)) {
+            alert("❌ Backup corrotto!");
+            return;
+        }
+
+        const currentTotal = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
+        
+        const confirmMsg = `📋 Ripristinare il backup del ${formatFullDate(data.exportedAt)}?\n\n` +
+                          `📝 ${data.description || 'Nessuna descrizione'}\n` +
+                          `📦 Elementi nel backup: ${data.totalItems}\n` +
+                          `📦 Elementi attuali: ${currentTotal}\n` +
+                          `📂 Cartelle nel backup: ${Object.keys(data.folders || {}).length}\n\n` +
+                          `⚠️ Questo SOSTITUIRÀ COMPLETAMENTE la lista attuale!\n\n` +
+                          `Procedere?`;
+        
+        if (!confirm(confirmMsg)) return;
+
+        // Salva backup automatico prima del ripristino
+        await saveBackupToHistory('restore', `Prima di ripristinare backup del ${formatFullDate(data.exportedAt)}`);
+
+        currentList = data.list || [];
+        currentFolders = data.folders || {};
+        
+        await saveAllData();
+        displayList();
+        
+        alert(`✅ Ripristinato! ${currentList.length} elementi nella lista principale e ${Object.keys(currentFolders).length} cartelle.`);
+        
+        // Aggiorna lo storico
+        await saveBackupToHistory('restore', `Ripristinato backup del ${formatFullDate(data.exportedAt)}`);
+    };
+
+    // Elimina un backup dallo storico
+    window.deleteBackup = function(index) {
+        if (!currentUser) return;
+        const historyKey = `kitsustream_backup_history_${currentUser.uid}`;
+        const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+        
+        if (index < 0 || index >= history.length) return;
+        
+        if (!confirm(`Eliminare il backup del ${formatFullDate(history[index].exportedAt)}?`)) return;
+        
+        history.splice(index, 1);
+        localStorage.setItem(historyKey, JSON.stringify(history));
+        
+        // Ricarica la lista dello storico se il modale è aperto
+        const modal = document.getElementById('historyModal');
+        if (modal && modal.style.display === 'flex') {
+            renderBackupHistory();
+        }
+    };
+
+    // Apre il modale dello storico
+    window.openBackupHistory = function() {
+        if (!currentUser) {
+            alert("Devi essere loggato!");
+            return;
+        }
+        document.getElementById('historyModal').style.display = 'flex';
+        renderBackupHistory();
+    };
+
+    window.closeHistoryModal = function() {
+        document.getElementById('historyModal').style.display = 'none';
+    };
+
+    // Renderizza lo storico
+    function renderBackupHistory() {
+        const container = document.getElementById('backupHistoryList');
+        const stats = document.getElementById('backupStats');
+        
+        const history = loadBackupHistory();
+        
+        if (history.length === 0) {
+            container.innerHTML = `
+                <div class="backup-empty">
+                    📭 Nessun backup storico trovato.<br>
+                    Ogni modifica alla lista creerà automaticamente un backup.
+                </div>
+            `;
+            stats.innerHTML = '';
+            return;
+        }
+
+        // Calcola il totale degli elementi salvati
+        const totalItems = history.reduce((sum, b) => sum + (b.totalItems || 0), 0);
+        const avgItems = Math.round(totalItems / history.length);
+
+        let html = '';
+        
+        // Backup attuale (primo della lista)
+        const currentBackup = history[0];
+        html += `
+            <div class="backup-item current">
+                <div class="backup-info">
+                    <div class="backup-date">📌 <strong>STATO ATTUALE</strong> · ${formatFullDate(currentBackup.exportedAt)}</div>
+                    <div class="backup-desc">📝 ${currentBackup.description || 'Stato corrente della lista'}</div>
+                    <div class="backup-count">📦 ${currentBackup.totalItems} elementi · 📂 ${Object.keys(currentBackup.folders || {}).length} cartelle</div>
+                </div>
+                <div class="backup-actions">
+                    <button class="download-btn" onclick="window.downloadBackup(0)">💾 Scarica</button>
+                </div>
+            </div>
+        `;
+
+        // Backup precedenti
+        if (history.length > 1) {
+            html += `<div style="margin: 8px 0; text-align: center; color: #8892b0; font-size: 11px;">— VERSIONI PRECEDENTI —</div>`;
+            
+            for (let i = 1; i < history.length; i++) {
+                const backup = history[i];
+                const isCurrent = i === 0;
+                html += `
+                    <div class="backup-item">
+                        <div class="backup-info">
+                            <div class="backup-date">📅 ${formatFullDate(backup.exportedAt)}</div>
+                            <div class="backup-desc">📝 ${backup.description || 'Nessuna descrizione'}</div>
+                            <div class="backup-count">📦 ${backup.totalItems} elementi · 📂 ${Object.keys(backup.folders || {}).length} cartelle</div>
+                        </div>
+                        <div class="backup-actions">
+                            <button class="download-btn" onclick="window.downloadBackup(${i})">💾 Scarica</button>
+                            <button class="restore-btn" onclick="window.restoreBackup(${i})">⏪ Ripristina</button>
+                            <button class="delete-backup-btn" onclick="window.deleteBackup(${i})">🗑</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        container.innerHTML = html;
+        
+        stats.innerHTML = `
+            📊 ${history.length} backup salvati · 
+            📦 Media ${avgItems} elementi per backup · 
+            💾 ${history.length > 0 ? Math.round((history[0].totalItems - history[history.length-1].totalItems) / history[history.length-1].totalItems * 100) : 0}% variazione totale
+        `;
     }
 
     // ============================================================
-    // 🔥 RIPRISTINA ULTIMO BACKUP AUTOMATICO
+    // 🔥 FUNZIONI AUTENTICAZIONE
     // ============================================================
-    window.restoreAutoBackup = function() {
-        const lastAuto = localStorage.getItem('kitsustream_last_auto_backup');
-        if (!lastAuto) {
-            alert("❌ Nessun backup automatico trovato!");
+    window.login = async function() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorDiv = document.getElementById('loginError');
+        
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            document.getElementById('authModal').style.display = 'none';
+            errorDiv.textContent = '';
+        } catch (error) {
+            let msg = error.code === 'auth/invalid-email' ? 'Email non valida' :
+                      error.code === 'auth/user-not-found' ? 'Utente non trovato' :
+                      error.code === 'auth/wrong-password' ? 'Password errata' : error.message;
+            errorDiv.textContent = msg;
+        }
+    };
+
+    window.register = async function() {
+        const username = document.getElementById('regUsername')?.value?.trim() || "";
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+        const errorDiv = document.getElementById('regError');
+        const successDiv = document.getElementById('regSuccess');
+        
+        if (!username) {
+            errorDiv.textContent = 'Inserisci un nome utente';
+            return;
+        }
+        
+        if (username.length < 3) {
+            errorDiv.textContent = 'Il nome utente deve avere almeno 3 caratteri';
+            return;
+        }
+        
+        if (password.length < 6) {
+            errorDiv.textContent = 'La password deve essere almeno di 6 caratteri';
             return;
         }
         
         try {
-            const data = JSON.parse(lastAuto);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             
-            if (!data.list || !Array.isArray(data.list)) {
-                alert("❌ Backup automatico corrotto!");
-                return;
-            }
-
-            const currentTotal = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
+            await setDoc(doc(db, 'users', userCredential.user.uid), { 
+                list: [],
+                folders: {},
+                username: username,
+                email: email,
+                createdAt: new Date()
+            });
             
-            const confirmMsg = `📋 Ripristinare il backup automatico del ${new Date(data.exportedAt).toLocaleString('it-IT')}?\n\n` +
-                              `📦 Elementi nel backup: ${data.totalItems}\n` +
-                              `📦 Elementi attuali: ${currentTotal}\n` +
-                              `${data.description ? `📝 Descrizione: ${data.description}\n` : ''}\n` +
-                              `⚠️ Questo SOSTITUIRÀ COMPLETAMENTE la lista attuale!\n\n` +
-                              `Procedere?`;
-            
-            if (!confirm(confirmMsg)) return;
-
-            currentList = data.list || [];
-            currentFolders = data.folders || {};
-            
-            saveAllData();
-            displayList();
-            
-            alert(`✅ Ripristinato! ${currentList.length} elementi.`);
-            
+            successDiv.textContent = '✅ Registrazione completata! Ora puoi accedere.';
+            setTimeout(() => window.showLoginPanel(), 2000);
         } catch (error) {
-            alert("❌ Errore nel ripristino: " + error.message);
+            let msg = error.code === 'email-already-in-use' ? 'Email già registrata' :
+                      error.code === 'invalid-email' ? 'Email non valida' : error.message;
+            errorDiv.textContent = msg;
         }
     };
 
+    window.logout = async function() {
+        await signOut(auth);
+    };
+
+    window.showLoginPanel = function() {
+        document.getElementById('loginPanel').style.display = 'block';
+        document.getElementById('registerPanel').style.display = 'none';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('regError').textContent = '';
+        document.getElementById('regSuccess').textContent = '';
+    };
+
+    window.showRegisterPanel = function() {
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('registerPanel').style.display = 'block';
+    };
+
+    window.openLoginModal = function() {
+        window.showLoginPanel();
+        document.getElementById('authModal').style.display = 'flex';
+    };
+
+    // ============================================================
+    // 🔥 FUNZIONI UI
+    // ============================================================
+    window.changeSort = function(sort) {
+        currentSort = sort;
+        document.querySelectorAll(".sort-btn").forEach(btn => btn.classList.remove("active"));
+        document.querySelector(`.sort-btn[data-sort="${sort}"]`).classList.add("active");
+        displayList();
+    };
+
+    window.filterByType = function(type) {
+        currentTypeFilter = type;
+        document.querySelectorAll(".type-btn").forEach(btn => btn.classList.remove("active"));
+        document.querySelector(`.type-btn[data-type="${type}"]`).classList.add("active");
+        displayList();
+    };
+
+    window.filterByStatus = function(status) {
+        currentStatusFilter = status;
+        document.querySelectorAll(".status-filter-btn").forEach(btn => {
+            btn.classList.remove("active", "completed-active");
+        });
+        const btn = document.querySelector(`.status-filter-btn[data-status="${status}"]`);
+        if (btn) {
+            btn.classList.add("active");
+            if (status === 'completed') {
+                btn.classList.add("completed-active");
+            }
+        }
+        displayList();
+    };
+
+    function getCurrentItems() {
+        if (currentFolder) {
+            return currentFolders[currentFolder] || [];
+        }
+        return currentList;
+    }
+
+    function sortItems(items) {
+        const sorted = [...items];
+        switch(currentSort) {
+            case "rating":
+                sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                break;
+            case "title":
+                sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+                break;
+            case "date":
+                sorted.sort((a, b) => {
+                    const dateA = a.release_date || a.first_air_date || '';
+                    const dateB = b.release_date || b.first_air_date || '';
+                    
+                    if (dateA && dateB) {
+                        return dateB.localeCompare(dateA);
+                    }
+                    if (dateA) return -1;
+                    if (dateB) return 1;
+                    return (b.year || 0) - (a.year || 0);
+                });
+                break;
+            case "addedDate":
+            default:
+                sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+                break;
+        }
+        return sorted;
+    }
+
+    function filterItems(items) {
+        let filtered = [...items];
+        
+        if (currentTypeFilter !== "all") {
+            filtered = filtered.filter(item => item.type === currentTypeFilter);
+        }
+        
+        if (currentStatusFilter === "completed") {
+            filtered = filtered.filter(item => item.completed === true);
+            filtered.sort((a, b) => {
+                const dateA = a.completedDate || a.watched_at || '';
+                const dateB = b.completedDate || b.watched_at || '';
+                return dateB.localeCompare(dateA);
+            });
+        } else {
+            filtered = filtered.filter(item => item.completed !== true);
+        }
+        
+        return filtered;
+    }
+
+    function updateStats(filteredItems, totalItems) {
+        const statsDiv = document.getElementById("stats");
+        const moviesCount = filteredItems.filter(i => i.type === "movie").length;
+        const tvCount = filteredItems.filter(i => i.type === "tv" || i.type === "series").length;
+        const avgRating = filteredItems.length > 0 
+            ? (filteredItems.reduce((sum, i) => sum + (i.rating || 0), 0) / filteredItems.length).toFixed(1)
+            : 0;
+        
+        const statusLabel = currentStatusFilter === "completed" ? "Completati" : "Da Guardare";
+        statsDiv.innerHTML = `📊 ${statusLabel}: ${filteredItems.length} su ${totalItems} totali | 🎬 Film: ${moviesCount} | 📺 Serie: ${tvCount} | ⭐ Media voto: ${avgRating}`;
+        updateCompletedStats();
+    }
+
+    function updateCompletedStats() {
+        const items = getCurrentItems();
+        const total = items.length;
+        const completed = items.filter(i => i.completed === true).length;
+        const notCompleted = total - completed;
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+        
+        document.getElementById('completedCount').textContent = completed;
+        document.getElementById('notCompletedCount').textContent = notCompleted;
+        document.getElementById('completionPercentage').textContent = percentage;
+    }
+
+    function renderFoldersBar() {
+        const container = document.getElementById('foldersBar');
+        let html = `<button class="folder-btn ${!currentFolder ? 'active' : ''}" onclick="window.selectFolder(null)">📂 Tutti</button>`;
+        
+        for (const folderName in currentFolders) {
+            const count = currentFolders[folderName].length;
+            html += `<div class="folder-item">
+                        <button class="folder-btn ${currentFolder === folderName ? 'active' : ''}" onclick="window.selectFolder('${escapeHtml(folderName)}')">
+                            📁 ${escapeHtml(folderName)} (${count})
+                        </button>
+                        <button class="folder-btn delete-folder-btn" onclick="window.deleteFolder('${escapeHtml(folderName)}')">🗑</button>
+                    </div>`;
+        }
+        
+        container.innerHTML = html;
+    }
+
+    // ============================================================
+    // 🔥 FUNZIONI DI MODIFICA DELLA LISTA (CON BACKUP AUTOMATICO)
+    // ============================================================
+    
+    // Ogni funzione che modifica la lista chiama saveBackupToHistory PRIMA della modifica
+
+    window.markAsCompleted = async function(id, type, event) {
+        event.stopPropagation();
+        
+        let items = getCurrentItems();
+        let item = items.find(i => i.id == id && i.type === type);
+        
+        if (!item) return;
+        
+        const action = item.completed ? 'uncompleted' : 'completed';
+        const details = `"${item.title}" (${item.type === 'movie' ? 'Film' : 'Serie TV'})`;
+        
+        // 🔥 BACKUP PRIMA DELLA MODIFICA
+        await saveBackupToHistory(action, details);
+        
+        if (item.completed) {
+            item.completed = false;
+            item.completedDate = null;
+        } else {
+            item.completed = true;
+            item.completedDate = new Date().toISOString().split('T')[0];
+            item.watched_at = new Date().toISOString();
+        }
+        
+        await saveAllData();
+        displayList();
+    };
+
+    window.createFolder = async function() {
+        const folderName = document.getElementById('folderName').value.trim();
+        if (!folderName) {
+            document.getElementById('folderError').textContent = 'Inserisci un nome per la cartella';
+            return;
+        }
+        
+        if (currentFolders[folderName]) {
+            document.getElementById('folderError').textContent = 'Esiste già una cartella con questo nome';
+            return;
+        }
+        
+        // 🔥 BACKUP PRIMA DELLA MODIFICA
+        await saveBackupToHistory('folder_create', folderName);
+        
+        currentFolders[folderName] = [];
+        await saveAllData();
+        closeFolderModal();
+        renderFoldersBar();
+        displayList();
+    };
+
+    window.deleteFolder = async function(folderName) {
+        if (confirm(`Eliminare la cartella "${folderName}"? I contenuti torneranno nella lista principale.`)) {
+            // 🔥 BACKUP PRIMA DELLA MODIFICA
+            await saveBackupToHistory('folder_delete', folderName);
+            
+            const folderItems = currentFolders[folderName] || [];
+            
+            for (const item of folderItems) {
+                const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
+                if (!esisteGia) {
+                    currentList.push(item);
+                }
+            }
+            
+            delete currentFolders[folderName];
+            await saveAllData();
+            
+            if (currentFolder === folderName) {
+                currentFolder = null;
+            }
+            
+            renderFoldersBar();
+            displayList();
+        }
+    };
+
+    window.confirmMultiMove = async function() {
+        const targetFolder = document.getElementById('multiFolderSelect').value;
+        const itemsToMove = [];
+        
+        for (const key of selectedItems) {
+            const [id, type] = key.split('_');
+            const found = getCurrentItems().find(item => item.id == id && item.type === type);
+            if (found) {
+                itemsToMove.push(found);
+            }
+        }
+        
+        if (itemsToMove.length === 0) return;
+        
+        // 🔥 BACKUP PRIMA DELLA MODIFICA
+        await saveBackupToHistory('move', `${itemsToMove.length} elementi in ${targetFolder || 'lista principale'}`);
+        
+        if (currentFolder) {
+            const folderItems = currentFolders[currentFolder] || [];
+            currentFolders[currentFolder] = folderItems.filter(item => 
+                !itemsToMove.some(move => move.id === item.id && move.type === item.type)
+            );
+        } else {
+            currentList = currentList.filter(item => 
+                !itemsToMove.some(move => move.id === item.id && move.type === item.type)
+            );
+        }
+        
+        if (targetFolder && currentFolders[targetFolder]) {
+            for (const item of itemsToMove) {
+                const esisteGia = currentFolders[targetFolder].some(i => i.id === item.id && i.type === item.type);
+                if (!esisteGia) {
+                    currentFolders[targetFolder].push(item);
+                }
+            }
+        } else {
+            for (const item of itemsToMove) {
+                const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
+                if (!esisteGia) {
+                    currentList.push(item);
+                }
+            }
+        }
+        
+        await saveAllData();
+        closeMultiMoveModal();
+        cancelMultiSelect();
+        displayList();
+    };
+
+    window.confirmSingleMove = async function() {
+        const targetFolder = document.getElementById('folderSelect').value;
+        if (!pendingMoveItem) return;
+        
+        // 🔥 BACKUP PRIMA DELLA MODIFICA
+        await saveBackupToHistory('move', `"${pendingMoveItem.title}" in ${targetFolder || 'lista principale'}`);
+        
+        if (currentFolder) {
+            const folderItems = currentFolders[currentFolder] || [];
+            const index = folderItems.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (index !== -1) {
+                folderItems.splice(index, 1);
+                currentFolders[currentFolder] = folderItems;
+            }
+        } else {
+            const index = currentList.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (index !== -1) {
+                currentList.splice(index, 1);
+            }
+        }
+        
+        if (targetFolder && currentFolders[targetFolder]) {
+            const esisteGia = currentFolders[targetFolder].some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (!esisteGia) {
+                currentFolders[targetFolder].push(pendingMoveItem);
+            }
+        } else {
+            const esisteGia = currentList.some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
+            if (!esisteGia) {
+                currentList.push(pendingMoveItem);
+            }
+        }
+        
+        await saveAllData();
+        closeMoveModal();
+        displayList();
+    };
+
+    window.removeFromList = async function(id, type, event) {
+        event.stopPropagation();
+        if (!confirm("Rimuovere questo elemento dalla lista?")) return;
+        
+        let items = getCurrentItems();
+        let item = items.find(i => i.id == id && i.type === type);
+        
+        // 🔥 BACKUP PRIMA DELLA MODIFICA
+        await saveBackupToHistory('remove', `"${item ? item.title : 'elemento'}"`);
+        
+        const userRef = doc(db, 'users', currentUser.uid);
+        
+        try {
+            await runTransaction(db, async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+                
+                if (!userDoc.exists()) {
+                    throw new Error("Utente non trovato");
+                }
+                
+                let newList = userDoc.data().list || [];
+                let newFolders = userDoc.data().folders || {};
+                
+                if (currentFolder) {
+                    if (newFolders[currentFolder]) {
+                        newFolders[currentFolder] = newFolders[currentFolder].filter(
+                            item => !(item.id === id && item.type === type)
+                        );
+                    }
+                } else {
+                    newList = newList.filter(item => !(item.id === id && item.type === type));
+                }
+                
+                transaction.update(userRef, { 
+                    list: newList,
+                    folders: newFolders
+                });
+                
+                currentList = newList;
+                currentFolders = newFolders;
+            });
+            
+            displayList();
+        } catch (error) {
+            console.error("Errore transazione:", error);
+            alert("Errore durante la rimozione. Riprova.");
+        }
+    };
+
+    window.clearAll = async function() {
+        const confirmMsg = currentFolder ? `⚠️ Sei sicuro di voler svuotare la cartella "${currentFolder}"?` : "⚠️ Sei sicuro di voler svuotare tutta la lista?";
+        if (!confirm(confirmMsg)) return;
+        
+        // 🔥 BACKUP PRIMA DELLA MODIFICA
+        await saveBackupToHistory('clear', currentFolder ? `cartella "${currentFolder}"` : 'lista completa');
+        
+        const userRef = doc(db, 'users', currentUser.uid);
+        
+        try {
+            await runTransaction(db, async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+                
+                if (!userDoc.exists()) {
+                    throw new Error("Utente non trovato");
+                }
+                
+                let newList = userDoc.data().list || [];
+                let newFolders = userDoc.data().folders || {};
+                
+                if (currentFolder) {
+                    newFolders[currentFolder] = [];
+                } else {
+                    newList = [];
+                }
+                
+                transaction.update(userRef, { 
+                    list: newList,
+                    folders: newFolders
+                });
+                
+                currentList = newList;
+                currentFolders = newFolders;
+            });
+            
+            displayList();
+        } catch (error) {
+            console.error("Errore transazione:", error);
+            alert("Errore durante lo svuotamento. Riprova.");
+        }
+    };
+
+    // ============================================================
+    // 🔥 BACKUP MANUALE
+    // ============================================================
+    window.exportList = async function() {
+        if (!currentUser) {
+            alert("Devi essere loggato!");
+            return;
+        }
+        
+        // 🔥 Salva come backup manuale
+        await saveBackupToHistory('manual', 'Backup manuale');
+        
+        // Scarica il file
+        const historyKey = `kitsustream_backup_history_${currentUser.uid}`;
+        const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+        
+        if (history.length === 0) {
+            alert("❌ Errore: nessun backup trovato!");
+            return;
+        }
+        
+        const data = history[0]; // L'ultimo backup (il più recente)
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        a.download = `backup_manual_${dateStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert(`✅ Backup manuale creato! (${data.totalItems} elementi salvati)\n💾 File scaricato.`);
+    };
+
+    // ============================================================
+    // 🔥 IMPORTA BACKUP DA FILE
+    // ============================================================
+    window.importList = function() {
+        if (!currentUser) {
+            alert("Devi essere loggato!");
+            return;
+        }
+        
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    
+                    if (!data.list || !Array.isArray(data.list)) {
+                        alert("❌ File non valido! Assicurati di aver selezionato un backup di KitsuStream.");
+                        return;
+                    }
+                    
+                    const currentTotal = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
+                    
+                    const confirmMsg = `📋 Ripristinare il backup del ${formatFullDate(data.exportedAt)}?\n\n` +
+                                      `📝 ${data.description || 'Nessuna descrizione'}\n` +
+                                      `📦 Elementi nel backup: ${data.totalItems || data.list.length}\n` +
+                                      `📦 Elementi attuali: ${currentTotal}\n` +
+                                      `📂 Cartelle nel backup: ${Object.keys(data.folders || {}).length}\n\n` +
+                                      `⚠️ Questo SOSTITUIRÀ COMPLETAMENTE la lista attuale!\n\n` +
+                                      `Procedere?`;
+                    
+                    if (!confirm(confirmMsg)) return;
+                    
+                    // 🔥 BACKUP PRIMA DEL RIPRISTINO
+                    await saveBackupToHistory('restore', `Prima di ripristinare da file esterno: ${formatFullDate(data.exportedAt)}`);
+                    
+                    currentList = data.list || [];
+                    currentFolders = data.folders || {};
+                    
+                    await saveAllData();
+                    displayList();
+                    
+                    // 🔥 Salva anche il backup ripristinato nello storico
+                    await saveBackupToHistory('restore', `Ripristinato da file esterno: ${formatFullDate(data.exportedAt)}`);
+                    
+                    alert(`✅ Ripristinato! ${currentList.length} elementi nella lista principale e ${Object.keys(currentFolders).length} cartelle.`);
+                    
+                } catch (error) {
+                    alert("❌ Errore nella lettura del file: " + error.message);
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    };
+
+    // ============================================================
+    // 🔥 FUNZIONI DI IMPORT COMPLETATI (MODIFICATE CON BACKUP)
+    // ============================================================
     window.toggleImportSection = function() {
         const section = document.getElementById('importSection');
         const btn = document.querySelector('.toggle-import-btn');
@@ -1286,8 +2032,8 @@ h1 {
         statusDiv.textContent = '⏳ Elaborazione in corso...';
         statusDiv.style.color = '#667eea';
 
-        // 🔥 BACKUP AUTOMATICO PRIMA DELL'IMPORTAZIONE
-        await autoBackupBeforeChange(`Importazione ${type === 'movies' ? 'film' : 'serie'} completati`);
+        // 🔥 BACKUP PRIMA DELL'IMPORTAZIONE
+        await saveBackupToHistory('import', `Importazione ${type === 'movies' ? 'film' : 'serie'} completati da file`);
 
         const reader = new FileReader();
         reader.onload = async function(event) {
@@ -1490,200 +2236,9 @@ h1 {
         document.getElementById('importedTotalCount').textContent = allCompleted.length;
     }
 
-    window.login = async function() {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        const errorDiv = document.getElementById('loginError');
-        
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            document.getElementById('authModal').style.display = 'none';
-            errorDiv.textContent = '';
-        } catch (error) {
-            let msg = error.code === 'auth/invalid-email' ? 'Email non valida' :
-                      error.code === 'auth/user-not-found' ? 'Utente non trovato' :
-                      error.code === 'auth/wrong-password' ? 'Password errata' : error.message;
-            errorDiv.textContent = msg;
-        }
-    };
-
-    window.register = async function() {
-        const username = document.getElementById('regUsername')?.value?.trim() || "";
-        const email = document.getElementById('regEmail').value;
-        const password = document.getElementById('regPassword').value;
-        const errorDiv = document.getElementById('regError');
-        const successDiv = document.getElementById('regSuccess');
-        
-        if (!username) {
-            errorDiv.textContent = 'Inserisci un nome utente';
-            return;
-        }
-        
-        if (username.length < 3) {
-            errorDiv.textContent = 'Il nome utente deve avere almeno 3 caratteri';
-            return;
-        }
-        
-        if (password.length < 6) {
-            errorDiv.textContent = 'La password deve essere almeno di 6 caratteri';
-            return;
-        }
-        
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            
-            await setDoc(doc(db, 'users', userCredential.user.uid), { 
-                list: [],
-                folders: {},
-                username: username,
-                email: email,
-                createdAt: new Date()
-            });
-            
-            successDiv.textContent = '✅ Registrazione completata! Ora puoi accedere.';
-            setTimeout(() => window.showLoginPanel(), 2000);
-        } catch (error) {
-            let msg = error.code === 'email-already-in-use' ? 'Email già registrata' :
-                      error.code === 'invalid-email' ? 'Email non valida' : error.message;
-            errorDiv.textContent = msg;
-        }
-    };
-
-    window.logout = async function() {
-        await signOut(auth);
-    };
-
-    window.showLoginPanel = function() {
-        document.getElementById('loginPanel').style.display = 'block';
-        document.getElementById('registerPanel').style.display = 'none';
-        document.getElementById('loginError').textContent = '';
-        document.getElementById('regError').textContent = '';
-        document.getElementById('regSuccess').textContent = '';
-    };
-
-    window.showRegisterPanel = function() {
-        document.getElementById('loginPanel').style.display = 'none';
-        document.getElementById('registerPanel').style.display = 'block';
-    };
-
-    window.openLoginModal = function() {
-        window.showLoginPanel();
-        document.getElementById('authModal').style.display = 'flex';
-    };
-
-    window.filterByStatus = function(status) {
-        currentStatusFilter = status;
-        document.querySelectorAll(".status-filter-btn").forEach(btn => {
-            btn.classList.remove("active", "completed-active");
-        });
-        const btn = document.querySelector(`.status-filter-btn[data-status="${status}"]`);
-        if (btn) {
-            btn.classList.add("active");
-            if (status === 'completed') {
-                btn.classList.add("completed-active");
-            }
-        }
-        displayList();
-    };
-
-    window.markAsCompleted = async function(id, type, event) {
-        event.stopPropagation();
-        
-        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
-        await autoBackupBeforeChange(`Marcato come ${currentStatusFilter === 'completed' ? 'da completare' : 'completato'}`);
-        
-        let items = getCurrentItems();
-        let item = items.find(i => i.id == id && i.type === type);
-        
-        if (!item) return;
-        
-        if (item.completed) {
-            item.completed = false;
-            item.completedDate = null;
-        } else {
-            item.completed = true;
-            item.completedDate = new Date().toISOString().split('T')[0];
-            item.watched_at = new Date().toISOString();
-        }
-        
-        await saveAllData();
-        displayList();
-    };
-
-    function updateCompletedStats() {
-        const items = getCurrentItems();
-        const total = items.length;
-        const completed = items.filter(i => i.completed === true).length;
-        const notCompleted = total - completed;
-        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-        
-        document.getElementById('completedCount').textContent = completed;
-        document.getElementById('notCompletedCount').textContent = notCompleted;
-        document.getElementById('completionPercentage').textContent = percentage;
-    }
-
-    window.openAddFolderModal = function() {
-        if (!currentUser) {
-            alert("Devi prima accedere!");
-            return;
-        }
-        document.getElementById('folderName').value = '';
-        document.getElementById('folderError').textContent = '';
-        document.getElementById('folderModal').style.display = 'flex';
-    };
-
-    window.closeFolderModal = function() {
-        document.getElementById('folderModal').style.display = 'none';
-    };
-
-    window.createFolder = async function() {
-        const folderName = document.getElementById('folderName').value.trim();
-        if (!folderName) {
-            document.getElementById('folderError').textContent = 'Inserisci un nome per la cartella';
-            return;
-        }
-        
-        if (currentFolders[folderName]) {
-            document.getElementById('folderError').textContent = 'Esiste già una cartella con questo nome';
-            return;
-        }
-        
-        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
-        await autoBackupBeforeChange(`Creata cartella "${folderName}"`);
-        
-        currentFolders[folderName] = [];
-        await saveAllData();
-        closeFolderModal();
-        renderFoldersBar();
-        displayList();
-    };
-
-    window.deleteFolder = async function(folderName) {
-        if (confirm(`Eliminare la cartella "${folderName}"? I contenuti torneranno nella lista principale.`)) {
-            // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
-            await autoBackupBeforeChange(`Eliminata cartella "${folderName}"`);
-            
-            const folderItems = currentFolders[folderName] || [];
-            
-            for (const item of folderItems) {
-                const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
-                if (!esisteGia) {
-                    currentList.push(item);
-                }
-            }
-            
-            delete currentFolders[folderName];
-            await saveAllData();
-            
-            if (currentFolder === folderName) {
-                currentFolder = null;
-            }
-            
-            renderFoldersBar();
-            displayList();
-        }
-    };
-
+    // ============================================================
+    // 🔥 FUNZIONI DI SELEZIONE MULTIPLA
+    // ============================================================
     window.selectFolder = function(folderName) {
         cancelMultiSelect();
         currentFolder = folderName === currentFolder ? null : folderName;
@@ -1759,56 +2314,6 @@ h1 {
         document.getElementById('multiMoveModal').style.display = 'none';
     };
 
-    window.confirmMultiMove = async function() {
-        const targetFolder = document.getElementById('multiFolderSelect').value;
-        const itemsToMove = [];
-        
-        for (const key of selectedItems) {
-            const [id, type] = key.split('_');
-            const found = getCurrentItems().find(item => item.id == id && item.type === type);
-            if (found) {
-                itemsToMove.push(found);
-            }
-        }
-        
-        if (itemsToMove.length === 0) return;
-        
-        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
-        await autoBackupBeforeChange(`Spostati ${itemsToMove.length} elementi in ${targetFolder || 'lista principale'}`);
-        
-        if (currentFolder) {
-            const folderItems = currentFolders[currentFolder] || [];
-            currentFolders[currentFolder] = folderItems.filter(item => 
-                !itemsToMove.some(move => move.id === item.id && move.type === item.type)
-            );
-        } else {
-            currentList = currentList.filter(item => 
-                !itemsToMove.some(move => move.id === item.id && move.type === item.type)
-            );
-        }
-        
-        if (targetFolder && currentFolders[targetFolder]) {
-            for (const item of itemsToMove) {
-                const esisteGia = currentFolders[targetFolder].some(i => i.id === item.id && i.type === item.type);
-                if (!esisteGia) {
-                    currentFolders[targetFolder].push(item);
-                }
-            }
-        } else {
-            for (const item of itemsToMove) {
-                const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
-                if (!esisteGia) {
-                    currentList.push(item);
-                }
-            }
-        }
-        
-        await saveAllData();
-        closeMultiMoveModal();
-        cancelMultiSelect();
-        displayList();
-    };
-
     window.moveItem = function(item) {
         if (multiSelectMode) return;
         pendingMoveItem = item;
@@ -1827,46 +2332,13 @@ h1 {
         pendingMoveItem = null;
     };
 
-    window.confirmSingleMove = async function() {
-        const targetFolder = document.getElementById('folderSelect').value;
-        if (!pendingMoveItem) return;
-        
-        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
-        await autoBackupBeforeChange(`Spostato "${pendingMoveItem.title}" in ${targetFolder || 'lista principale'}`);
-        
-        if (currentFolder) {
-            const folderItems = currentFolders[currentFolder] || [];
-            const index = folderItems.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
-            if (index !== -1) {
-                folderItems.splice(index, 1);
-                currentFolders[currentFolder] = folderItems;
-            }
-        } else {
-            const index = currentList.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
-            if (index !== -1) {
-                currentList.splice(index, 1);
-            }
-        }
-        
-        if (targetFolder && currentFolders[targetFolder]) {
-            const esisteGia = currentFolders[targetFolder].some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
-            if (!esisteGia) {
-                currentFolders[targetFolder].push(pendingMoveItem);
-            }
-        } else {
-            const esisteGia = currentList.some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
-            if (!esisteGia) {
-                currentList.push(pendingMoveItem);
-            }
-        }
-        
-        await saveAllData();
-        closeMoveModal();
-        displayList();
+    window.moveItemClick = function(item, event) {
+        event.stopPropagation();
+        moveItem(item);
     };
 
     // ============================================================
-    // 🔥 CARICA DATI UTENTE
+    // 🔥 FUNZIONI DI CARICAMENTO E SALVATAGGIO
     // ============================================================
     async function loadUserData() {
         if (!currentUser) return null;
@@ -1880,9 +2352,6 @@ h1 {
         return null;
     }
 
-    // ============================================================
-    // 🔥 SALVA DATI CON TRANSAZIONE
-    // ============================================================
     async function saveAllData() {
         if (!currentUser) return;
         
@@ -1909,260 +2378,21 @@ h1 {
     }
 
     // ============================================================
-    // 🔥 RIMUOVI CON TRANSAZIONE
-    // ============================================================
-    async function removeFromCloudList(id, type) {
-        if (!currentUser) return;
-        
-        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
-        await autoBackupBeforeChange(`Rimosso elemento dalla lista`);
-        
-        const userRef = doc(db, 'users', currentUser.uid);
-        
-        try {
-            await runTransaction(db, async (transaction) => {
-                const userDoc = await transaction.get(userRef);
-                
-                if (!userDoc.exists()) {
-                    throw new Error("Utente non trovato");
-                }
-                
-                let newList = userDoc.data().list || [];
-                let newFolders = userDoc.data().folders || {};
-                
-                if (currentFolder) {
-                    if (newFolders[currentFolder]) {
-                        newFolders[currentFolder] = newFolders[currentFolder].filter(
-                            item => !(item.id === id && item.type === type)
-                        );
-                    }
-                } else {
-                    newList = newList.filter(item => !(item.id === id && item.type === type));
-                }
-                
-                transaction.update(userRef, { 
-                    list: newList,
-                    folders: newFolders
-                });
-                
-                currentList = newList;
-                currentFolders = newFolders;
-            });
-            
-            displayList();
-        } catch (error) {
-            console.error("Errore transazione:", error);
-            alert("Errore durante la rimozione. Riprova.");
-        }
-    }
-
-    // ============================================================
-    // 🔥 SVUOTA CON TRANSAZIONE
-    // ============================================================
-    async function clearCloudList() {
-        if (!currentUser) return;
-        
-        // 🔥 BACKUP AUTOMATICO PRIMA DELLA MODIFICA
-        await autoBackupBeforeChange(`Svuotata ${currentFolder ? 'cartella "' + currentFolder + '"' : 'lista'}`);
-        
-        const userRef = doc(db, 'users', currentUser.uid);
-        
-        try {
-            await runTransaction(db, async (transaction) => {
-                const userDoc = await transaction.get(userRef);
-                
-                if (!userDoc.exists()) {
-                    throw new Error("Utente non trovato");
-                }
-                
-                let newList = userDoc.data().list || [];
-                let newFolders = userDoc.data().folders || {};
-                
-                if (currentFolder) {
-                    newFolders[currentFolder] = [];
-                } else {
-                    newList = [];
-                }
-                
-                transaction.update(userRef, { 
-                    list: newList,
-                    folders: newFolders
-                });
-                
-                currentList = newList;
-                currentFolders = newFolders;
-            });
-            
-            displayList();
-        } catch (error) {
-            console.error("Errore transazione:", error);
-            alert("Errore durante lo svuotamento. Riprova.");
-        }
-    }
-
-    // ============================================================
-    // 🔥 IMPORTA BACKUP
-    // ============================================================
-    window.importList = function() {
-        if (!currentUser) {
-            alert("Devi essere loggato!");
-            return;
-        }
-        
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.onchange = async function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = async function(event) {
-                try {
-                    const data = JSON.parse(event.target.result);
-                    
-                    if (!data.list || !Array.isArray(data.list)) {
-                        alert("❌ File non valido! Assicurati di aver selezionato un backup di KitsuStream.");
-                        return;
-                    }
-                    
-                    const currentTotal = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
-                    
-                    const confirmMsg = `📋 Ripristinare il backup del ${new Date(data.exportedAt).toLocaleString('it-IT')}?\n\n` +
-                                      `📦 Elementi nel backup: ${data.totalItems || data.list.length}\n` +
-                                      `📦 Elementi attuali: ${currentTotal}\n` +
-                                      `📂 Cartelle nel backup: ${Object.keys(data.folders || {}).length}\n` +
-                                      `📂 Cartelle attuali: ${Object.keys(currentFolders).length}\n\n` +
-                                      `⚠️ Questo SOSTITUIRÀ COMPLETAMENTE la lista attuale!\n\n` +
-                                      `Procedere?`;
-                    
-                    if (!confirm(confirmMsg)) return;
-                    
-                    // 🔥 BACKUP AUTOMATICO PRIMA DEL RIPRISTINO
-                    await autoBackupBeforeChange(`Ripristino da backup esterno`);
-                    
-                    currentList = data.list || [];
-                    currentFolders = data.folders || {};
-                    
-                    await saveAllData();
-                    displayList();
-                    
-                    alert(`✅ Ripristinato! ${currentList.length} elementi nella lista principale e ${Object.keys(currentFolders).length} cartelle.`);
-                    
-                } catch (error) {
-                    alert("❌ Errore nella lettura del file: " + error.message);
-                    console.error(error);
-                }
-            };
-            reader.readAsText(file);
-        };
-        input.click();
-    };
-
-    // ============================================================
     // 🔥 FUNZIONI UI
     // ============================================================
-    window.changeSort = function(sort) {
-        currentSort = sort;
-        document.querySelectorAll(".sort-btn").forEach(btn => btn.classList.remove("active"));
-        document.querySelector(`.sort-btn[data-sort="${sort}"]`).classList.add("active");
-        displayList();
+    window.openAddFolderModal = function() {
+        if (!currentUser) {
+            alert("Devi prima accedere!");
+            return;
+        }
+        document.getElementById('folderName').value = '';
+        document.getElementById('folderError').textContent = '';
+        document.getElementById('folderModal').style.display = 'flex';
     };
 
-    window.filterByType = function(type) {
-        currentTypeFilter = type;
-        document.querySelectorAll(".type-btn").forEach(btn => btn.classList.remove("active"));
-        document.querySelector(`.type-btn[data-type="${type}"]`).classList.add("active");
-        displayList();
+    window.closeFolderModal = function() {
+        document.getElementById('folderModal').style.display = 'none';
     };
-
-    function getCurrentItems() {
-        if (currentFolder) {
-            return currentFolders[currentFolder] || [];
-        }
-        return currentList;
-    }
-
-    function sortItems(items) {
-        const sorted = [...items];
-        switch(currentSort) {
-            case "rating":
-                sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-                break;
-            case "title":
-                sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-                break;
-            case "date":
-                sorted.sort((a, b) => {
-                    const dateA = a.release_date || a.first_air_date || '';
-                    const dateB = b.release_date || b.first_air_date || '';
-                    
-                    if (dateA && dateB) {
-                        return dateB.localeCompare(dateA);
-                    }
-                    if (dateA) return -1;
-                    if (dateB) return 1;
-                    return (b.year || 0) - (a.year || 0);
-                });
-                break;
-            case "addedDate":
-            default:
-                sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-                break;
-        }
-        return sorted;
-    }
-
-    function filterItems(items) {
-        let filtered = [...items];
-        
-        if (currentTypeFilter !== "all") {
-            filtered = filtered.filter(item => item.type === currentTypeFilter);
-        }
-        
-        if (currentStatusFilter === "completed") {
-            filtered = filtered.filter(item => item.completed === true);
-            filtered.sort((a, b) => {
-                const dateA = a.completedDate || a.watched_at || '';
-                const dateB = b.completedDate || b.watched_at || '';
-                return dateB.localeCompare(dateA);
-            });
-        } else {
-            filtered = filtered.filter(item => item.completed !== true);
-        }
-        
-        return filtered;
-    }
-
-    function updateStats(filteredItems, totalItems) {
-        const statsDiv = document.getElementById("stats");
-        const moviesCount = filteredItems.filter(i => i.type === "movie").length;
-        const tvCount = filteredItems.filter(i => i.type === "tv" || i.type === "series").length;
-        const avgRating = filteredItems.length > 0 
-            ? (filteredItems.reduce((sum, i) => sum + (i.rating || 0), 0) / filteredItems.length).toFixed(1)
-            : 0;
-        
-        const statusLabel = currentStatusFilter === "completed" ? "Completati" : "Da Guardare";
-        statsDiv.innerHTML = `📊 ${statusLabel}: ${filteredItems.length} su ${totalItems} totali | 🎬 Film: ${moviesCount} | 📺 Serie: ${tvCount} | ⭐ Media voto: ${avgRating}`;
-        updateCompletedStats();
-    }
-
-    function renderFoldersBar() {
-        const container = document.getElementById('foldersBar');
-        let html = `<button class="folder-btn ${!currentFolder ? 'active' : ''}" onclick="window.selectFolder(null)">📂 Tutti</button>`;
-        
-        for (const folderName in currentFolders) {
-            const count = currentFolders[folderName].length;
-            html += `<div class="folder-item">
-                        <button class="folder-btn ${currentFolder === folderName ? 'active' : ''}" onclick="window.selectFolder('${escapeHtml(folderName)}')">
-                            📁 ${escapeHtml(folderName)} (${count})
-                        </button>
-                        <button class="folder-btn delete-folder-btn" onclick="window.deleteFolder('${escapeHtml(folderName)}')">🗑</button>
-                    </div>`;
-        }
-        
-        container.innerHTML = html;
-    }
 
     window.handleCardClick = function(id, type, event) {
         if (multiSelectMode) {
@@ -2177,20 +2407,8 @@ h1 {
         window.location.href = `${type === 'movie' ? 'movie' : 'tv'}.html?id=${id}`;
     };
 
-    window.removeFromList = async function(id, type, event) {
-        event.stopPropagation();
-        if (confirm("Rimuovere questo elemento dalla lista?")) {
-            await removeFromCloudList(id, type);
-        }
-    };
-
-    window.moveItemClick = function(item, event) {
-        event.stopPropagation();
-        moveItem(item);
-    };
-
     // ============================================================
-    // 🔥 DISPLAY LISTA (RICARICA SEMPRE I DATI)
+    // 🔥 DISPLAY LISTA
     // ============================================================
     window.displayList = async function() {
         const container = document.getElementById("listContainer");
@@ -2202,7 +2420,6 @@ h1 {
             return;
         }
         
-        // 🔥 RICARICA SEMPRE I DATI FRESCHI
         await loadUserData();
         
         renderFoldersBar();
@@ -2284,13 +2501,9 @@ h1 {
         `;
     };
 
-    window.clearAll = async function() {
-        const confirmMsg = currentFolder ? `⚠️ Sei sicuro di voler svuotare la cartella "${currentFolder}"?` : "⚠️ Sei sicuro di voler svuotare tutta la lista?";
-        if (confirm(confirmMsg)) {
-            await clearCloudList();
-        }
-    };
-
+    // ============================================================
+    // 🔥 UTILITY
+    // ============================================================
     function escapeHtml(text) {
         if (!text) return "";
         const div = document.createElement("div");
@@ -2320,6 +2533,15 @@ h1 {
                     <button class="logout-btn" onclick="window.logout()" style="padding: 4px 10px;">🚪</button>
                 </div>
             `;
+            
+            // Carica lo storico
+            const history = loadBackupHistory();
+            
+            // Se non c'è storico, salva lo stato attuale come primo backup
+            if (history.length === 0) {
+                await saveBackupToHistory('manual', 'Backup iniziale');
+            }
+            
             displayList();
         } else {
             authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
