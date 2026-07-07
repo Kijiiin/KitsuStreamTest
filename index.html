@@ -763,7 +763,7 @@ async function loadContent() {
             if (currentOrder === 'top_rated') {
                 url = `https://api.themoviedb.org/3/${currentMediaType}/top_rated?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
             } else if (currentOrder === 'latest') {
-                // ===== MODIFICA: USCITE DAL 1° DEL MESE A OGGI - ESCLUSE RIELABORAZIONI =====
+                // ===== MODIFICA: SENZA FILTRO REGION=IT =====
                 if (currentMediaType === 'movie') {
                     // Ottieni la data di oggi
                     const oggi = new Date();
@@ -776,11 +776,9 @@ async function loadContent() {
                     
                     console.log(`📅 Film usciti dal ${primoDelMeseStr} al ${oggiStr}`);
                     
-                    // COMBINAZIONE MAGICA:
-                    // - release_date: usa le date di uscita italiane (grazie a region=IT)
-                    // - primary_release_date: esclude le riedizioni (verifica la prima uscita mondiale)
-                    // - region=IT: priorità alle date di uscita italiane
-                    url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=release_date.desc&with_release_type=1|2|3|4|5|6&release_date.gte=${primoDelMeseStr}&release_date.lte=${oggiStr}&primary_release_date.gte=${primoDelMeseStr}&primary_release_date.lte=${oggiStr}&region=IT&vote_count.gte=10`;
+                    // RIMOSSO region=IT
+                    // Ora mostra TUTTI i film con primary_release_date nel periodo
+                    url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=primary_release_date.desc&with_release_type=1|2|3|4|5|6&primary_release_date.gte=${primoDelMeseStr}&primary_release_date.lte=${oggiStr}&vote_count.gte=10`;
                 } else {
                     // Per le serie TV: episodi andati in onda dal primo del mese a oggi
                     const oggi = new Date();
