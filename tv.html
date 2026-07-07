@@ -358,6 +358,9 @@ h1 {
 <button id="tornaSu" title="Torna su">↑</button>
 
 <script type="module">
+    // 🔥 Importa le funzioni di backup
+    import { saveBackup } from './backup.js';
+
     const firebaseConfig = {
         apiKey: "AIzaSyCeM7KVc9lZsdd8HM5b-PAfhx0usN8Aubo",
         authDomain: "kitsustream-454e8.firebaseapp.com",
@@ -367,7 +370,6 @@ h1 {
         appId: "1:1008216243036:web:73dfb15639862757b0df99"
     };
 
-    // 🔥 IMPORTA runTransaction
     import { initializeApp } from 'firebase/app';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
     import { getFirestore, doc, getDoc, setDoc, deleteDoc, runTransaction } from 'firebase/firestore';
@@ -380,6 +382,7 @@ h1 {
     let userList = [];
     let currentUsername = "";
     let isCompleted = false;
+    let currentFolders = {}; // Per il backup
     
     // Funzione globale per aggiornare il bottone
     window.updateTVButton = function() {
@@ -483,7 +486,7 @@ h1 {
     // =======================================================================
 
     // ============================================================
-    // 🔥 TOGGLE COMPLETATO CON TRANSAZIONE
+    // 🔥 TOGGLE COMPLETATO CON TRANSAZIONE E BACKUP
     // ============================================================
     window.toggleCompleted = async function() {
         if (!currentUser) {
@@ -491,6 +494,13 @@ h1 {
             return;
         }
         if (!window.tvData) return;
+
+        // 🔥 DETERMINA L'AZIONE E SALVA BACKUP PRIMA DELLA MODIFICA
+        const currentList = await loadUserList();
+        const item = currentList.find(i => i.id === window.tvData.id && i.type === "tv");
+        const action = item && item.completed ? 'uncompleted' : 'completed';
+        const details = `"${window.tvData.name}" (Serie TV)`;
+        await saveBackup(action, details, 'tv', currentUser, currentList, currentFolders);
 
         const userRef = doc(db, 'users', currentUser.uid);
 
@@ -644,7 +654,12 @@ h1 {
     async function loadUserData() {
         if (!currentUser) return null;
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        return userDoc.exists() ? userDoc.data() : null;
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            currentFolders = data.folders || {};
+            return data;
+        }
+        return null;
     }
 
     async function loadUserList() {
@@ -654,13 +669,21 @@ h1 {
     }
 
     // ============================================================
-    // 🔥 TOGGLE LISTA CON TRANSAZIONE
+    // 🔥 TOGGLE LISTA CON TRANSAZIONE E BACKUP
     // ============================================================
     async function toggleCloudList(itemData) {
         if (!currentUser) {
             window.openLoginModal();
             return false;
         }
+
+        // 🔥 DETERMINA SE L'ELEMENTO ESISTE GIA' NELLA LISTA
+        const exists = userList.some(item => item.id === itemData.id && item.type === itemData.type);
+        const action = exists ? 'remove' : 'add';
+        const details = `"${itemData.title}" (Serie TV)`;
+        
+        // 🔥 SALVA BACKUP PRIMA DELLA MODIFICA
+        await saveBackup(action, details, 'tv', currentUser, userList, currentFolders);
 
         const userRef = doc(db, 'users', currentUser.uid);
 
@@ -673,12 +696,12 @@ h1 {
                 }
 
                 const currentList = userDoc.data().list || [];
-                const exists = currentList.some(item => 
+                const existsInDb = currentList.some(item => 
                     item.id === itemData.id && item.type === itemData.type
                 );
 
                 let newList;
-                if (exists) {
+                if (existsInDb) {
                     newList = currentList.filter(item => 
                         !(item.id === itemData.id && item.type === itemData.type)
                     );
@@ -688,7 +711,7 @@ h1 {
                 }
 
                 transaction.update(userRef, { list: newList });
-                return { newList, added: !exists };
+                return { newList, added: !existsInDb };
             });
 
             userList = result.newList;
@@ -1237,7 +1260,7 @@ async function playFirstEpisode() {
 }
 
 // ============================================================
-// 🔥 TOGGLE LISTA - CHIAMA LA FUNZIONE CON TRANSAZIONE
+// 🔥 TOGGLE LISTA - CHIAMA LA FUNZIONE CON TRANSAZIONE E BACKUP
 // ============================================================
 async function toggleListFromDetails() {
     if (!tvData) return;
