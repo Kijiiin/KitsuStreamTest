@@ -722,21 +722,33 @@ async function loadMonthlyReleases() {
     resultsDiv.innerHTML = '<div class="loading">⏳ Caricamento uscite del mese...</div>';
     
     try {
-        // 🔥 CALCOLA IL MESE INTERO (dal 1° all'ultimo giorno)
+        // 🔥 CALCOLA LE DATE COME FA TMDB
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
-        const firstDay = `${year}-${month}-01`;
-        const lastDay = `${year}-${month}-${String(new Date(year, now.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
+        
+        // Data di inizio: 15 del mese corrente
+        // Data di fine: 5 del mese successivo
+        const firstDay = `${year}-${month}-15`;
+        
+        let nextMonth = now.getMonth() + 2;
+        let nextYear = year;
+        if (nextMonth > 12) {
+            nextMonth = 1;
+            nextYear = year + 1;
+        }
+        const lastDay = `${nextYear}-${String(nextMonth).padStart(2, '0')}-05`;
         
         // 🔥 CARICA TUTTE LE PAGINE
         let allMovies = [];
         let page = 1;
         let totalPages = 1;
         
-        // Usa primary_release_date per il mese intero
+        // 🔥 USA GLI STESSI PARAMETRI DI TMDB
         while (page <= totalPages && page <= 20) {
-            const url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&region=IT&sort_by=release_date.desc&primary_release_date.gte=${firstDay}&primary_release_date.lte=${lastDay}&with_release_type=2|4|5|6&page=${page}`;
+            const url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&region=IT&sort_by=popularity.desc&release_date.gte=${firstDay}&release_date.lte=${lastDay}&with_release_type=3&page=${page}`;
+            
+            console.log('URL:', url); // Per debug
             
             const response = await fetch(url);
             const data = await response.json();
@@ -750,7 +762,7 @@ async function loadMonthlyReleases() {
             page++;
         }
         
-        // 🔥 FILTRA PER DATA NEL MESE INTERO
+        // 🔥 FILTRA PER DATA
         const filteredResults = allMovies.filter(movie => {
             if (!movie.release_date) return false;
             const releaseDate = new Date(movie.release_date);
@@ -784,7 +796,7 @@ async function loadMonthlyReleases() {
         if (uniqueMovies.length > 0) {
             const resultsDiv = document.getElementById("results");
             resultsDiv.innerHTML += `<div style="text-align:center;color:#a855f7;margin-top:20px;padding:10px;background:rgba(124,58,237,0.2);border-radius:30px;">
-                📊 Totale uscite del mese: ${uniqueMovies.length}
+                📊 Totale uscite: ${uniqueMovies.length}
             </div>`;
         }
         
@@ -793,6 +805,7 @@ async function loadMonthlyReleases() {
         document.getElementById("results").innerHTML = '<div class="no-results">❌ Errore nel caricamento</div>';
     }
 }
+    
 window.onload = function() {
     renderGenres();
     loadContent();
