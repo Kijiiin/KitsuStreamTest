@@ -300,39 +300,6 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
 #pageNumber { font-size: 11px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 30px; }
 .loading, .no-results { text-align: center; padding: 40px; font-size: 13px; color: #c084fc; }
 
-/* Sezione Uscite del Mese */
-.monthly-section {
-    margin: 30px 0 20px;
-    padding: 20px 0;
-    border-top: 2px solid rgba(124, 58, 237, 0.3);
-    border-bottom: 2px solid rgba(124, 58, 237, 0.3);
-}
-
-.monthly-section h2 {
-    text-align: center;
-    font-size: 18px;
-    margin-bottom: 20px;
-    color: #c084fc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-.monthly-section .grid {
-    margin-top: 0;
-}
-
-.monthly-section .total-count {
-    text-align: center;
-    color: #a855f7;
-    font-size: 14px;
-    margin-top: 20px;
-    padding: 10px;
-    background: rgba(124, 58, 237, 0.2);
-    border-radius: 30px;
-}
-
 /* Desktop */
 @media (min-width: 769px) {
     .topbar {
@@ -372,10 +339,6 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     .card button { padding: 8px 12px; font-size: 12px; }
     .pagination { gap: 20px; margin-top: 40px; }
     .pagination button { padding: 10px 20px; font-size: 14px; }
-    
-    .monthly-section h2 {
-        font-size: 24px;
-    }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
@@ -439,16 +402,11 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     <div class="order-selector">
          <button class="order-btn active" data-order="popular" onclick="changeOrder('popular')">🔥 Popolari</button>
          <button class="order-btn" data-order="top_rated" onclick="changeOrder('top_rated')">⭐ Più votati</button>
+         <button class="order-btn" data-order="monthly" onclick="changeOrder('monthly')">📅 Uscite del Mese</button>
     </div>
 
     <div id="genresContainer" class="genres"></div>
     <div id="results" class="grid"></div>
-
-    <!-- SEZIONE USCITE DEL MESE -->
-    <div class="monthly-section" id="monthlySection">
-        <h2>📅 Uscite del Mese</h2>
-        <div id="monthlyReleases" class="grid"></div>
-    </div>
 
     <div class="pagination">
         <button onclick="prevPage()">◀ Prec</button>
@@ -760,24 +718,15 @@ function formatDate(dateString) {
 // 🆕 FUNZIONE PER CARICARE LE USCITE DEL MESE CORRENTE
 // ============================================================
 async function loadMonthlyReleases() {
-    const container = document.getElementById('monthlyReleases');
-    if (!container) return;
+    const resultsDiv = document.getElementById("results");
+    resultsDiv.innerHTML = '<div class="loading">⏳ Caricamento uscite del mese...</div>';
     
     try {
-        container.innerHTML = '<div class="loading">⏳ Caricamento uscite del mese...</div>';
-        
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const firstDay = `${year}-${month}-01`;
         const lastDay = `${year}-${month}-${String(new Date(year, now.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
-        
-        // Nome del mese in italiano
-        const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
-        const monthName = monthNames[now.getMonth()];
-        
-        // Aggiorna il titolo con il mese corrente
-        document.querySelector('#monthlySection h2').innerHTML = `📅 Uscite del Mese - ${monthName} ${year}`;
         
         // Recupera tutte le pagine per avere tutti i film del mese
         let allMovies = [];
@@ -815,78 +764,22 @@ async function loadMonthlyReleases() {
             }
         }
         
-        displayMonthlyReleases(uniqueMovies);
+        // Imposta totalPages per la paginazione (solo 1 pagina per le uscite mensili)
+        totalPages = 1;
+        currentPage = 1;
+        updatePageNumber();
+        
+        await displayItems(uniqueMovies);
         
     } catch (error) {
         console.error('Errore nel caricamento delle uscite mensili:', error);
-        container.innerHTML = '<div class="no-results">❌ Errore nel caricamento delle uscite del mese</div>';
+        resultsDiv.innerHTML = '<div class="no-results">❌ Errore nel caricamento delle uscite del mese</div>';
     }
 }
 
-// ============================================================
-// 🆕 FUNZIONE PER VISUALIZZARE LE USCITE DEL MESE
-// ============================================================
-async function displayMonthlyReleases(movies) {
-    const container = document.getElementById('monthlyReleases');
-    if (!container) return;
-    
-    if (!movies || movies.length === 0) {
-        container.innerHTML = '<div class="no-results">📭 Nessuna uscita prevista per questo mese</div>';
-        return;
-    }
-    
-    // RICARICA LA LISTA PER ESSERE SICURI
-    if (window.getCurrentUser && window.getCurrentUser()) {
-        userList = await window.getUserList();
-    }
-    
-    const itemsHtml = movies.map(movie => {
-        const posterUrl = movie.poster_path ? IMG_BASE + movie.poster_path : "https://via.placeholder.com/500x750?text=No+Image";
-        const title = movie.title || 'Titolo sconosciuto';
-        const rating = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
-        const releaseDate = movie.release_date || 'Data non disponibile';
-        const year = releaseDate ? releaseDate.split('-')[0] : '';
-        
-        // Controlla se il film è nella lista utente
-        let inList = false;
-        if (window.getCurrentUser && window.getCurrentUser()) {
-            inList = userList.some(item => item.id === movie.id && item.type === 'movie');
-        }
-        
-        return `
-            <div class="card">
-                <a href="movie.html?id=${movie.id}">
-                    <img src="${posterUrl}" alt="${escapeHtml(title)}" loading="lazy">
-                </a>
-                <div class="card-content">
-                    <h4>${escapeHtml(title)}</h4>
-                    <div class="rating">⭐ ${rating}</div>
-                    <p>📅 ${formatDate(releaseDate)}</p>
-                    <button 
-                        id="monthly-btn-${movie.id}"
-                        onclick="window.toggleListGlobal(${movie.id}, '${escapeHtml(title)}', '${posterUrl}', ${movie.vote_average || 0}, '${year}', 'movie', 'Film', '${releaseDate}')"
-                        style="background:${inList ? '#ef4444' : '#7c3aed'}"
-                    >
-                        ${inList ? "❌ Rimuovi" : "❤️ Aggiungi"}
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    container.innerHTML = `
-        <div class="grid">${itemsHtml}</div>
-        <p class="total-count">📊 Totale uscite: ${movies.length}</p>
-    `;
-}
-
-// ============================================================
-// FUNZIONI PRINCIPALI
-// ============================================================
 window.onload = function() {
     renderGenres();
     loadContent();
-    loadMonthlyReleases(); // Carica le uscite del mese
     document.getElementById("searchInput").addEventListener("input", handleSearch);
 };
 
@@ -895,7 +788,12 @@ function changeOrder(order) {
     currentPage = 1;
     document.querySelectorAll(".order-btn").forEach(btn => btn.classList.remove("active"));
     document.querySelector(`.order-btn[data-order="${order}"]`).classList.add("active");
-    loadContent();
+    
+    if (order === 'monthly') {
+        loadMonthlyReleases();
+    } else {
+        loadContent();
+    }
 }
 
 function switchMediaType(type) {
@@ -907,7 +805,13 @@ function switchMediaType(type) {
     document.querySelectorAll(".media-btn").forEach(btn => btn.classList.remove("active"));
     document.querySelector(`[data-type="${type}"]`).classList.add("active");
     renderGenres();
-    loadContent();
+    
+    // Se l'ordine corrente è 'monthly', ricarica le uscite mensili
+    if (currentOrder === 'monthly') {
+        loadMonthlyReleases();
+    } else {
+        loadContent();
+    }
 }
 
 function renderGenres() {
@@ -933,12 +837,24 @@ function toggleGenre(genreId) {
     }
     
     currentPage = 1;
+    // Se l'ordine corrente è 'monthly', torna a 'popular'
+    if (currentOrder === 'monthly') {
+        currentOrder = 'popular';
+        document.querySelectorAll(".order-btn").forEach(b => b.classList.remove("active"));
+        document.querySelector(`.order-btn[data-order="popular"]`).classList.add("active");
+    }
     loadContent();
 }
 
 function handleSearch() {
     searchQuery = document.getElementById("searchInput").value.trim();
     currentPage = 1;
+    // Se l'ordine corrente è 'monthly', torna a 'popular'
+    if (currentOrder === 'monthly') {
+        currentOrder = 'popular';
+        document.querySelectorAll(".order-btn").forEach(b => b.classList.remove("active"));
+        document.querySelector(`.order-btn[data-order="popular"]`).classList.add("active");
+    }
     loadContent();
 }
 
@@ -946,6 +862,12 @@ function clearSearch() {
     document.getElementById("searchInput").value = "";
     searchQuery = "";
     currentPage = 1;
+    // Se l'ordine corrente è 'monthly', torna a 'popular'
+    if (currentOrder === 'monthly') {
+        currentOrder = 'popular';
+        document.querySelectorAll(".order-btn").forEach(b => b.classList.remove("active"));
+        document.querySelector(`.order-btn[data-order="popular"]`).classList.add("active");
+    }
     loadContent();
 }
 
@@ -1072,18 +994,10 @@ window.toggleListGlobal = async function(id, title, poster, rating, year, type, 
     
     const added = await window.toggleCloudList(itemData);
     
-    // Aggiorna il bottone principale
     const btn = document.getElementById(`btn-${id}`);
     if (btn) {
         btn.innerText = added ? "❌ Rimuovi" : "❤️ Aggiungi";
         btn.style.background = added ? "#ef4444" : "#7c3aed";
-    }
-    
-    // Aggiorna anche il bottone nella sezione mensile se presente
-    const monthlyBtn = document.getElementById(`monthly-btn-${id}`);
-    if (monthlyBtn) {
-        monthlyBtn.innerText = added ? "❌ Rimuovi" : "❤️ Aggiungi";
-        monthlyBtn.style.background = added ? "#ef4444" : "#7c3aed";
     }
 };
 
@@ -1102,13 +1016,18 @@ function goHome() {
 function prevPage() {
     if (currentPage > 1) {
         currentPage--;
-        loadContent();
+        if (currentOrder === 'monthly') {
+            // Le uscite mensili non hanno paginazione, rimani sulla prima pagina
+            currentPage = 1;
+        } else {
+            loadContent();
+        }
         window.scrollTo({ top: 0, behavior: "smooth" });
     }
 }
 
 function nextPage() {
-    if (currentPage < totalPages) {
+    if (currentPage < totalPages && currentOrder !== 'monthly') {
         currentPage++;
         loadContent();
         window.scrollTo({ top: 0, behavior: "smooth" });
