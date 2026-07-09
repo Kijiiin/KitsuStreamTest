@@ -402,7 +402,7 @@ input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
     <div class="order-selector">
          <button class="order-btn active" data-order="popular" onclick="changeOrder('popular')">🔥 Popolari</button>
          <button class="order-btn" data-order="top_rated" onclick="changeOrder('top_rated')">⭐ Più votati</button>
-         <button class="order-btn" data-order="monthly" onclick="changeOrder('monthly')">📅 Uscite del Mese</button>
+         <button class="order-btn" data-order="latest" onclick="changeOrder('latest')">🆕 Ultimi usciti</button>
     </div>
 
     <div id="genresContainer" class="genres"></div>
@@ -714,109 +714,19 @@ function formatDate(dateString) {
     }
 }
 
-// ============================================================
-// 🆕 FUNZIONE PER CARICARE LE USCITE DEL MESE CORRENTE
-// ============================================================
-async function loadMonthlyReleases() {
-    const resultsDiv = document.getElementById("results");
-    resultsDiv.innerHTML = '<div class="loading">⏳ Caricamento uscite del mese...</div>';
-    
-    try {
-        // 🔥 CALCOLA IL MESE INTERO (dal 1° all'ultimo giorno)
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const firstDay = `${year}-${month}-01`;
-        const lastDay = `${year}-${month}-${String(new Date(year, now.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
-        
-        // 🔥 OGGI (per filtrare solo i film futuri se vuoi)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        // 🔥 CARICA TUTTE LE PAGINE
-        let allMovies = [];
-        let page = 1;
-        let totalPages = 1;
-        
-        // 🔥 USA GLI STESSI PARAMETRI DI TMDB (ma con mese intero)
-        while (page <= totalPages && page <= 20) {
-            const url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&region=IT&sort_by=release_date.desc&release_date.gte=${firstDay}&release_date.lte=${lastDay}&with_release_type=3&page=${page}`;
-            
-            console.log('URL:', url); // Per debug
-            
-            const response = await fetch(url);
-            const data = await response.json();
-            
-            if (data.results && data.results.length > 0) {
-                allMovies = allMovies.concat(data.results);
-                totalPages = data.total_pages || 1;
-            } else {
-                break;
-            }
-            page++;
-        }
-        
-        // 🔥 FILTRA PER DATA NEL MESE INTERO
-        const filteredResults = allMovies.filter(movie => {
-            if (!movie.release_date) return false;
-            const releaseDate = new Date(movie.release_date);
-            return releaseDate >= new Date(firstDay) && releaseDate <= new Date(lastDay);
-        });
-        
-        // Rimuovi duplicati
-        const uniqueMovies = [];
-        const seenIds = new Set();
-        for (const movie of filteredResults) {
-            if (!seenIds.has(movie.id)) {
-                seenIds.add(movie.id);
-                uniqueMovies.push(movie);
-            }
-        }
-        
-        // Ordina per data decrescente (dal più recente al più vecchio)
-        uniqueMovies.sort((a, b) => {
-            const dateA = new Date(a.release_date);
-            const dateB = new Date(b.release_date);
-            return dateB - dateA;
-        });
-        
-        totalPages = 1;
-        currentPage = 1;
-        updatePageNumber();
-        
-        await displayItems(uniqueMovies);
-        
-        // Mostra il conteggio totale
-        if (uniqueMovies.length > 0) {
-            const resultsDiv = document.getElementById("results");
-            resultsDiv.innerHTML += `<div style="text-align:center;color:#a855f7;margin-top:20px;padding:10px;background:rgba(124,58,237,0.2);border-radius:30px;">
-                📊 Totale uscite del mese: ${uniqueMovies.length}
-            </div>`;
-        }
-        
-    } catch (error) {
-        console.error('Errore:', error);
-        document.getElementById("results").innerHTML = '<div class="no-results">❌ Errore nel caricamento</div>';
-    }
-}
-    
 window.onload = function() {
     renderGenres();
     loadContent();
     document.getElementById("searchInput").addEventListener("input", handleSearch);
 };
 
+
 function changeOrder(order) {
     currentOrder = order;
     currentPage = 1;
     document.querySelectorAll(".order-btn").forEach(btn => btn.classList.remove("active"));
     document.querySelector(`.order-btn[data-order="${order}"]`).classList.add("active");
-    
-    if (order === 'monthly') {
-        loadMonthlyReleases();
-    } else {
-        loadContent();
-    }
+    loadContent();
 }
 
 function switchMediaType(type) {
@@ -828,13 +738,7 @@ function switchMediaType(type) {
     document.querySelectorAll(".media-btn").forEach(btn => btn.classList.remove("active"));
     document.querySelector(`[data-type="${type}"]`).classList.add("active");
     renderGenres();
-    
-    // Se l'ordine corrente è 'monthly', ricarica le uscite mensili
-    if (currentOrder === 'monthly') {
-        loadMonthlyReleases();
-    } else {
-        loadContent();
-    }
+    loadContent();
 }
 
 function renderGenres() {
@@ -860,24 +764,12 @@ function toggleGenre(genreId) {
     }
     
     currentPage = 1;
-    // Se l'ordine corrente è 'monthly', torna a 'popular'
-    if (currentOrder === 'monthly') {
-        currentOrder = 'popular';
-        document.querySelectorAll(".order-btn").forEach(b => b.classList.remove("active"));
-        document.querySelector(`.order-btn[data-order="popular"]`).classList.add("active");
-    }
     loadContent();
 }
 
 function handleSearch() {
     searchQuery = document.getElementById("searchInput").value.trim();
     currentPage = 1;
-    // Se l'ordine corrente è 'monthly', torna a 'popular'
-    if (currentOrder === 'monthly') {
-        currentOrder = 'popular';
-        document.querySelectorAll(".order-btn").forEach(b => b.classList.remove("active"));
-        document.querySelector(`.order-btn[data-order="popular"]`).classList.add("active");
-    }
     loadContent();
 }
 
@@ -885,12 +777,6 @@ function clearSearch() {
     document.getElementById("searchInput").value = "";
     searchQuery = "";
     currentPage = 1;
-    // Se l'ordine corrente è 'monthly', torna a 'popular'
-    if (currentOrder === 'monthly') {
-        currentOrder = 'popular';
-        document.querySelectorAll(".order-btn").forEach(b => b.classList.remove("active"));
-        document.querySelector(`.order-btn[data-order="popular"]`).classList.add("active");
-    }
     loadContent();
 }
 
@@ -903,7 +789,13 @@ async function loadContent() {
         if (searchQuery) {
             const searchType = currentMediaType === "movie" ? "movie" : "tv";
             let sortParam = "";
-            if (currentOrder === 'top_rated') {
+            if (currentOrder === 'latest') {
+                if (currentMediaType === 'movie') {
+                    sortParam = `&sort_by=release_date.desc`;
+                } else {
+                    sortParam = `&sort_by=first_air_date.desc`;
+                }
+            } else if (currentOrder === 'top_rated') {
                 sortParam = `&sort_by=vote_average.desc`;
             } else {
                 sortParam = `&sort_by=popularity.desc`;
@@ -915,12 +807,24 @@ async function loadContent() {
             let sortBy = 'popularity.desc';
             if (currentOrder === 'top_rated') {
                 sortBy = 'vote_average.desc';
+            } else if (currentOrder === 'latest') {
+                if (currentMediaType === 'movie') {
+                    sortBy = 'release_date.desc';
+                } else {
+                    sortBy = 'first_air_date.desc';
+                }
             }
             url = `https://api.themoviedb.org/3/discover/${currentMediaType}?api_key=${API_KEY}&with_genres=${genreQuery}&language=it-IT&page=${currentPage}&sort_by=${sortBy}&vote_count.gte=50`;
         } 
         else {
             if (currentOrder === 'top_rated') {
                 url = `https://api.themoviedb.org/3/${currentMediaType}/top_rated?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
+            } else if (currentOrder === 'latest') {
+                if (currentMediaType === 'movie') {
+                    url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=release_date.desc&vote_count.gte=50`;
+                } else {
+                    url = `https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=first_air_date.desc&vote_count.gte=50`;
+                }
             } else {
                 url = `https://api.themoviedb.org/3/${currentMediaType}/popular?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
             }
@@ -937,7 +841,6 @@ async function loadContent() {
         document.getElementById("results").innerHTML = '<div class="no-results">❌ Errore nel caricamento</div>';
     }
 }
-
 function showLoading() {
     document.getElementById("results").innerHTML = '<div class="loading">⏳ Caricamento in corso...</div>';
 }
@@ -1039,18 +942,13 @@ function goHome() {
 function prevPage() {
     if (currentPage > 1) {
         currentPage--;
-        if (currentOrder === 'monthly') {
-            // Le uscite mensili non hanno paginazione, rimani sulla prima pagina
-            currentPage = 1;
-        } else {
-            loadContent();
-        }
+        loadContent();
         window.scrollTo({ top: 0, behavior: "smooth" });
     }
 }
 
 function nextPage() {
-    if (currentPage < totalPages && currentOrder !== 'monthly') {
+    if (currentPage < totalPages) {
         currentPage++;
         loadContent();
         window.scrollTo({ top: 0, behavior: "smooth" });
