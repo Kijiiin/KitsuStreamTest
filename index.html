@@ -722,6 +722,7 @@ async function loadMonthlyReleases() {
     resultsDiv.innerHTML = '<div class="loading">⏳ Caricamento uscite del mese...</div>';
     
     try {
+        // 🔥 CALCOLA IL MESE INTERO (dal 1° all'ultimo giorno)
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -733,7 +734,7 @@ async function loadMonthlyReleases() {
         let page = 1;
         let totalPages = 1;
         
-        // Continua a caricare finché ci sono pagine (max 20 per evitare troppe richieste)
+        // Usa primary_release_date per il mese intero
         while (page <= totalPages && page <= 20) {
             const url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&region=IT&sort_by=release_date.desc&primary_release_date.gte=${firstDay}&primary_release_date.lte=${lastDay}&with_release_type=2|4|5|6&page=${page}`;
             
@@ -744,12 +745,12 @@ async function loadMonthlyReleases() {
                 allMovies = allMovies.concat(data.results);
                 totalPages = data.total_pages || 1;
             } else {
-                break; // Se non ci sono risultati, esci
+                break;
             }
             page++;
         }
         
-        // Filtra per data nel mese corrente
+        // 🔥 FILTRA PER DATA NEL MESE INTERO
         const filteredResults = allMovies.filter(movie => {
             if (!movie.release_date) return false;
             const releaseDate = new Date(movie.release_date);
@@ -766,6 +767,13 @@ async function loadMonthlyReleases() {
             }
         }
         
+        // Ordina per data decrescente (dal più recente al più vecchio)
+        uniqueMovies.sort((a, b) => {
+            const dateA = new Date(a.release_date);
+            const dateB = new Date(b.release_date);
+            return dateB - dateA;
+        });
+        
         totalPages = 1;
         currentPage = 1;
         updatePageNumber();
@@ -773,8 +781,8 @@ async function loadMonthlyReleases() {
         await displayItems(uniqueMovies);
         
         // Mostra il conteggio totale
-        const resultsDiv = document.getElementById("results");
         if (uniqueMovies.length > 0) {
+            const resultsDiv = document.getElementById("results");
             resultsDiv.innerHTML += `<div style="text-align:center;color:#a855f7;margin-top:20px;padding:10px;background:rgba(124,58,237,0.2);border-radius:30px;">
                 📊 Totale uscite del mese: ${uniqueMovies.length}
             </div>`;
@@ -785,7 +793,6 @@ async function loadMonthlyReleases() {
         document.getElementById("results").innerHTML = '<div class="no-results">❌ Errore nel caricamento</div>';
     }
 }
-
 window.onload = function() {
     renderGenres();
     loadContent();
