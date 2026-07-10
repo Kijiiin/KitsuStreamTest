@@ -1349,7 +1349,6 @@ h1 {
             
             for (let i = 1; i < history.length; i++) {
                 const backup = history[i];
-                const isCurrent = i === 0;
                 html += `
                     <div class="backup-item">
                         <div class="backup-info">
@@ -1492,10 +1491,15 @@ h1 {
         displayList();
     };
 
+    // ============================================================
+    // 🔥 FUNZIONE PER OTTENERE GLI ELEMENTI CORRENTI (CORRETTA)
+    // ============================================================
     function getCurrentItems() {
-        if (currentFolder) {
-            return currentFolders[currentFolder] || [];
+        // Se c'è una cartella selezionata, restituisci i suoi contenuti
+        if (currentFolder && currentFolders[currentFolder]) {
+            return currentFolders[currentFolder];
         }
+        // Altrimenti restituisci la lista principale
         return currentList;
     }
 
@@ -1531,53 +1535,45 @@ h1 {
 
     // Filtra per stato (completati / da guardare)
     function filterItems(items) {
-    // 🔥 CONTROLLO DI SICUREZZA
-    if (!items || !Array.isArray(items)) {
-        return [];
-    }
-    
-    let filtered = [...items];
-    
-    // Filtra per tipo (movie, tv, all)
-    if (currentTypeFilter !== "all") {
-        filtered = filtered.filter(item => item.type === currentTypeFilter);
-    }
-    
-    // Filtra per stato (completati / da guardare)
-    if (currentStatusFilter === "completed") {
-        // Mostra SOLO i completati
-        filtered = filtered.filter(item => item.completed === true);
+        if (!items || !Array.isArray(items)) {
+            return [];
+        }
         
-        // 🔥 ORDINA PER DATA DI COMPLETAMENTO (completedDate) - IL PIÙ RECENTE IN CIMA
-        // 🔥 In caso di parità, usa addedAt (il più recente in cima)
-        filtered.sort((a, b) => {
-            const dateA = a.completedDate || '';
-            const dateB = b.completedDate || '';
+        let filtered = [...items];
+        
+        // Filtra per tipo (movie, tv, all)
+        if (currentTypeFilter !== "all") {
+            filtered = filtered.filter(item => item.type === currentTypeFilter);
+        }
+        
+        // Filtra per stato (completati / da guardare)
+        if (currentStatusFilter === "completed") {
+            // Mostra SOLO i completati
+            filtered = filtered.filter(item => item.completed === true);
             
-            // Confronta le date di completamento
-            if (dateA && dateB) {
-                const comparison = dateB.localeCompare(dateA);
-                if (comparison !== 0) {
-                    return comparison; // Date diverse
+            // ORDINA PER DATA DI COMPLETAMENTO (completedDate) - IL PIÙ RECENTE IN CIMA
+            filtered.sort((a, b) => {
+                const dateA = a.completedDate || '';
+                const dateB = b.completedDate || '';
+                
+                if (dateA && dateB) {
+                    const comparison = dateB.localeCompare(dateA);
+                    if (comparison !== 0) {
+                        return comparison;
+                    }
+                    return (b.addedAt || 0) - (a.addedAt || 0);
                 }
-                // 🔥 STESSA DATA: ordina per addedAt (più recente in cima)
+                if (dateA) return -1;
+                if (dateB) return 1;
                 return (b.addedAt || 0) - (a.addedAt || 0);
-            }
-            // Se solo A ha una data, va prima
-            if (dateA) return -1;
-            // Se solo B ha una data, va prima
-            if (dateB) return 1;
-            // Se nessuna ha una data, usa addedAt come fallback
-            return (b.addedAt || 0) - (a.addedAt || 0);
-        });
-    } else {
-        // Mostra SOLO i NON completati (da guardare)
-        filtered = filtered.filter(item => item.completed !== true);
+            });
+        } else {
+            // Mostra SOLO i NON completati (da guardare)
+            filtered = filtered.filter(item => item.completed !== true);
+        }
+        
+        return filtered;
     }
-    
-    // 🔥 IMPORTANTE: restituisce SEMPRE l'array filtrato
-    return filtered;
-}
 
     function updateStats(filteredItems, totalItems) {
         const statsDiv = document.getElementById("stats");
@@ -1625,8 +1621,6 @@ h1 {
     // 🔥 FUNZIONI DI MODIFICA DELLA LISTA (CON BACKUP AUTOMATICO)
     // ============================================================
     
-    // Ogni funzione che modifica la lista chiama saveBackupToHistory PRIMA della modifica
-
     window.markAsCompleted = async function(id, type, event) {
         event.stopPropagation();
         
@@ -1638,7 +1632,6 @@ h1 {
         const action = item.completed ? 'uncompleted' : 'completed';
         const details = `"${item.title}" (${item.type === 'movie' ? 'Film' : 'Serie TV'})`;
         
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
         await saveBackupToHistory(action, details);
         
         if (item.completed) {
@@ -1666,7 +1659,6 @@ h1 {
             return;
         }
         
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
         await saveBackupToHistory('folder_create', folderName);
         
         currentFolders[folderName] = [];
@@ -1678,7 +1670,6 @@ h1 {
 
     window.deleteFolder = async function(folderName) {
         if (confirm(`Eliminare la cartella "${folderName}"? I contenuti torneranno nella lista principale.`)) {
-            // 🔥 BACKUP PRIMA DELLA MODIFICA
             await saveBackupToHistory('folder_delete', folderName);
             
             const folderItems = currentFolders[folderName] || [];
@@ -1716,7 +1707,6 @@ h1 {
         
         if (itemsToMove.length === 0) return;
         
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
         await saveBackupToHistory('move', `${itemsToMove.length} elementi in ${targetFolder || 'lista principale'}`);
         
         if (currentFolder) {
@@ -1756,7 +1746,6 @@ h1 {
         const targetFolder = document.getElementById('folderSelect').value;
         if (!pendingMoveItem) return;
         
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
         await saveBackupToHistory('move', `"${pendingMoveItem.title}" in ${targetFolder || 'lista principale'}`);
         
         if (currentFolder) {
@@ -1797,7 +1786,6 @@ h1 {
         let items = getCurrentItems();
         let item = items.find(i => i.id == id && i.type === type);
         
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
         await saveBackupToHistory('remove', `"${item ? item.title : 'elemento'}"`);
         
         const userRef = doc(db, 'users', currentUser.uid);
@@ -1843,7 +1831,6 @@ h1 {
         const confirmMsg = currentFolder ? `⚠️ Sei sicuro di voler svuotare la cartella "${currentFolder}"?` : "⚠️ Sei sicuro di voler svuotare tutta la lista?";
         if (!confirm(confirmMsg)) return;
         
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
         await saveBackupToHistory('clear', currentFolder ? `cartella "${currentFolder}"` : 'lista completa');
         
         const userRef = doc(db, 'users', currentUser.uid);
@@ -1890,10 +1877,8 @@ h1 {
             return;
         }
         
-        // 🔥 Salva come backup manuale
         await saveBackupToHistory('manual', 'Backup manuale');
         
-        // Scarica il file
         const historyKey = `kitsustream_backup_history_${currentUser.uid}`;
         const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
         
@@ -1902,7 +1887,7 @@ h1 {
             return;
         }
         
-        const data = history[0]; // L'ultimo backup (il più recente)
+        const data = history[0];
         const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1955,7 +1940,6 @@ h1 {
                     
                     if (!confirm(confirmMsg)) return;
                     
-                    // 🔥 BACKUP PRIMA DEL RIPRISTINO
                     await saveBackupToHistory('restore', `Prima di ripristinare da file esterno: ${formatFullDate(data.exportedAt)}`);
                     
                     currentList = data.list || [];
@@ -1964,7 +1948,6 @@ h1 {
                     await saveAllData();
                     displayList();
                     
-                    // 🔥 Salva anche il backup ripristinato nello storico
                     await saveBackupToHistory('restore', `Ripristinato da file esterno: ${formatFullDate(data.exportedAt)}`);
                     
                     alert(`✅ Ripristinato! ${currentList.length} elementi nella lista principale e ${Object.keys(currentFolders).length} cartelle.`);
@@ -1980,7 +1963,7 @@ h1 {
     };
 
     // ============================================================
-    // 🔥 FUNZIONI DI IMPORT COMPLETATI (MODIFICATE CON BACKUP)
+    // 🔥 FUNZIONI DI IMPORT COMPLETATI
     // ============================================================
     window.toggleImportSection = function() {
         const section = document.getElementById('importSection');
@@ -2061,7 +2044,6 @@ h1 {
         statusDiv.textContent = '⏳ Elaborazione in corso...';
         statusDiv.style.color = '#667eea';
 
-        // 🔥 BACKUP PRIMA DELL'IMPORTAZIONE
         await saveBackupToHistory('import', `Importazione ${type === 'movies' ? 'film' : 'serie'} completati da file`);
 
         const reader = new FileReader();
@@ -2266,12 +2248,25 @@ h1 {
     }
 
     // ============================================================
-    // 🔥 FUNZIONI DI SELEZIONE MULTIPLA
+    // 🔥 FUNZIONI DI SELEZIONE MULTIPLA (CORRETTE)
     // ============================================================
     window.selectFolder = function(folderName) {
-        cancelMultiSelect();
-        currentFolder = folderName === currentFolder ? null : folderName;
+        // Se clicchi sulla stessa cartella, la deselezioni
+        if (currentFolder === folderName) {
+            currentFolder = null;
+        } else {
+            currentFolder = folderName;
+        }
+        
+        // Annulla la selezione multipla se attiva
+        if (multiSelectMode) {
+            cancelMultiSelect();
+        }
+        
+        // Aggiorna la barra delle cartelle
         renderFoldersBar();
+        
+        // Ricarica la lista con i contenuti della cartella selezionata
         displayList();
     };
 
@@ -2283,13 +2278,32 @@ h1 {
         if (multiSelectMode) {
             btn.classList.add('active');
             btn.innerHTML = '❌ Annulla Selezione';
-            selectionBar.classList.add('show');
+            if (!selectionBar) {
+                // Crea la selection bar se non esiste
+                const bar = document.createElement('div');
+                bar.id = 'selectionBar';
+                bar.className = 'selection-bar show';
+                bar.innerHTML = `
+                    <span class="selection-count" id="selectionCount">0 selezionati</span>
+                    <div class="selection-actions">
+                        <button class="selection-action-btn" onclick="moveSelectedToFolder()">📂 Sposta in cartella</button>
+                        <button class="selection-action-btn cancel" onclick="cancelMultiSelect()">❌ Annulla</button>
+                    </div>
+                `;
+                const title = document.querySelector('.lista-title');
+                title.parentNode.insertBefore(bar, title.nextSibling);
+            } else {
+                selectionBar.classList.add('show');
+            }
         } else {
             btn.classList.remove('active');
             btn.innerHTML = '✅ Sposta Multipli';
-            selectionBar.classList.remove('show');
+            if (selectionBar) {
+                selectionBar.classList.remove('show');
+            }
             selectedItems.clear();
         }
+        updateSelectionCount();
         displayList();
     };
 
@@ -2298,9 +2312,14 @@ h1 {
         selectedItems.clear();
         const btn = document.getElementById('multiMoveBtn');
         const selectionBar = document.getElementById('selectionBar');
-        btn.classList.remove('active');
-        btn.innerHTML = '✅ Sposta Multipli';
-        selectionBar.classList.remove('show');
+        if (btn) {
+            btn.classList.remove('active');
+            btn.innerHTML = '✅ Sposta Multipli';
+        }
+        if (selectionBar) {
+            selectionBar.classList.remove('show');
+        }
+        updateSelectionCount();
         displayList();
     };
 
@@ -2563,10 +2582,8 @@ h1 {
                 </div>
             `;
             
-            // Carica lo storico
             const history = loadBackupHistory();
             
-            // Se non c'è storico, salva lo stato attuale come primo backup
             if (history.length === 0) {
                 await saveBackupToHistory('manual', 'Backup iniziale');
             }
