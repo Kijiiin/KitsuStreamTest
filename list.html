@@ -1529,27 +1529,47 @@ h1 {
         return sorted;
     }
 
-    // 🔥 FUNZIONE MODIFICATA - I COMPLETATI VENGONO ORDINATI PER DATA DI AGGIUNTA (addedAt)
     function filterItems(items) {
-        let filtered = [...items];
+    // 🔥 CONTROLLO DI SICUREZZA
+    if (!items || !Array.isArray(items)) {
+        return [];
+    }
+    
+    let filtered = [...items];
+    
+    // Filtra per tipo (movie, tv, all)
+    if (currentTypeFilter !== "all") {
+        filtered = filtered.filter(item => item.type === currentTypeFilter);
+    }
+    
+    // Filtra per stato (completati / da guardare)
+    if (currentStatusFilter === "completed") {
+        // Mostra SOLO i completati
+        filtered = filtered.filter(item => item.completed === true);
         
-        if (currentTypeFilter !== "all") {
-            filtered = filtered.filter(item => item.type === currentTypeFilter);
-        }
-        
-        if (currentStatusFilter === "completed") {
-    filtered = filtered.filter(item => item.completed === true);
-    // 🔥 ORDINA PER DATA DI VISIONE (watched_at) - IL PIÙ RECENTE IN CIMA
-    filtered.sort((a, b) => {
-        const dateA = a.watched_at || a.completedDate || '';
-        const dateB = b.watched_at || b.completedDate || '';
-        if (dateA && dateB) {
-            return dateB.localeCompare(dateA);
-        }
-        if (dateA) return -1;
-        if (dateB) return 1;
-        return 0;
-    });
+        // 🔥 ORDINA PER DATA DI COMPLETAMENTO (completedDate) - IL PIÙ RECENTE IN CIMA
+        filtered.sort((a, b) => {
+            const dateA = a.completedDate || '';
+            const dateB = b.completedDate || '';
+            
+            // Se entrambe hanno una data, confrontale
+            if (dateA && dateB) {
+                return dateB.localeCompare(dateA);
+            }
+            // Se solo A ha una data, va prima
+            if (dateA) return -1;
+            // Se solo B ha una data, va prima
+            if (dateB) return 1;
+            // Se nessuna ha una data, usa addedAt come fallback
+            return (b.addedAt || 0) - (a.addedAt || 0);
+        });
+    } else {
+        // Mostra SOLO i NON completati (da guardare)
+        filtered = filtered.filter(item => item.completed !== true);
+    }
+    
+    // 🔥 IMPORTANTE: restituisce SEMPRE l'array filtrato
+    return filtered;
 }
     }
 
