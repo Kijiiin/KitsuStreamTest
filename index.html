@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>KitsuStream - La mia lista</title>
+<title>KitsuStream - Film e Serie TV</title>
 
 <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
@@ -32,149 +32,123 @@ body {
     min-height: 100vh;
 }
 
+/* ============================================ */
+/* TOPBAR MOBILE MIGLIORATA */
+/* ============================================ */
 .topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(15px);
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(12px);
     position: sticky;
     top: 0;
     z-index: 100;
+    border-bottom: 1px solid rgba(124, 58, 237, 0.3);
 }
 
-.topbar-left, .topbar-right { display: flex; gap: 8px; align-items: center; }
-.topbar-center { flex: 1; text-align: center; }
+.topbar-left, .topbar-right {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.topbar-center {
+    flex: 1;
+    text-align: center;
+}
 
 h1 {
     margin: 0;
     font-size: 18px;
     font-weight: bold;
-    background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
+    background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
-.clear-all-btn, .login-btn, .logout-btn {
-    background: rgba(124, 58, 237, 0.9);
+/* Bottoni topbar */
+.list-btn, .actors-btn, .home-btn {
+    background: rgba(124, 58, 237, 0.85);
     border: none;
-    padding: 6px 12px;
+    padding: 7px 12px;
     border-radius: 30px;
     color: white;
     cursor: pointer;
     font-size: 12px;
     font-weight: 500;
     transition: all 0.2s ease;
-}
-
-.login-btn { background: rgba(16, 185, 129, 0.9); }
-.logout-btn { background: rgba(239, 68, 68, 0.9); }
-.user-info { 
-    font-size: 12px; 
-    background: rgba(0,0,0,0.5); 
-    padding: 4px 12px; 
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.username { font-weight: bold; color: #c084fc; }
-
-/* Dropdown menu per Backup/Ripristina */
-.dropdown-container {
-    position: relative;
-    display: inline-block;
-}
-
-.dropdown-btn {
-    background: rgba(16, 185, 129, 0.9);
-    border: none;
-    padding: 6px 12px;
-    border-radius: 30px;
-    color: white;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    text-decoration: none;
 }
 
-.dropdown-btn:hover {
-    transform: translateY(-1px);
+.list-btn:active, .actors-btn:active, .home-btn:active {
+    transform: scale(0.95);
+    background: rgba(124, 58, 237, 1);
 }
 
-.dropdown-btn .arrow {
-    font-size: 10px;
-    transition: transform 0.3s ease;
+.actors-btn {
+    background: linear-gradient(135deg, #ec4899, #be185d);
+    text-decoration: none;
 }
 
-.dropdown-btn.open .arrow {
-    transform: rotate(180deg);
-}
-
-.dropdown-menu {
-    display: none;
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    background: rgba(31, 27, 58, 0.95);
-    backdrop-filter: blur(15px);
-    border-radius: 12px;
-    padding: 6px;
-    min-width: 200px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-    border: 1px solid rgba(255,255,255,0.1);
-    z-index: 1000;
-}
-
-.dropdown-menu.show {
-    display: block;
-    animation: fadeIn 0.2s ease;
-}
-
-.dropdown-menu button {
-    background: transparent;
+.login-btn {
+    background: linear-gradient(135deg, #10b981, #059669);
     border: none;
-    padding: 10px 16px;
-    border-radius: 8px;
+    padding: 7px 12px;
+    border-radius: 30px;
     color: white;
     cursor: pointer;
     font-size: 12px;
     font-weight: 500;
-    width: 100%;
-    text-align: left;
     transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.logout-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none;
+    padding: 7px 12px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.login-btn:active, .logout-btn:active {
+    transform: scale(0.95);
+}
+
+.user-info {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    padding: 5px 12px;
+    border-radius: 30px;
     display: flex;
     align-items: center;
     gap: 8px;
+    border: 1px solid rgba(124, 58, 237, 0.4);
 }
 
-.dropdown-menu button:hover {
-    background: rgba(124, 58, 237, 0.3);
+.username {
+    font-weight: bold;
+    color: #c084fc;
+    font-size: 12px;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.dropdown-menu button.export-btn {
-    color: #4ade80;
-}
-
-.dropdown-menu button.import-btn {
-    color: #fbbf24;
-}
-
-.dropdown-menu button.history-btn {
-    color: #60a5fa;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Modal storico backup */
+/* Modale */
 .modal {
     display: none;
     position: fixed;
@@ -192,14 +166,12 @@ h1 {
     background: #1e1b4b;
     padding: 30px;
     border-radius: 20px;
-    max-width: 700px;
-    width: 95%;
+    max-width: 400px;
+    width: 90%;
     text-align: center;
-    max-height: 85vh;
-    overflow-y: auto;
 }
 
-.modal-content input, .modal-content select {
+.modal-content input {
     width: 100%;
     margin: 10px 0;
     padding: 12px;
@@ -213,277 +185,37 @@ h1 {
 .error-msg { color: #f87171; font-size: 12px; margin-top: 10px; }
 .success-msg { color: #4ade80; font-size: 12px; margin-top: 10px; }
 
-/* Stili per la lista dello storico */
-.backup-list {
-    max-height: 55vh;
-    overflow-y: auto;
-    margin: 10px 0;
-}
-
-.backup-item {
-    background: rgba(31, 27, 58, 0.6);
-    border-radius: 12px;
-    padding: 12px 16px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    border-left: 3px solid #10b981;
-}
-
-.backup-item .backup-info {
-    text-align: left;
-    flex: 1;
-    min-width: 150px;
-}
-
-.backup-item .backup-date {
-    font-size: 11px;
-    color: #8892b0;
-    font-weight: 500;
-}
-
-.backup-item .backup-date strong {
-    color: #c084fc;
-}
-
-.backup-item .backup-desc {
-    font-size: 13px;
-    font-weight: 600;
-    color: #ccd6f6;
-    margin-top: 2px;
-}
-
-.backup-item .backup-count {
-    font-size: 11px;
-    color: #8892b0;
-    margin-top: 2px;
-}
-
-.backup-item .backup-actions {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-.backup-item .download-btn {
-    background: rgba(16, 185, 129, 0.8);
-    border: none;
-    padding: 6px 14px;
-    border-radius: 20px;
-    color: white;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.backup-item .download-btn:hover {
-    background: #10b981;
-    transform: translateY(-2px);
-}
-
-.backup-item .restore-btn {
-    background: rgba(245, 158, 11, 0.8);
-    border: none;
-    padding: 6px 14px;
-    border-radius: 20px;
-    color: white;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.backup-item .restore-btn:hover {
-    background: #f59e0b;
-    transform: translateY(-2px);
-}
-
-.backup-item .delete-backup-btn {
-    background: rgba(239, 68, 68, 0.6);
-    border: none;
-    padding: 6px 12px;
-    border-radius: 20px;
-    color: white;
-    cursor: pointer;
-    font-size: 11px;
-    transition: all 0.2s ease;
-}
-
-.backup-item .delete-backup-btn:hover {
-    background: #ef4444;
-    transform: translateY(-2px);
-}
-
-.backup-item.current {
-    border-left-color: #f59e0b;
-    background: rgba(245, 158, 11, 0.15);
-}
-
-.backup-item.current .backup-desc {
-    color: #fbbf24;
-}
-
-.backup-empty {
-    text-align: center;
-    padding: 30px;
-    color: #8892b0;
-    font-size: 13px;
-}
-
-.backup-stats {
-    margin-top: 10px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    font-size: 12px;
-    color: #8892b0;
-}
-
 .container { max-width: 1200px; margin: auto; padding: 16px; }
-
-.lista-title {
-    text-align: center;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-.lista-title h2 { 
-    font-size: 20px; 
-    background: linear-gradient(90deg, #a855f7, #00d4ff, #7c3aed); 
-    -webkit-background-clip: text; 
-    -webkit-text-fill-color: transparent; 
-    background-clip: text; 
-    display: inline-block; 
-}
-.lista-title p { 
-    font-size: 12px; 
-    color: rgba(255,255,255,0.5); 
-    margin-top: 4px;
-    width: 100%;
-}
-.title-btn {
-    background: rgba(124, 58, 237, 0.9);
-    border: none;
-    padding: 6px 12px;
+.search-section { margin-bottom: 16px; }
+.search-box { display: flex; gap: 8px; }
+input {
+    flex: 1;
+    padding: 10px 14px;
     border-radius: 30px;
-    color: white;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-.title-btn.add-folder { background: rgba(124, 58, 237, 0.9); }
-.title-btn.multi-move { background: rgba(59, 130, 246, 0.9); }
-.title-btn.multi-move.active { background: #ef4444; }
-
-/* Selection Bar */
-.selection-bar {
-    background: rgba(31, 27, 58, 0.8);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 12px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    display: none;
-}
-
-.selection-bar.show {
-    display: flex;
-}
-
-.selection-count {
-    font-size: 13px;
-    color: #c084fc;
-    font-weight: bold;
-}
-
-.selection-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.selection-action-btn {
-    background: rgba(124, 58, 237, 0.8);
     border: none;
-    padding: 6px 12px;
-    border-radius: 30px;
+    background: rgba(31, 27, 58, 0.9);
     color: white;
-    cursor: pointer;
-    font-size: 11px;
+    outline: none;
+    font-size: 14px;
 }
+input::placeholder { color: rgba(255,255,255,0.5); font-size: 13px; }
+.clear-btn { background: rgba(239, 68, 68, 0.9); padding: 0 14px; border-radius: 30px; font-size: 12px; }
 
-.selection-action-btn.cancel {
-    background: rgba(107, 114, 128, 0.8);
-}
-
-/* Folder Navigation */
-.folders-bar {
-    background: rgba(31, 27, 58, 0.6);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 12px;
-    margin-bottom: 16px;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.folder-btn {
-    background: rgba(124, 58, 237, 0.4);
+.media-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 16px; }
+.media-btn {
+    background: rgba(124, 58, 237, 0.5);
     border: 1px solid rgba(124, 58, 237, 0.5);
     padding: 8px 16px;
-    border-radius: 30px;
+    border-radius: 40px;
     color: white;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
-    transition: all 0.2s ease;
 }
+.media-btn.active { background: #7c3aed; border-color: #7c3aed; }
 
-.folder-btn.active {
-    background: #7c3aed;
-    border-color: #7c3aed;
-}
-
-.folder-btn:hover {
-    transform: translateY(-2px);
-}
-
-.delete-folder-btn {
-    background: rgba(239, 68, 68, 0.6);
-    margin-left: 5px;
-}
-
-.folder-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.filters-bar {
-    background: rgba(31, 27, 58, 0.6);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 12px;
-    margin-bottom: 16px;
-}
-
-.filter-group { margin-bottom: 10px; }
-.filter-label { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 6px; display: block; }
-.sort-buttons, .type-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-.sort-btn, .type-btn {
+.order-selector { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; }
+.order-btn {
     background: rgba(124, 58, 237, 0.4);
     border: 1px solid rgba(124, 58, 237, 0.5);
     padding: 5px 10px;
@@ -491,248 +223,39 @@ h1 {
     color: white;
     cursor: pointer;
     font-size: 11px;
-    font-weight: 500;
 }
-.sort-btn.active, .type-btn.active { background: #7c3aed; border-color: #7c3aed; }
-.stats { font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
+.order-btn.active { background: #7c3aed; border-color: #7c3aed; }
 
-/* ===== STILI PER IMPORT COMPLETATI ===== */
-.import-completed-section {
-    background: rgba(16, 185, 129, 0.1);
-    border: 2px solid #10b981;
-    border-radius: 15px;
-    padding: 20px;
-    margin-bottom: 20px;
-    display: none;
-}
-
-.import-completed-section.visible {
-    display: block;
-}
-
-.import-completed-section h3 {
-    color: #10b981;
-    margin-bottom: 10px;
+.genres {
+    margin: 12px 0 16px;
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 4px 0 8px;
+    scrollbar-width: thin;
 }
-
-.import-completed-section .subtitle {
-    color: #8892b0;
-    font-size: 12px;
-    margin-bottom: 15px;
-}
-
-.import-completed-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-
-@media (max-width: 600px) {
-    .import-completed-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-.import-completed-box {
-    background: rgba(31, 27, 58, 0.6);
-    padding: 20px;
-    border-radius: 12px;
-    text-align: center;
-}
-
-.import-completed-box h4 {
-    color: #ccd6f6;
-    margin-bottom: 5px;
-}
-
-.import-completed-box p {
-    color: #8892b0;
-    font-size: 11px;
-    margin-bottom: 12px;
-}
-
-.import-completed-btn {
-    background: #10b981;
-    border: none;
-    padding: 10px 20px;
+.genres::-webkit-scrollbar { height: 3px; }
+.genres::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 10px; }
+.genres::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 10px; }
+.genre-btn {
+    padding: 5px 12px;
     border-radius: 30px;
+    border: 1px solid #7c3aed;
+    background: transparent;
     color: white;
     cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s;
-    font-size: 13px;
-}
-
-.import-completed-btn:hover {
-    background: #059669;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
-}
-
-.import-completed-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.import-progress {
-    margin-top: 10px;
-    font-size: 12px;
-    color: #10b981;
-}
-
-.import-stats {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    margin-top: 15px;
-    flex-wrap: wrap;
-}
-
-.import-stat-item {
-    background: rgba(16, 185, 129, 0.15);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 12px;
-    color: #8892b0;
-}
-
-.import-stat-item strong {
-    color: #10b981;
-    font-size: 16px;
-}
-
-.toggle-import-btn {
-    background: rgba(16, 185, 129, 0.8);
-    border: none;
-    padding: 8px 16px;
-    border-radius: 30px;
-    color: white;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    margin-bottom: 15px;
-}
-
-.toggle-import-btn:hover {
-    background: #059669;
-    transform: translateY(-2px);
-}
-
-.toggle-import-btn.active {
-    background: rgba(239, 68, 68, 0.8);
-}
-
-.toggle-import-btn.active:hover {
-    background: #dc2626;
-}
-
-.completed-badge {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 8px 18px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 700;
-    background: #10b981;
-    color: white;
-    margin-bottom: 8px;
-    gap: 4px;
-    width: fit-content;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-    border: 1px solid rgba(255,255,255,0.15);
-}
-
-.completed-badge .date {
-    font-weight: 400;
     font-size: 11px;
-    opacity: 0.95;
-    color: #e8f5e9;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
-
-.status-filter-btn {
-    background: rgba(124, 58, 237, 0.3);
-    border: 1px solid rgba(124, 58, 237, 0.5);
-    padding: 8px 20px;
-    border-radius: 30px;
-    color: white;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    flex: 1;
-    min-width: 120px;
-}
-
-.status-filter-btn.active {
-    background: #7c3aed;
-    border-color: #7c3aed;
-}
-
-.status-filter-btn.completed-active {
-    background: #10b981;
-    border-color: #10b981;
-}
-
-.status-filter-btn:hover {
-    transform: translateY(-2px);
-}
-
-.completed-stats {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 8px;
-    font-size: 11px;
-    color: rgba(255,255,255,0.5);
-}
-
-.completed-stats span {
-    background: rgba(16, 185, 129, 0.2);
-    padding: 4px 12px;
-    border-radius: 20px;
-}
-
-.completed-stats .number {
-    color: #10b981;
-    font-weight: bold;
-}
-
-.mark-completed-btn {
-    background: #10b981 !important;
-    padding: 6px 0 !important;
-    border: none;
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
-    font-size: 10px;
-    font-weight: 500;
-    width: 100%;
-    margin-top: 4px;
-}
-
-.mark-completed-btn:hover {
-    background: #059669 !important;
-}
-
-.mark-completed-btn.completed {
-    background: #f59e0b !important;
-}
-
-.mark-completed-btn.completed:hover {
-    background: #d97706 !important;
-}
+.genre-btn.active { background: #7c3aed; }
 
 .grid {
+    margin-top: 16px;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
-    margin-top: 0;
 }
 
 .card {
@@ -740,18 +263,9 @@ h1 {
     border-radius: 12px;
     overflow: hidden;
     backdrop-filter: blur(10px);
-    transition: transform 0.2s ease, border 0.2s ease;
-    cursor: default;
-    border: 2px solid transparent;
+    transition: transform 0.2s ease;
 }
 .card:active { transform: scale(0.98); }
-.card.selected {
-    border-color: #3b82f6;
-    transform: scale(0.98);
-}
-.card.completed-card {
-    border-color: #10b981;
-}
 .card img {
     width: 100%;
     aspect-ratio: 2 / 3;
@@ -759,91 +273,76 @@ h1 {
     cursor: pointer;
 }
 .card-content { padding: 8px; }
-.card h4 { margin: 0 0 3px; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.media-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 9px; font-weight: 600; margin-bottom: 6px; }
-.badge-movie { background: #7c3aed; }
-.badge-tv { background: #ef4444; }
-.card p { font-size: 9px; color: #c084fc; margin-bottom: 3px; }
-.move-folder-btn, .card button {
+.card h4 {
+    margin: 0 0 3px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rating { color: #ffd700; font-size: 10px; margin-bottom: 3px; }
+.card p { font-size: 9px; color: #c084fc; margin-bottom: 6px; }
+.card button {
     padding: 6px 0;
     border: none;
     border-radius: 8px;
+    background: #7c3aed;
     color: white;
     cursor: pointer;
     font-size: 10px;
     font-weight: 500;
     width: 100%;
-    margin-top: 6px;
-}
-.move-folder-btn { background: #3b82f6; margin-top: 4px; }
-.card button { background: #ef4444; }
-.empty-state { text-align: center; padding: 50px 20px; font-size: 13px; color: #888; }
-.selection-hint {
-    font-size: 11px;
-    color: #3b82f6;
-    text-align: center;
-    padding: 8px;
 }
 
-#tornaSu {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #7c3aed, #a855f7);
-    color: white;
-    font-size: 20px;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(124,58,237,0.4);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9998;
-}
+.pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 24px; margin-bottom: 16px; }
+.pagination button { padding: 6px 14px; background: rgba(124, 58, 237, 0.8); border-radius: 30px; font-size: 12px; }
+#pageNumber { font-size: 11px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 30px; }
+.loading, .no-results { text-align: center; padding: 40px; font-size: 13px; color: #c084fc; }
 
+/* Desktop */
 @media (min-width: 769px) {
-    .topbar { padding: 20px 40px; background: rgba(0,0,0,0.3); }
-    h1 { font-size: 28px; }
-    .clear-all-btn, .login-btn, .logout-btn { padding: 10px 20px; font-size: 14px; }
-    .dropdown-btn { padding: 10px 20px; font-size: 14px; }
-    .dropdown-menu button { padding: 12px 20px; font-size: 14px; }
+    .topbar {
+        padding: 15px 30px;
+        background: rgba(0, 0, 0, 0.5);
+    }
+    h1 {
+        font-size: 28px;
+    }
+    .list-btn, .actors-btn, .home-btn, .login-btn, .logout-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    .user-info {
+        padding: 6px 16px;
+    }
+    .username {
+        font-size: 14px;
+        max-width: 200px;
+    }
     .container { padding: 30px; }
-    .lista-title { margin-bottom: 30px; gap: 20px; }
-    .lista-title h2 { font-size: 28px; }
-    .title-btn { padding: 8px 20px; font-size: 14px; }
-    .toggle-import-btn { padding: 10px 20px; font-size: 14px; }
-    .filters-bar { padding: 20px; margin-bottom: 30px; border-radius: 20px; }
-    .filter-label { font-size: 13px; }
-    .sort-btn, .type-btn { padding: 8px 16px; font-size: 13px; }
-    .status-filter-btn { font-size: 15px; padding: 10px 24px; }
-    .stats { font-size: 13px; }
-    .completed-stats { font-size: 13px; }
-    .completed-stats span { padding: 6px 16px; }
-    .grid { grid-template-columns: repeat(5, 1fr); gap: 25px; }
+    .search-section { margin-bottom: 30px; display: flex; justify-content: center; }
+    .search-box { max-width: 600px; }
+    input { padding: 14px 20px; font-size: 16px; }
+    .media-selector { gap: 15px; margin-bottom: 25px; }
+    .media-btn { padding: 10px 24px; font-size: 15px; }
+    .order-selector { gap: 12px; margin-bottom: 20px; }
+    .order-btn { padding: 8px 16px; font-size: 13px; }
+    .genres { flex-wrap: wrap; overflow-x: visible; justify-content: center; gap: 10px; }
+    .genre-btn { padding: 8px 16px; font-size: 13px; }
+    .grid { margin-top: 30px; grid-template-columns: repeat(5, 1fr); gap: 25px; }
     .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
     .card-content { padding: 15px; }
     .card h4 { font-size: 14px; }
-    .media-badge { padding: 3px 10px; font-size: 10px; }
-    .completed-badge { font-size: 15px; padding: 10px 22px; }
-    .completed-badge .date { font-size: 13px; }
-    .card p { font-size: 11px; }
-    .move-folder-btn, .card button { padding: 8px 12px; font-size: 12px; }
-    .mark-completed-btn { padding: 8px 12px !important; font-size: 12px !important; }
-    #tornaSu { bottom: 30px; right: 30px; width: 50px; height: 50px; font-size: 24px; }
-    #tornaSu:hover { transform: translateY(-5px); }
-    .folder-btn { font-size: 14px; }
-    .selection-count { font-size: 14px; }
-    .selection-action-btn { padding: 8px 16px; font-size: 13px; }
-    .selection-hint { font-size: 13px; }
+    .rating { font-size: 12px; }
+    .card p { font-size: 12px; }
+    .card button { padding: 8px 12px; font-size: 12px; }
+    .pagination { gap: 20px; margin-top: 40px; }
+    .pagination button { padding: 10px 20px; font-size: 14px; }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
 @media (min-width: 1400px) { .grid { grid-template-columns: repeat(6, 1fr); } }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.card { animation: fadeIn 0.3s ease; }
 </style>
 </head>
 
@@ -851,23 +350,7 @@ h1 {
 
 <div class="topbar">
     <div class="topbar-left">
-        <div class="dropdown-container" id="backupDropdown">
-            <button class="dropdown-btn" onclick="toggleDropdown()">
-                💾 Backup <span class="arrow">▾</span>
-            </button>
-            <div class="dropdown-menu" id="dropdownMenu">
-                <button class="export-btn" onclick="window.exportList(); closeDropdown();">
-                    💾 Backup lista
-                </button>
-                <button class="import-btn" onclick="window.importList(); closeDropdown();">
-                    📂 Ripristina da backup
-                </button>
-                <button class="history-btn" onclick="window.openBackupHistory(); closeDropdown();">
-                    📚 Storico backup
-                </button>
-            </div>
-        </div>
-        <button class="clear-all-btn" onclick="clearAll()">🗑 Svuota</button>
+        <a href="actors.html" class="actors-btn">🎭 Troupe</a>
     </div>
     <div class="topbar-center">
         <h1 onclick="goHome()" style="cursor: pointer;">🎬 KitsuStream</h1>
@@ -877,26 +360,11 @@ h1 {
     </div>
 </div>
 
-<!-- MODALE STORICO BACKUP -->
-<div id="historyModal" class="modal">
-    <div class="modal-content">
-        <h2>📚 Storico Backup</h2>
-        <p style="color: #8892b0; font-size: 12px; margin-bottom: 10px;">
-            Ogni modifica alla lista genera automaticamente un backup. Puoi scaricare o ripristinare qualsiasi versione.
-        </p>
-        <div id="backupHistoryList" class="backup-list">
-            <div class="backup-empty">⏳ Caricamento storico...</div>
-        </div>
-        <div id="backupStats" class="backup-stats"></div>
-        <button onclick="closeHistoryModal()" style="margin-top: 15px; background: rgba(124, 58, 237, 0.8); border: none; padding: 10px 30px; border-radius: 30px; color: white; cursor: pointer;">❌ Chiudi</button>
-    </div>
-</div>
-
-<!-- MODALE LOGIN -->
+<!-- Modale Login/Registrazione -->
 <div id="authModal" class="modal">
     <div class="modal-content">
         <div id="loginPanel">
-            <h2>🔐 Accedi per vedere la tua lista</h2>
+            <h2>🔐 Accedi</h2>
             <input type="email" id="loginEmail" placeholder="Email">
             <input type="password" id="loginPassword" placeholder="Password">
             <button onclick="login()">Accedi</button>
@@ -916,136 +384,42 @@ h1 {
     </div>
 </div>
 
-<!-- MODALE CARTELLA -->
-<div id="folderModal" class="modal">
-    <div class="modal-content">
-        <h2>📁 Nuova Cartella</h2>
-        <input type="text" id="folderName" placeholder="Nome cartella (es. Film Azione, Serie preferite...)">
-        <button onclick="createFolder()">Crea Cartella</button>
-        <button onclick="closeFolderModal()">Annulla</button>
-        <div id="folderError" class="error-msg"></div>
-    </div>
-</div>
-
-<!-- MODALE SPOSTA -->
-<div id="moveModal" class="modal">
-    <div class="modal-content">
-        <h2>📂 Sposta in cartella</h2>
-        <select id="folderSelect">
-            <option value="">-- Nessuna cartella (Lista principale) --</option>
-        </select>
-        <button onclick="confirmSingleMove()">Sposta</button>
-        <button onclick="closeMoveModal()">Annulla</button>
-    </div>
-</div>
-
-<!-- MODALE SPOSTA MULTIPLA -->
-<div id="multiMoveModal" class="modal">
-    <div class="modal-content">
-        <h2>📂 Sposta elementi selezionati in cartella</h2>
-        <select id="multiFolderSelect">
-            <option value="">-- Nessuna cartella (Lista principale) --</option>
-        </select>
-        <button onclick="confirmMultiMove()">Sposta</button>
-        <button onclick="closeMultiMoveModal()">Annulla</button>
-    </div>
-</div>
-
 <div class="container">
-    <button class="toggle-import-btn" onclick="toggleImportSection()">
-        📥 Mostra Importazione
-    </button>
-    
-    <div class="import-completed-section" id="importSection">
-        <h3>✅ Importa Completati da TV Time</h3>
-        <div class="subtitle">
-            Carica i file esportati da TV Time per importare automaticamente i contenuti che hai già visto
-        </div>
-        <div class="import-completed-grid">
-            <div class="import-completed-box">
-                <h4>🎬 Film</h4>
-                <p>Carica <strong>tvtime-movies-YYYY-MM-DD.json</strong></p>
-                <input type="file" id="moviesCompletedInput" accept=".json" style="display:none;">
-                <button class="import-completed-btn" onclick="document.getElementById('moviesCompletedInput').click()">
-                    📂 Importa Film Completati
-                </button>
-                <div id="moviesCompletedStatus" class="import-progress"></div>
-            </div>
-            <div class="import-completed-box">
-                <h4>📺 Serie TV</h4>
-                <p>Carica <strong>tvtime-series-YYYY-MM-DD.json</strong></p>
-                <input type="file" id="seriesCompletedInput" accept=".json" style="display:none;">
-                <button class="import-completed-btn" onclick="document.getElementById('seriesCompletedInput').click()">
-                    📂 Importa Serie Completate
-                </button>
-                <div id="seriesCompletedStatus" class="import-progress"></div>
-            </div>
-        </div>
-        <div id="importCompletedStats" class="import-stats" style="display:none;">
-            <div class="import-stat-item">
-                🎬 Film importati: <strong id="importedMoviesCount">0</strong>
-            </div>
-            <div class="import-stat-item">
-                📺 Serie importate: <strong id="importedSeriesCount">0</strong>
-            </div>
-            <div class="import-stat-item">
-                ✅ Totale completati: <strong id="importedTotalCount">0</strong>
-            </div>
+    <div class="search-section">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Cerca film, serie TV..." autocomplete="off">
+            <button class="clear-btn" onclick="clearSearch()">✖</button>
         </div>
     </div>
 
-    <div class="lista-title">
-        <button id="addFolderBtn" class="title-btn add-folder" onclick="openAddFolderModal()">📁 Nuova Cartella</button>
-        <h2>⭐ La mia lista</h2>
-        <button id="multiMoveBtn" class="title-btn multi-move" onclick="toggleMultiSelectMode()">✅ Sposta Multipli</button>
-        <p>I tuoi film e serie TV organizzati in cartelle</p>
+    <div class="media-selector">
+        <button class="media-btn active" data-type="movie" onclick="switchMediaType('movie')">🎬 Film</button>
+        <button class="media-btn" data-type="tv" onclick="switchMediaType('tv')">📺 Serie TV</button>
+        <a href="ricerca-loonex.eu.html" class="list-btn">🎞️ Archivio Cartoni</a>
+        <a href="list.html" class="list-btn">❤️ Lista</a>
     </div>
 
-    <div class="folders-bar" id="foldersBar"></div>
-
-    <div class="filters-bar">
-        <div class="filter-group">
-            <div class="filter-label">📋 Ordina per:</div>
-            <div class="sort-buttons">
-                <button class="sort-btn active" data-sort="addedDate" onclick="changeSort('addedDate')">📅 Ultima Aggiunta</button>
-                <button class="sort-btn" data-sort="date" onclick="changeSort('date')">🗓️ Data Uscita</button>
-                <button class="sort-btn" data-sort="rating" onclick="changeSort('rating')">⭐ Voto</button>
-                <button class="sort-btn" data-sort="title" onclick="changeSort('title')">🔤 Titolo</button>
-            </div>
-        </div>
-        <div class="filter-group">
-            <div class="filter-label">🎬 Tipo:</div>
-            <div class="type-buttons">
-                <button class="type-btn active" data-type="all" onclick="filterByType('all')">Tutti</button>
-                <button class="type-btn" data-type="movie" onclick="filterByType('movie')">🎬 Film</button>
-                <button class="type-btn" data-type="tv" onclick="filterByType('tv')">📺 Serie TV</button>
-            </div>
-        </div>
-        <div class="filter-group">
-            <div class="filter-label">📋 Stato:</div>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button class="status-filter-btn active" data-status="all" onclick="filterByStatus('all')">📋 Da Guardare</button>
-                <button class="status-filter-btn" data-status="completed" onclick="filterByStatus('completed')">✅ Completati</button>
-            </div>
-        </div>
-        
-        <div class="completed-stats" id="completedStats">
-            <span>✅ Completati: <span class="number" id="completedCount">0</span></span>
-            <span>⏳ Da guardare: <span class="number" id="notCompletedCount">0</span></span>
-            <span>📊 Completati: <span class="number" id="completionPercentage">0</span>%</span>
-        </div>
-        <div class="stats" id="stats"></div>
+    <div class="order-selector">
+         <button class="order-btn active" data-order="popular" onclick="changeOrder('popular')">🔥 Popolari</button>
+         <button class="order-btn" data-order="top_rated" onclick="changeOrder('top_rated')">⭐ Più votati</button>
+         <button class="order-btn" data-order="latest" onclick="changeOrder('latest')">🆕 Ultimi usciti</button>
     </div>
 
-    <div id="listContainer"></div>
+    <div id="genresContainer" class="genres"></div>
+    <div id="results" class="grid"></div>
+
+    <div class="pagination">
+        <button onclick="prevPage()">◀ Prec</button>
+        <span id="pageNumber">1 / 1</span>
+        <button onclick="nextPage()">Succ ▶</button>
+    </div>
 </div>
-
-<button id="tornaSu" title="Torna su">↑</button>
 
 <script type="module">
-    const API_KEY = "7fe396e6f50677047459e8c173f2bd9d";
-    const IMG_BASE = "https://image.tmdb.org/t/p/w500";
+    // 🔥 Importa le funzioni di backup
+    import { saveBackup } from './backup.js';
 
+    // Configurazione Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyCeM7KVc9lZsdd8HM5b-PAfhx0usN8Aubo",
         authDomain: "kitsustream-454e8.firebaseapp.com",
@@ -1064,321 +438,10 @@ h1 {
     const db = getFirestore(app);
 
     let currentUser = null;
-    let currentList = [];
-    let currentFolders = {};
-    let currentFolder = null;
+    let userList = [];
     let currentUsername = "";
-    let currentSort = "addedDate";
-    let currentTypeFilter = "all";
-    let currentStatusFilter = "all";
-    let pendingMoveItem = null;
-    
-    let multiSelectMode = false;
-    let selectedItems = new Set();
+    let currentFolders = {};
 
-    function formatDate(dateString) {
-        if (!dateString) return '';
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
-            
-            const options = { 
-                day: '2-digit', 
-                month: 'short', 
-                year: 'numeric'
-            };
-            return date.toLocaleDateString('it-IT', options);
-        } catch (e) {
-            return dateString;
-        }
-    }
-
-    function formatFullDate(dateString) {
-        if (!dateString) return '';
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
-            
-            const options = { 
-                day: '2-digit', 
-                month: 'short', 
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            };
-            return date.toLocaleDateString('it-IT', options);
-        } catch (e) {
-            return dateString;
-        }
-    }
-
-    // ============================================================
-    // 🔥 GESTIONE DROPDOWN
-    // ============================================================
-    window.toggleDropdown = function() {
-        const menu = document.getElementById('dropdownMenu');
-        const btn = document.querySelector('.dropdown-btn');
-        menu.classList.toggle('show');
-        btn.classList.toggle('open');
-    };
-
-    window.closeDropdown = function() {
-        const menu = document.getElementById('dropdownMenu');
-        const btn = document.querySelector('.dropdown-btn');
-        menu.classList.remove('show');
-        btn.classList.remove('open');
-    };
-
-    document.addEventListener('click', function(event) {
-        const container = document.getElementById('backupDropdown');
-        if (!container.contains(event.target)) {
-            closeDropdown();
-        }
-    });
-
-    // ============================================================
-    // 🔥 FUNZIONI PER LO STORICO BACKUP
-    // ============================================================
-    
-    // Ottiene la descrizione dell'azione
-    function getActionDescription(action, details) {
-        const actions = {
-            'add': `➕ Aggiunto: ${details || 'elemento'}`,
-            'remove': `➖ Rimosso: ${details || 'elemento'}`,
-            'completed': `✅ Marcato come ${details || 'completato'}`,
-            'uncompleted': `↩️ Rimosso da completati: ${details || 'elemento'}`,
-            'move': `📂 Spostato: ${details || 'elemento'}`,
-            'folder_create': `📁 Creata cartella: ${details || 'senza nome'}`,
-            'folder_delete': `🗑 Eliminata cartella: ${details || 'senza nome'}`,
-            'clear': `🗑 Svuotata ${details || 'lista'}`,
-            'import': `📥 Importazione: ${details || 'contenuti'}`,
-            'restore': `⏪ Ripristino da backup: ${details || 'versione precedente'}`,
-            'manual': `💾 Backup manuale`,
-            'unknown': `🔄 Modifica generica`
-        };
-        return actions[action] || actions['unknown'];
-    }
-
-    // Salva un backup nello storico
-    async function saveBackupToHistory(action, description = '') {
-        if (!currentUser) return;
-
-        const totalItems = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
-        
-        const backupData = {
-            user: {
-                uid: currentUser.uid,
-                email: currentUser.email,
-                username: currentUsername
-            },
-            list: JSON.parse(JSON.stringify(currentList)),
-            folders: JSON.parse(JSON.stringify(currentFolders)),
-            exportedAt: new Date().toISOString(),
-            totalItems: totalItems,
-            version: Date.now(),
-            type: "auto_backup",
-            action: action,
-            description: getActionDescription(action, description)
-        };
-
-        // Salva nello storico
-        const historyKey = `kitsustream_backup_history_${currentUser.uid}`;
-        const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
-        
-        // Aggiungi il nuovo backup all'inizio
-        history.unshift(backupData);
-        
-        // Mantieni solo gli ultimi 50 backup
-        while (history.length > 50) {
-            history.pop();
-        }
-        
-        localStorage.setItem(historyKey, JSON.stringify(history));
-        
-        // Salva anche come ultimo backup
-        localStorage.setItem(`kitsustream_last_backup_${currentUser.uid}`, JSON.stringify(backupData));
-    }
-
-    // Carica lo storico
-    function loadBackupHistory() {
-        if (!currentUser) return [];
-        const historyKey = `kitsustream_backup_history_${currentUser.uid}`;
-        return JSON.parse(localStorage.getItem(historyKey) || '[]');
-    }
-
-    // Scarica un backup specifico
-    window.downloadBackup = function(index) {
-        const history = loadBackupHistory();
-        if (index < 0 || index >= history.length) {
-            alert("❌ Backup non trovato!");
-            return;
-        }
-        
-        const data = history[index];
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const dateStr = new Date(data.exportedAt).toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        a.download = `backup_${dateStr}_v${data.version}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
-    // Ripristina un backup specifico
-    window.restoreBackup = async function(index) {
-        const history = loadBackupHistory();
-        if (index < 0 || index >= history.length) {
-            alert("❌ Backup non trovato!");
-            return;
-        }
-        
-        const data = history[index];
-        
-        if (!data.list || !Array.isArray(data.list)) {
-            alert("❌ Backup corrotto!");
-            return;
-        }
-
-        const currentTotal = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
-        
-        const confirmMsg = `📋 Ripristinare il backup del ${formatFullDate(data.exportedAt)}?\n\n` +
-                          `📝 ${data.description || 'Nessuna descrizione'}\n` +
-                          `📦 Elementi nel backup: ${data.totalItems}\n` +
-                          `📦 Elementi attuali: ${currentTotal}\n` +
-                          `📂 Cartelle nel backup: ${Object.keys(data.folders || {}).length}\n\n` +
-                          `⚠️ Questo SOSTITUIRÀ COMPLETAMENTE la lista attuale!\n\n` +
-                          `Procedere?`;
-        
-        if (!confirm(confirmMsg)) return;
-
-        // Salva backup automatico prima del ripristino
-        await saveBackupToHistory('restore', `Prima di ripristinare backup del ${formatFullDate(data.exportedAt)}`);
-
-        currentList = data.list || [];
-        currentFolders = data.folders || {};
-        
-        await saveAllData();
-        displayList();
-        
-        alert(`✅ Ripristinato! ${currentList.length} elementi nella lista principale e ${Object.keys(currentFolders).length} cartelle.`);
-        
-        // Aggiorna lo storico
-        await saveBackupToHistory('restore', `Ripristinato backup del ${formatFullDate(data.exportedAt)}`);
-    };
-
-    // Elimina un backup dallo storico
-    window.deleteBackup = function(index) {
-        if (!currentUser) return;
-        const historyKey = `kitsustream_backup_history_${currentUser.uid}`;
-        const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
-        
-        if (index < 0 || index >= history.length) return;
-        
-        if (!confirm(`Eliminare il backup del ${formatFullDate(history[index].exportedAt)}?`)) return;
-        
-        history.splice(index, 1);
-        localStorage.setItem(historyKey, JSON.stringify(history));
-        
-        // Ricarica la lista dello storico se il modale è aperto
-        const modal = document.getElementById('historyModal');
-        if (modal && modal.style.display === 'flex') {
-            renderBackupHistory();
-        }
-    };
-
-    // Apre il modale dello storico
-    window.openBackupHistory = function() {
-        if (!currentUser) {
-            alert("Devi essere loggato!");
-            return;
-        }
-        document.getElementById('historyModal').style.display = 'flex';
-        renderBackupHistory();
-    };
-
-    window.closeHistoryModal = function() {
-        document.getElementById('historyModal').style.display = 'none';
-    };
-
-    // Renderizza lo storico
-    function renderBackupHistory() {
-        const container = document.getElementById('backupHistoryList');
-        const stats = document.getElementById('backupStats');
-        
-        const history = loadBackupHistory();
-        
-        if (history.length === 0) {
-            container.innerHTML = `
-                <div class="backup-empty">
-                    📭 Nessun backup storico trovato.<br>
-                    Ogni modifica alla lista creerà automaticamente un backup.
-                </div>
-            `;
-            stats.innerHTML = '';
-            return;
-        }
-
-        // Calcola il totale degli elementi salvati
-        const totalItems = history.reduce((sum, b) => sum + (b.totalItems || 0), 0);
-        const avgItems = Math.round(totalItems / history.length);
-
-        let html = '';
-        
-        // Backup attuale (primo della lista)
-        const currentBackup = history[0];
-        html += `
-            <div class="backup-item current">
-                <div class="backup-info">
-                    <div class="backup-date">📌 <strong>STATO ATTUALE</strong> · ${formatFullDate(currentBackup.exportedAt)}</div>
-                    <div class="backup-desc">📝 ${currentBackup.description || 'Stato corrente della lista'}</div>
-                    <div class="backup-count">📦 ${currentBackup.totalItems} elementi · 📂 ${Object.keys(currentBackup.folders || {}).length} cartelle</div>
-                </div>
-                <div class="backup-actions">
-                    <button class="download-btn" onclick="window.downloadBackup(0)">💾 Scarica</button>
-                </div>
-            </div>
-        `;
-
-        // Backup precedenti
-        if (history.length > 1) {
-            html += `<div style="margin: 8px 0; text-align: center; color: #8892b0; font-size: 11px;">— VERSIONI PRECEDENTI —</div>`;
-            
-            for (let i = 1; i < history.length; i++) {
-                const backup = history[i];
-                const isCurrent = i === 0;
-                html += `
-                    <div class="backup-item">
-                        <div class="backup-info">
-                            <div class="backup-date">📅 ${formatFullDate(backup.exportedAt)}</div>
-                            <div class="backup-desc">📝 ${backup.description || 'Nessuna descrizione'}</div>
-                            <div class="backup-count">📦 ${backup.totalItems} elementi · 📂 ${Object.keys(backup.folders || {}).length} cartelle</div>
-                        </div>
-                        <div class="backup-actions">
-                            <button class="download-btn" onclick="window.downloadBackup(${i})">💾 Scarica</button>
-                            <button class="restore-btn" onclick="window.restoreBackup(${i})">⏪ Ripristina</button>
-                            <button class="delete-backup-btn" onclick="window.deleteBackup(${i})">🗑</button>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        container.innerHTML = html;
-        
-        stats.innerHTML = `
-            📊 ${history.length} backup salvati · 
-            📦 Media ${avgItems} elementi per backup · 
-            💾 ${history.length > 0 ? Math.round((history[0].totalItems - history[history.length-1].totalItems) / history[history.length-1].totalItems * 100) : 0}% variazione totale
-        `;
-    }
-
-    // ============================================================
-    // 🔥 FUNZIONI AUTENTICAZIONE
-    // ============================================================
     window.login = async function() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
@@ -1423,7 +486,6 @@ h1 {
             
             await setDoc(doc(db, 'users', userCredential.user.uid), { 
                 list: [],
-                folders: {},
                 username: username,
                 email: email,
                 createdAt: new Date()
@@ -1432,8 +494,8 @@ h1 {
             successDiv.textContent = '✅ Registrazione completata! Ora puoi accedere.';
             setTimeout(() => window.showLoginPanel(), 2000);
         } catch (error) {
-            let msg = error.code === 'email-already-in-use' ? 'Email già registrata' :
-                      error.code === 'invalid-email' ? 'Email non valida' : error.message;
+            let msg = error.code === 'auth/email-already-in-use' ? 'Email già registrata' :
+                      error.code === 'auth/invalid-email' ? 'Email non valida' : error.message;
             errorDiv.textContent = msg;
         }
     };
@@ -1448,11 +510,17 @@ h1 {
         document.getElementById('loginError').textContent = '';
         document.getElementById('regError').textContent = '';
         document.getElementById('regSuccess').textContent = '';
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regEmail').value = '';
+        document.getElementById('regPassword').value = '';
     };
 
     window.showRegisterPanel = function() {
         document.getElementById('loginPanel').style.display = 'none';
         document.getElementById('registerPanel').style.display = 'block';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('regError').textContent = '';
+        document.getElementById('regSuccess').textContent = '';
     };
 
     window.openLoginModal = function() {
@@ -1460,1062 +528,103 @@ h1 {
         document.getElementById('authModal').style.display = 'flex';
     };
 
-    // ============================================================
-    // 🔥 FUNZIONI UI
-    // ============================================================
-    window.changeSort = function(sort) {
-        currentSort = sort;
-        document.querySelectorAll(".sort-btn").forEach(btn => btn.classList.remove("active"));
-        document.querySelector(`.sort-btn[data-sort="${sort}"]`).classList.add("active");
-        displayList();
-    };
-
-    window.filterByType = function(type) {
-        currentTypeFilter = type;
-        document.querySelectorAll(".type-btn").forEach(btn => btn.classList.remove("active"));
-        document.querySelector(`.type-btn[data-type="${type}"]`).classList.add("active");
-        displayList();
-    };
-
-    window.filterByStatus = function(status) {
-        currentStatusFilter = status;
-        document.querySelectorAll(".status-filter-btn").forEach(btn => {
-            btn.classList.remove("active", "completed-active");
-        });
-        const btn = document.querySelector(`.status-filter-btn[data-status="${status}"]`);
-        if (btn) {
-            btn.classList.add("active");
-            if (status === 'completed') {
-                btn.classList.add("completed-active");
-            }
-        }
-        displayList();
-    };
-
-    function getCurrentItems() {
-        if (currentFolder) {
-            return currentFolders[currentFolder] || [];
-        }
-        return currentList;
+    async function loadUserList() {
+        if (!currentUser) return [];
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        return userDoc.exists() ? (userDoc.data().list || []) : [];
     }
 
-    function sortItems(items) {
-        const sorted = [...items];
-        switch(currentSort) {
-            case "rating":
-                sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-                break;
-            case "title":
-                sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-                break;
-            case "date":
-                sorted.sort((a, b) => {
-                    const dateA = a.release_date || a.first_air_date || '';
-                    const dateB = b.release_date || b.first_air_date || '';
-                    
-                    if (dateA && dateB) {
-                        return dateB.localeCompare(dateA);
-                    }
-                    if (dateA) return -1;
-                    if (dateB) return 1;
-                    return (b.year || 0) - (a.year || 0);
-                });
-                break;
-            case "addedDate":
-            default:
-                sorted.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-                break;
-        }
-        return sorted;
-    }
-
-    // 🔥 FUNZIONE MODIFICATA - I COMPLETATI VENGONO ORDINATI PER DATA DI AGGIUNTA (addedAt)
-    function filterItems(items) {
-        let filtered = [...items];
-        
-        if (currentTypeFilter !== "all") {
-            filtered = filtered.filter(item => item.type === currentTypeFilter);
-        }
-        
-        if (currentStatusFilter === "completed") {
-            filtered = filtered.filter(item => item.completed === true);
-            // 🔥 ORDINA PER DATA DI AGGIUNTA (addedAt) - IL PIÙ RECENTE IN CIMA
-            filtered.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-        } else {
-            filtered = filtered.filter(item => item.completed !== true);
-        }
-        
-        return filtered;
-    }
-
-    function updateStats(filteredItems, totalItems) {
-        const statsDiv = document.getElementById("stats");
-        const moviesCount = filteredItems.filter(i => i.type === "movie").length;
-        const tvCount = filteredItems.filter(i => i.type === "tv" || i.type === "series").length;
-        const avgRating = filteredItems.length > 0 
-            ? (filteredItems.reduce((sum, i) => sum + (i.rating || 0), 0) / filteredItems.length).toFixed(1)
-            : 0;
-        
-        const statusLabel = currentStatusFilter === "completed" ? "Completati" : "Da Guardare";
-        statsDiv.innerHTML = `📊 ${statusLabel}: ${filteredItems.length} su ${totalItems} totali | 🎬 Film: ${moviesCount} | 📺 Serie: ${tvCount} | ⭐ Media voto: ${avgRating}`;
-        updateCompletedStats();
-    }
-
-    function updateCompletedStats() {
-        const items = getCurrentItems();
-        const total = items.length;
-        const completed = items.filter(i => i.completed === true).length;
-        const notCompleted = total - completed;
-        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-        
-        document.getElementById('completedCount').textContent = completed;
-        document.getElementById('notCompletedCount').textContent = notCompleted;
-        document.getElementById('completionPercentage').textContent = percentage;
-    }
-
-    function renderFoldersBar() {
-        const container = document.getElementById('foldersBar');
-        let html = `<button class="folder-btn ${!currentFolder ? 'active' : ''}" onclick="window.selectFolder(null)">📂 Tutti</button>`;
-        
-        for (const folderName in currentFolders) {
-            const count = currentFolders[folderName].length;
-            html += `<div class="folder-item">
-                        <button class="folder-btn ${currentFolder === folderName ? 'active' : ''}" onclick="window.selectFolder('${escapeHtml(folderName)}')">
-                            📁 ${escapeHtml(folderName)} (${count})
-                        </button>
-                        <button class="folder-btn delete-folder-btn" onclick="window.deleteFolder('${escapeHtml(folderName)}')">🗑</button>
-                    </div>`;
-        }
-        
-        container.innerHTML = html;
-    }
-
-    // ============================================================
-    // 🔥 FUNZIONI DI MODIFICA DELLA LISTA (CON BACKUP AUTOMATICO)
-    // ============================================================
-    
-    // Ogni funzione che modifica la lista chiama saveBackupToHistory PRIMA della modifica
-
-    window.markAsCompleted = async function(id, type, event) {
-        event.stopPropagation();
-        
-        let items = getCurrentItems();
-        let item = items.find(i => i.id == id && i.type === type);
-        
-        if (!item) return;
-        
-        const action = item.completed ? 'uncompleted' : 'completed';
-        const details = `"${item.title}" (${item.type === 'movie' ? 'Film' : 'Serie TV'})`;
-        
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
-        await saveBackupToHistory(action, details);
-        
-        if (item.completed) {
-            item.completed = false;
-            item.completedDate = null;
-        } else {
-            item.completed = true;
-            item.completedDate = new Date().toISOString().split('T')[0];
-            item.watched_at = new Date().toISOString();
-        }
-        
-        await saveAllData();
-        displayList();
-    };
-
-    window.createFolder = async function() {
-        const folderName = document.getElementById('folderName').value.trim();
-        if (!folderName) {
-            document.getElementById('folderError').textContent = 'Inserisci un nome per la cartella';
-            return;
-        }
-        
-        if (currentFolders[folderName]) {
-            document.getElementById('folderError').textContent = 'Esiste già una cartella con questo nome';
-            return;
-        }
-        
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
-        await saveBackupToHistory('folder_create', folderName);
-        
-        currentFolders[folderName] = [];
-        await saveAllData();
-        closeFolderModal();
-        renderFoldersBar();
-        displayList();
-    };
-
-    window.deleteFolder = async function(folderName) {
-        if (confirm(`Eliminare la cartella "${folderName}"? I contenuti torneranno nella lista principale.`)) {
-            // 🔥 BACKUP PRIMA DELLA MODIFICA
-            await saveBackupToHistory('folder_delete', folderName);
-            
-            const folderItems = currentFolders[folderName] || [];
-            
-            for (const item of folderItems) {
-                const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
-                if (!esisteGia) {
-                    currentList.push(item);
-                }
-            }
-            
-            delete currentFolders[folderName];
-            await saveAllData();
-            
-            if (currentFolder === folderName) {
-                currentFolder = null;
-            }
-            
-            renderFoldersBar();
-            displayList();
-        }
-    };
-
-    window.confirmMultiMove = async function() {
-        const targetFolder = document.getElementById('multiFolderSelect').value;
-        const itemsToMove = [];
-        
-        for (const key of selectedItems) {
-            const [id, type] = key.split('_');
-            const found = getCurrentItems().find(item => item.id == id && item.type === type);
-            if (found) {
-                itemsToMove.push(found);
-            }
-        }
-        
-        if (itemsToMove.length === 0) return;
-        
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
-        await saveBackupToHistory('move', `${itemsToMove.length} elementi in ${targetFolder || 'lista principale'}`);
-        
-        if (currentFolder) {
-            const folderItems = currentFolders[currentFolder] || [];
-            currentFolders[currentFolder] = folderItems.filter(item => 
-                !itemsToMove.some(move => move.id === item.id && move.type === item.type)
-            );
-        } else {
-            currentList = currentList.filter(item => 
-                !itemsToMove.some(move => move.id === item.id && move.type === item.type)
-            );
-        }
-        
-        if (targetFolder && currentFolders[targetFolder]) {
-            for (const item of itemsToMove) {
-                const esisteGia = currentFolders[targetFolder].some(i => i.id === item.id && i.type === item.type);
-                if (!esisteGia) {
-                    currentFolders[targetFolder].push(item);
-                }
-            }
-        } else {
-            for (const item of itemsToMove) {
-                const esisteGia = currentList.some(i => i.id === item.id && i.type === item.type);
-                if (!esisteGia) {
-                    currentList.push(item);
-                }
-            }
-        }
-        
-        await saveAllData();
-        closeMultiMoveModal();
-        cancelMultiSelect();
-        displayList();
-    };
-
-    window.confirmSingleMove = async function() {
-        const targetFolder = document.getElementById('folderSelect').value;
-        if (!pendingMoveItem) return;
-        
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
-        await saveBackupToHistory('move', `"${pendingMoveItem.title}" in ${targetFolder || 'lista principale'}`);
-        
-        if (currentFolder) {
-            const folderItems = currentFolders[currentFolder] || [];
-            const index = folderItems.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
-            if (index !== -1) {
-                folderItems.splice(index, 1);
-                currentFolders[currentFolder] = folderItems;
-            }
-        } else {
-            const index = currentList.findIndex(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
-            if (index !== -1) {
-                currentList.splice(index, 1);
-            }
-        }
-        
-        if (targetFolder && currentFolders[targetFolder]) {
-            const esisteGia = currentFolders[targetFolder].some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
-            if (!esisteGia) {
-                currentFolders[targetFolder].push(pendingMoveItem);
-            }
-        } else {
-            const esisteGia = currentList.some(i => i.id === pendingMoveItem.id && i.type === pendingMoveItem.type);
-            if (!esisteGia) {
-                currentList.push(pendingMoveItem);
-            }
-        }
-        
-        await saveAllData();
-        closeMoveModal();
-        displayList();
-    };
-
-    window.removeFromList = async function(id, type, event) {
-        event.stopPropagation();
-        if (!confirm("Rimuovere questo elemento dalla lista?")) return;
-        
-        let items = getCurrentItems();
-        let item = items.find(i => i.id == id && i.type === type);
-        
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
-        await saveBackupToHistory('remove', `"${item ? item.title : 'elemento'}"`);
-        
-        const userRef = doc(db, 'users', currentUser.uid);
-        
-        try {
-            await runTransaction(db, async (transaction) => {
-                const userDoc = await transaction.get(userRef);
-                
-                if (!userDoc.exists()) {
-                    throw new Error("Utente non trovato");
-                }
-                
-                let newList = userDoc.data().list || [];
-                let newFolders = userDoc.data().folders || {};
-                
-                if (currentFolder) {
-                    if (newFolders[currentFolder]) {
-                        newFolders[currentFolder] = newFolders[currentFolder].filter(
-                            item => !(item.id === id && item.type === type)
-                        );
-                    }
-                } else {
-                    newList = newList.filter(item => !(item.id === id && item.type === type));
-                }
-                
-                transaction.update(userRef, { 
-                    list: newList,
-                    folders: newFolders
-                });
-                
-                currentList = newList;
-                currentFolders = newFolders;
-            });
-            
-            displayList();
-        } catch (error) {
-            console.error("Errore transazione:", error);
-            alert("Errore durante la rimozione. Riprova.");
-        }
-    };
-
-    window.clearAll = async function() {
-        const confirmMsg = currentFolder ? `⚠️ Sei sicuro di voler svuotare la cartella "${currentFolder}"?` : "⚠️ Sei sicuro di voler svuotare tutta la lista?";
-        if (!confirm(confirmMsg)) return;
-        
-        // 🔥 BACKUP PRIMA DELLA MODIFICA
-        await saveBackupToHistory('clear', currentFolder ? `cartella "${currentFolder}"` : 'lista completa');
-        
-        const userRef = doc(db, 'users', currentUser.uid);
-        
-        try {
-            await runTransaction(db, async (transaction) => {
-                const userDoc = await transaction.get(userRef);
-                
-                if (!userDoc.exists()) {
-                    throw new Error("Utente non trovato");
-                }
-                
-                let newList = userDoc.data().list || [];
-                let newFolders = userDoc.data().folders || {};
-                
-                if (currentFolder) {
-                    newFolders[currentFolder] = [];
-                } else {
-                    newList = [];
-                }
-                
-                transaction.update(userRef, { 
-                    list: newList,
-                    folders: newFolders
-                });
-                
-                currentList = newList;
-                currentFolders = newFolders;
-            });
-            
-            displayList();
-        } catch (error) {
-            console.error("Errore transazione:", error);
-            alert("Errore durante lo svuotamento. Riprova.");
-        }
-    };
-
-    // ============================================================
-    // 🔥 BACKUP MANUALE
-    // ============================================================
-    window.exportList = async function() {
-        if (!currentUser) {
-            alert("Devi essere loggato!");
-            return;
-        }
-        
-        // 🔥 Salva come backup manuale
-        await saveBackupToHistory('manual', 'Backup manuale');
-        
-        // Scarica il file
-        const historyKey = `kitsustream_backup_history_${currentUser.uid}`;
-        const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
-        
-        if (history.length === 0) {
-            alert("❌ Errore: nessun backup trovato!");
-            return;
-        }
-        
-        const data = history[0]; // L'ultimo backup (il più recente)
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        a.download = `backup_manual_${dateStr}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        alert(`✅ Backup manuale creato! (${data.totalItems} elementi salvati)\n💾 File scaricato.`);
-    };
-
-    // ============================================================
-    // 🔥 IMPORTA BACKUP DA FILE
-    // ============================================================
-    window.importList = function() {
-        if (!currentUser) {
-            alert("Devi essere loggato!");
-            return;
-        }
-        
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.onchange = async function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = async function(event) {
-                try {
-                    const data = JSON.parse(event.target.result);
-                    
-                    if (!data.list || !Array.isArray(data.list)) {
-                        alert("❌ File non valido! Assicurati di aver selezionato un backup di KitsuStream.");
-                        return;
-                    }
-                    
-                    const currentTotal = currentList.length + Object.values(currentFolders).reduce((acc, f) => acc + f.length, 0);
-                    
-                    const confirmMsg = `📋 Ripristinare il backup del ${formatFullDate(data.exportedAt)}?\n\n` +
-                                      `📝 ${data.description || 'Nessuna descrizione'}\n` +
-                                      `📦 Elementi nel backup: ${data.totalItems || data.list.length}\n` +
-                                      `📦 Elementi attuali: ${currentTotal}\n` +
-                                      `📂 Cartelle nel backup: ${Object.keys(data.folders || {}).length}\n\n` +
-                                      `⚠️ Questo SOSTITUIRÀ COMPLETAMENTE la lista attuale!\n\n` +
-                                      `Procedere?`;
-                    
-                    if (!confirm(confirmMsg)) return;
-                    
-                    // 🔥 BACKUP PRIMA DEL RIPRISTINO
-                    await saveBackupToHistory('restore', `Prima di ripristinare da file esterno: ${formatFullDate(data.exportedAt)}`);
-                    
-                    currentList = data.list || [];
-                    currentFolders = data.folders || {};
-                    
-                    await saveAllData();
-                    displayList();
-                    
-                    // 🔥 Salva anche il backup ripristinato nello storico
-                    await saveBackupToHistory('restore', `Ripristinato da file esterno: ${formatFullDate(data.exportedAt)}`);
-                    
-                    alert(`✅ Ripristinato! ${currentList.length} elementi nella lista principale e ${Object.keys(currentFolders).length} cartelle.`);
-                    
-                } catch (error) {
-                    alert("❌ Errore nella lettura del file: " + error.message);
-                    console.error(error);
-                }
-            };
-            reader.readAsText(file);
-        };
-        input.click();
-    };
-
-    // ============================================================
-    // 🔥 FUNZIONI DI IMPORT COMPLETATI (MODIFICATE CON BACKUP)
-    // ============================================================
-    window.toggleImportSection = function() {
-        const section = document.getElementById('importSection');
-        const btn = document.querySelector('.toggle-import-btn');
-        
-        if (section.classList.contains('visible')) {
-            section.classList.remove('visible');
-            btn.textContent = '📥 Mostra Importazione';
-            btn.classList.remove('active');
-        } else {
-            section.classList.add('visible');
-            btn.textContent = '📥 Nascondi Importazione';
-            btn.classList.add('active');
-        }
-    };
-
-    async function fetchMovieData(title, year, type) {
-        try {
-            let searchType = type === 'movie' ? 'movie' : 'tv';
-            let url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(title)}&language=it-IT`;
-            
-            if (year) {
-                url += `&year=${year}`;
-            }
-            
-            const response = await fetch(url);
-            const data = await response.json();
-            
-            if (data.results && data.results.length > 0) {
-                let bestMatch = data.results[0];
-                
-                if (year) {
-                    const yearNum = parseInt(year);
-                    for (const result of data.results) {
-                        const resultYear = result.release_date ? parseInt(result.release_date.split('-')[0]) : 
-                                          result.first_air_date ? parseInt(result.first_air_date.split('-')[0]) : 0;
-                        if (resultYear === yearNum) {
-                            bestMatch = result;
-                            break;
-                        }
-                    }
-                }
-                
-                return {
-                    poster: bestMatch.poster_path ? IMG_BASE + bestMatch.poster_path : null,
-                    rating: bestMatch.vote_average ? parseFloat(bestMatch.vote_average.toFixed(1)) : null,
-                    year: bestMatch.release_date ? parseInt(bestMatch.release_date.split('-')[0]) : 
-                          bestMatch.first_air_date ? parseInt(bestMatch.first_air_date.split('-')[0]) : 
-                          (year ? parseInt(year) : null),
-                    overview: bestMatch.overview || null,
-                    genres: bestMatch.genre_ids || [],
-                    tmdb_id: bestMatch.id
-                };
-            }
-            return null;
-        } catch (error) {
-            console.error(`Errore nel recupero dati per ${title}:`, error);
-            return null;
-        }
-    }
-
-    document.getElementById('moviesCompletedInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        importCompletedItems(file, 'movies', 'moviesCompletedStatus');
-        this.value = '';
-    });
-
-    document.getElementById('seriesCompletedInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        importCompletedItems(file, 'series', 'seriesCompletedStatus');
-        this.value = '';
-    });
-
-    async function importCompletedItems(file, type, statusId) {
-        const statusDiv = document.getElementById(statusId);
-        statusDiv.textContent = '⏳ Elaborazione in corso...';
-        statusDiv.style.color = '#667eea';
-
-        // 🔥 BACKUP PRIMA DELL'IMPORTAZIONE
-        await saveBackupToHistory('import', `Importazione ${type === 'movies' ? 'film' : 'serie'} completati da file`);
-
-        const reader = new FileReader();
-        reader.onload = async function(event) {
-            try {
-                const jsonData = JSON.parse(event.target.result);
-                
-                let completedItems = [];
-                
-                if (type === 'movies') {
-                    if (Array.isArray(jsonData)) {
-                        completedItems = jsonData.filter(item => item.is_watched === true);
-                    } else if (jsonData.movies && Array.isArray(jsonData.movies)) {
-                        completedItems = jsonData.movies.filter(item => item.is_watched === true);
-                    }
-                } else if (type === 'series') {
-                    if (Array.isArray(jsonData)) {
-                        completedItems = jsonData.filter(series => {
-                            return isSeriesCompleted(series);
-                        });
-                    } else if (jsonData.series && Array.isArray(jsonData.series)) {
-                        completedItems = jsonData.series.filter(series => {
-                            return isSeriesCompleted(series);
-                        });
-                    }
-                }
-
-                if (completedItems.length === 0) {
-                    statusDiv.textContent = '❌ Nessun contenuto completato trovato nel file.';
-                    statusDiv.style.color = '#f87171';
-                    return;
-                }
-
-                statusDiv.textContent = `🖼️ Recupero dati da TMDB (0/${completedItems.length})...`;
-                statusDiv.style.color = '#667eea';
-
-                const convertedItems = await convertToWatchTrackerFormat(completedItems, type, statusDiv);
-                
-                let addedCount = 0;
-                const existingIds = new Set(currentList.map(item => 
-                    `${item.id}_${item.type}`
-                ));
-                
-                for (const folderName in currentFolders) {
-                    currentFolders[folderName].forEach(item => {
-                        existingIds.add(`${item.id}_${item.type}`);
-                    });
-                }
-
-                convertedItems.forEach(item => {
-                    const key = `${item.id}_${item.type}`;
-                    if (!existingIds.has(key)) {
-                        item.completed = true;
-                        item.completedDate = item.watched_at || new Date().toISOString().split('T')[0];
-                        currentList.push(item);
-                        existingIds.add(key);
-                        addedCount++;
-                    }
-                });
-
-                await saveAllData();
-                updateImportStats();
-                
-                statusDiv.textContent = `✅ Importati ${addedCount} ${type === 'movies' ? 'film' : 'serie'} completati!`;
-                statusDiv.style.color = '#4ade80';
-                
-                displayList();
-                document.getElementById('importCompletedStats').style.display = 'flex';
-
-            } catch (error) {
-                statusDiv.textContent = `❌ Errore: ${error.message}`;
-                statusDiv.style.color = '#f87171';
-                console.error('Errore parsing JSON:', error);
-            }
-        };
-
-        reader.onerror = function() {
-            statusDiv.textContent = '❌ Errore nella lettura del file';
-            statusDiv.style.color = '#f87171';
-        };
-
-        reader.readAsText(file);
-    }
-
-    function isSeriesCompleted(series) {
-        if (!series.seasons || !Array.isArray(series.seasons)) return false;
-        
-        let totalEpisodes = 0;
-        let watchedEpisodes = 0;
-        
-        series.seasons.forEach(season => {
-            if (season.episodes && Array.isArray(season.episodes)) {
-                season.episodes.forEach(ep => {
-                    totalEpisodes++;
-                    if (ep.is_watched === true) {
-                        watchedEpisodes++;
-                    }
-                });
-            }
-        });
-        
-        return totalEpisodes > 0 && watchedEpisodes === totalEpisodes;
-    }
-
-    async function convertToWatchTrackerFormat(items, type, statusDiv) {
-        const converted = [];
-        let processed = 0;
-        const total = items.length;
-        
-        if (type === 'movies') {
-            for (const movie of items) {
-                processed++;
-                if (statusDiv) {
-                    statusDiv.textContent = `🖼️ Recuperando ${movie.title} (${processed}/${total})...`;
-                }
-                
-                const movieData = await fetchMovieData(movie.title, movie.year, 'movie');
-                
-                converted.push({
-                    id: movie.id?.imdb || movie.uuid || `movie_${Date.now()}_${Math.random()}`,
-                    title: movie.title || 'Film senza titolo',
-                    type: 'movie',
-                    year: movieData?.year || movie.year || null,
-                    poster: movieData?.poster || null,
-                    rating: movieData?.rating || null,
-                    overview: movieData?.overview || null,
-                    watched: true,
-                    watched_at: movie.watched_at || movie.created_at || new Date().toISOString(),
-                    genres: movieData?.genres || [],
-                    tmdb_id: movieData?.tmdb_id || null,
-                    addedAt: Date.now(),
-                    completed: true,
-                    completedDate: movie.watched_at || new Date().toISOString().split('T')[0],
-                    mediaType: 'Film'
-                });
-            }
-        } else if (type === 'series') {
-            for (const series of items) {
-                processed++;
-                if (statusDiv) {
-                    statusDiv.textContent = `🖼️ Recuperando ${series.title} (${processed}/${total})...`;
-                }
-                
-                const seriesData = await fetchMovieData(series.title, null, 'tv');
-                
-                let totalEpisodes = 0;
-                let watchedEpisodes = 0;
-                let lastWatchedDate = null;
-                
-                if (series.seasons) {
-                    series.seasons.forEach(season => {
-                        if (season.episodes) {
-                            season.episodes.forEach(ep => {
-                                totalEpisodes++;
-                                if (ep.is_watched === true) {
-                                    watchedEpisodes++;
-                                    if (ep.watched_at) {
-                                        if (!lastWatchedDate || ep.watched_at > lastWatchedDate) {
-                                            lastWatchedDate = ep.watched_at;
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-                
-                converted.push({
-                    id: series.id?.tvdb || series.uuid || `series_${Date.now()}_${Math.random()}`,
-                    title: series.title || 'Serie senza titolo',
-                    type: 'tv',
-                    year: seriesData?.year || null,
-                    poster: seriesData?.poster || null,
-                    rating: seriesData?.rating || null,
-                    overview: seriesData?.overview || null,
-                    totalEpisodes: totalEpisodes,
-                    watchedEpisodes: watchedEpisodes,
-                    status: 'completed',
-                    genres: seriesData?.genres || [],
-                    seasons: series.seasons || [],
-                    tmdb_id: seriesData?.tmdb_id || null,
-                    addedAt: Date.now(),
-                    completed: true,
-                    completedDate: lastWatchedDate || series.created_at || new Date().toISOString().split('T')[0],
-                    watched_at: lastWatchedDate || series.created_at || new Date().toISOString(),
-                    mediaType: 'Serie TV'
-                });
-            }
-        }
-        
-        return converted;
-    }
-
-    function updateImportStats() {
-        const allCompleted = currentList.filter(item => item.completed === true);
-        const moviesCompleted = allCompleted.filter(item => item.type === 'movie');
-        const seriesCompleted = allCompleted.filter(item => item.type === 'tv' || item.type === 'series');
-        
-        document.getElementById('importedMoviesCount').textContent = moviesCompleted.length;
-        document.getElementById('importedSeriesCount').textContent = seriesCompleted.length;
-        document.getElementById('importedTotalCount').textContent = allCompleted.length;
-    }
-
-    // ============================================================
-    // 🔥 FUNZIONI DI SELEZIONE MULTIPLA
-    // ============================================================
-    window.selectFolder = function(folderName) {
-        cancelMultiSelect();
-        currentFolder = folderName === currentFolder ? null : folderName;
-        renderFoldersBar();
-        displayList();
-    };
-
-    window.toggleMultiSelectMode = function() {
-        multiSelectMode = !multiSelectMode;
-        const btn = document.getElementById('multiMoveBtn');
-        const selectionBar = document.getElementById('selectionBar');
-        
-        if (multiSelectMode) {
-            btn.classList.add('active');
-            btn.innerHTML = '❌ Annulla Selezione';
-            selectionBar.classList.add('show');
-        } else {
-            btn.classList.remove('active');
-            btn.innerHTML = '✅ Sposta Multipli';
-            selectionBar.classList.remove('show');
-            selectedItems.clear();
-        }
-        displayList();
-    };
-
-    window.cancelMultiSelect = function() {
-        multiSelectMode = false;
-        selectedItems.clear();
-        const btn = document.getElementById('multiMoveBtn');
-        const selectionBar = document.getElementById('selectionBar');
-        btn.classList.remove('active');
-        btn.innerHTML = '✅ Sposta Multipli';
-        selectionBar.classList.remove('show');
-        displayList();
-    };
-
-    window.toggleSelectItem = function(itemId, itemType) {
-        const key = `${itemId}_${itemType}`;
-        if (selectedItems.has(key)) {
-            selectedItems.delete(key);
-        } else {
-            selectedItems.add(key);
-        }
-        updateSelectionCount();
-        displayList();
-    };
-
-    function updateSelectionCount() {
-        const countSpan = document.getElementById('selectionCount');
-        if (countSpan) {
-            countSpan.textContent = `${selectedItems.size} selezionati`;
-        }
-    }
-
-    window.moveSelectedToFolder = function() {
-        if (selectedItems.size === 0) {
-            alert("Nessun elemento selezionato");
-            return;
-        }
-        
-        const select = document.getElementById('multiFolderSelect');
-        select.innerHTML = '<option value="">-- Nessuna cartella (Lista principale) --</option>';
-        for (const folderName in currentFolders) {
-            if (folderName !== currentFolder) {
-                select.innerHTML += `<option value="${escapeHtml(folderName)}">📁 ${escapeHtml(folderName)}</option>`;
-            }
-        }
-        
-        document.getElementById('multiMoveModal').style.display = 'flex';
-    };
-
-    window.closeMultiMoveModal = function() {
-        document.getElementById('multiMoveModal').style.display = 'none';
-    };
-
-    window.moveItem = function(item) {
-        if (multiSelectMode) return;
-        pendingMoveItem = item;
-        const select = document.getElementById('folderSelect');
-        select.innerHTML = '<option value="">-- Nessuna cartella (Lista principale) --</option>';
-        for (const folderName in currentFolders) {
-            if (folderName !== currentFolder) {
-                select.innerHTML += `<option value="${escapeHtml(folderName)}">📁 ${escapeHtml(folderName)}</option>`;
-            }
-        }
-        document.getElementById('moveModal').style.display = 'flex';
-    };
-
-    window.closeMoveModal = function() {
-        document.getElementById('moveModal').style.display = 'none';
-        pendingMoveItem = null;
-    };
-
-    window.moveItemClick = function(item, event) {
-        event.stopPropagation();
-        moveItem(item);
-    };
-
-    // ============================================================
-    // 🔥 FUNZIONI DI CARICAMENTO E SALVATAGGIO
-    // ============================================================
     async function loadUserData() {
         if (!currentUser) return null;
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (userDoc.exists()) {
             const data = userDoc.data();
-            currentList = data.list || [];
             currentFolders = data.folders || {};
             return data;
         }
         return null;
     }
 
-    async function saveAllData() {
-        if (!currentUser) return;
+    // ============================================================
+    // 🔥 TOGGLE LISTA CON TRANSAZIONE E BACKUP
+    // ============================================================
+    async function toggleCloudList(itemData) {
+        if (!currentUser) {
+            window.openLoginModal();
+            return false;
+        }
+
+        // 🔥 DETERMINA SE L'ELEMENTO ESISTE GIA' NELLA LISTA
+        const exists = userList.some(item => item.id === itemData.id && item.type === itemData.type);
+        const action = exists ? 'remove' : 'add';
+        const details = `"${itemData.title}" (${itemData.type === 'movie' ? 'Film' : 'Serie TV'})`;
         
+        // 🔥 SALVA BACKUP PRIMA DELLA MODIFICA (con la lista ATTUALE)
+        await saveBackup(action, details, 'index', currentUser, userList, currentFolders);
+
         const userRef = doc(db, 'users', currentUser.uid);
-        
+
         try {
-            await runTransaction(db, async (transaction) => {
+            const result = await runTransaction(db, async (transaction) => {
                 const userDoc = await transaction.get(userRef);
-                
+
                 if (!userDoc.exists()) {
                     throw new Error("Utente non trovato");
                 }
-                
-                transaction.update(userRef, { 
-                    list: currentList,
-                    folders: currentFolders,
-                    lastUpdate: new Date()
-                });
+
+                const currentList = userDoc.data().list || [];
+                const existsInDb = currentList.some(item => 
+                    item.id === itemData.id && item.type === itemData.type
+                );
+
+                let newList;
+                if (existsInDb) {
+                    newList = currentList.filter(item => 
+                        !(item.id === itemData.id && item.type === itemData.type)
+                    );
+                } else {
+                    itemData.addedAt = Date.now();
+                    newList = [...currentList, itemData];
+                }
+
+                transaction.update(userRef, { list: newList });
+                return { newList, added: !existsInDb };
             });
+
+            // Aggiorna lo stato locale
+            userList = result.newList;
+
+            // Aggiorna i bottoni nella UI
+            if (typeof updateListUI === 'function') {
+                updateListUI(result.newList);
+            }
+
+            return result.added;
+
         } catch (error) {
             console.error("Errore transazione:", error);
             alert("Errore durante il salvataggio. Riprova.");
+            return false;
         }
     }
 
     // ============================================================
-    // 🔥 FUNZIONI UI
+    // 🔥 AGGIORNA I BOTTONI NELLA UI
     // ============================================================
-    window.openAddFolderModal = function() {
-        if (!currentUser) {
-            alert("Devi prima accedere!");
-            return;
-        }
-        document.getElementById('folderName').value = '';
-        document.getElementById('folderError').textContent = '';
-        document.getElementById('folderModal').style.display = 'flex';
+    window.updateListUI = function(list) {
+        document.querySelectorAll('.card button[id^="btn-"]').forEach(btn => {
+            const id = btn.id.replace('btn-', '');
+            const isInList = list.some(item => item.id == id && item.type === currentMediaType);
+            btn.innerText = isInList ? "❌ Rimuovi" : "❤️ Aggiungi";
+            btn.style.background = isInList ? "#ef4444" : "#7c3aed";
+        });
     };
 
-    window.closeFolderModal = function() {
-        document.getElementById('folderModal').style.display = 'none';
-    };
-
-    window.handleCardClick = function(id, type, event) {
-        if (multiSelectMode) {
-            event.stopPropagation();
-            toggleSelectItem(id, type);
-        } else {
-            openDetails(id, type);
-        }
-    };
-
-    window.openDetails = function(id, type) {
-        window.location.href = `${type === 'movie' ? 'movie' : 'tv'}.html?id=${id}`;
-    };
-
-    // ============================================================
-    // 🔥 DISPLAY LISTA
-    // ============================================================
-    window.displayList = async function() {
-        const container = document.getElementById("listContainer");
-        
-        if (!currentUser) {
-            container.innerHTML = '<div class="empty-state">🔐 Accedi per vedere la tua lista salvata!</div>';
-            updateStats([], 0);
-            renderFoldersBar();
-            return;
-        }
-        
-        await loadUserData();
-        
-        renderFoldersBar();
-        const items = getCurrentItems();
-        const totalItems = items.length;
-        
-        if (totalItems === 0) {
-            const folderText = currentFolder ? ` nella cartella "${currentFolder}"` : '';
-            container.innerHTML = `<div class="empty-state">📭 La tua lista${folderText} è vuota<br>Aggiungi film o serie TV dalla home!</div>`;
-            updateStats([], 0);
-            return;
-        }
-        
-        let filtered = filterItems(items);
-        if (currentStatusFilter !== "completed") {
-            filtered = sortItems(filtered);
-        }
-        
-        updateStats(filtered, totalItems);
-        
-        if (filtered.length === 0) {
-            const emptyMsg = currentStatusFilter === "completed" ? 
-                '😕 Nessun elemento completato' : 
-                '😕 Nessun elemento da guardare';
-            container.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
-            return;
-        }
-        
-        container.innerHTML = `
-            <div class="grid">
-                ${filtered.map(item => {
-                    const key = `${item.id}_${item.type}`;
-                    const isSelected = selectedItems.has(key);
-                    const detailsUrl = `${item.type === 'movie' ? 'movie' : 'tv'}.html?id=${item.id}`;
-                    const isCompleted = item.completed === true;
-                    const mediaType = item.type === 'movie' ? 'Film' : 'Serie TV';
-                    
-                    let releaseDate = '';
-                    if (item.release_date) {
-                        releaseDate = formatDate(item.release_date);
-                    } else if (item.first_air_date) {
-                        releaseDate = formatDate(item.first_air_date);
-                    } else if (item.year) {
-                        releaseDate = String(item.year);
-                    } else {
-                        releaseDate = 'N/D';
-                    }
-                    
-                    return `
-                        <div class="card ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed-card' : ''}" 
-                             data-id="${item.id}"
-                             data-type="${item.type}"
-                             onclick="${multiSelectMode ? `toggleSelectItem(${item.id}, '${item.type}')` : ''}">
-                            <a href="${detailsUrl}" ${multiSelectMode ? 'onclick="return false;"' : ''}>
-                                <img src="${item.poster || 'https://via.placeholder.com/500x750/302b63/8892b0?text=No+Image'}" 
-                                     alt="${item.title}" 
-                                     loading="lazy">
-                            </a>
-                            <div class="card-content">
-                                <span class="media-badge ${item.type === 'movie' ? 'badge-movie' : 'badge-tv'}">
-                                    ${mediaType}
-                                </span>
-                                ${isCompleted ? `<div class="completed-badge">✅ Completato <span class="date">📅 ${formatDate(item.completedDate)}</span></div>` : ''}
-                                <h4>${escapeHtml(item.title)}</h4>
-                                <p>⭐ ${item.rating || "N/A"}/10</p>
-                                <p>📅 ${releaseDate}</p>
-                                ${!multiSelectMode ? `
-                                    <button class="mark-completed-btn ${isCompleted ? 'completed' : ''}" onclick="event.stopPropagation(); markAsCompleted(${item.id}, '${item.type}', event)">
-                                        ${isCompleted ? '↩️ Da completare' : '✅ Segna come completato'}
-                                    </button>
-                                    <button class="move-folder-btn" onclick='event.stopPropagation(); moveItemClick(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>📂 Sposta</button>
-                                    <button onclick="event.stopPropagation(); removeFromList(${item.id}, '${item.type}', event)">❌ Rimuovi</button>
-                                ` : '<div class="selection-hint">✨ Clicca sulla card per selezionare</div>'}
-                            </div>
-                        </div>
-                    `;
-                }).join("")}
-            </div>
-        `;
-    };
-
-    // ============================================================
-    // 🔥 UTILITY
-    // ============================================================
-    function escapeHtml(text) {
-        if (!text) return "";
-        const div = document.createElement("div");
-        div.textContent = text;
-        return div.innerHTML;
+    async function isInCloudList(id, type) {
+        if (!currentUser) return false;
+        return userList.some(item => item.id === id && item.type === type);
     }
 
-    window.goHome = function() {
-        window.location.href = "index.html";
-    };
-
-    // ============================================================
-    // 🔥 STATO AUTENTICAZIONE
-    // ============================================================
     onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         const authButtons = document.getElementById('authButtons');
@@ -2528,49 +637,335 @@ h1 {
                 <div class="user-info">
                     <span>👤</span>
                     <span class="username">${escapeHtml(currentUsername)}</span>
-                    <button class="logout-btn" onclick="window.logout()" style="padding: 4px 10px;">🚪</button>
+                    <button class="logout-btn" onclick="window.logout()" style="padding: 6px 12px;">🚪</button>
                 </div>
             `;
-            
-            // Carica lo storico
-            const history = loadBackupHistory();
-            
-            // Se non c'è storico, salva lo stato attuale come primo backup
-            if (history.length === 0) {
-                await saveBackupToHistory('manual', 'Backup iniziale');
-            }
-            
-            displayList();
+            userList = await loadUserList();
+            if (typeof loadContent === 'function') loadContent();
         } else {
             authButtons.innerHTML = `<button class="login-btn" onclick="window.openLoginModal()">🔐 Accedi</button>`;
             currentUsername = "";
-            currentList = [];
-            currentFolders = {};
-            currentFolder = null;
-            displayList();
+            userList = [];
+            if (typeof loadContent === 'function') loadContent();
         }
     });
 
-    // ============================================================
-    // 🔥 AGGIORNA LISTA QUANDO LA PAGINA DIVENTA VISIBILE
-    // ============================================================
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden && currentUser) {
-            displayList();
-        }
-    });
-
-    // ============================================================
-    // 🔥 TORNA SU
-    // ============================================================
-    const tornaSuBtn = document.getElementById("tornaSu");
-    window.addEventListener("scroll", function() {
-        tornaSuBtn.style.display = window.scrollY > 300 ? "flex" : "none";
-    });
-    tornaSuBtn.addEventListener("click", function() {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    });
+    window.getCurrentUser = () => currentUser;
+    window.getUserList = () => userList;
+    window.toggleCloudList = toggleCloudList;
+    window.isInCloudList = isInCloudList;
+    
+    function escapeHtml(text) {
+        if (!text) return "";
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+    }
 </script>
 
+<script>
+const API_KEY = "7fe396e6f50677047459e8c173f2bd9d";
+const IMG_BASE = "https://image.tmdb.org/t/p/w500";
+
+let currentPage = 1;
+let selectedGenres = [];
+let currentMediaType = "movie";
+let searchQuery = "";
+let totalPages = 1;
+let currentOrder = "popular";
+
+const movieGenres = [
+    { id: "28", name: "Azione" }, { id: "12", name: "Avventura" }, { id: "16", name: "Animazione" },
+    { id: "35", name: "Commedia" }, { id: "80", name: "Crime" }, { id: "99", name: "Documentario" },
+    { id: "18", name: "Dramma" }, { id: "10751", name: "Famiglia" }, { id: "14", name: "Fantasy" },
+    { id: "36", name: "Storico" }, { id: "27", name: "Horror" }, { id: "10402", name: "Musica" },
+    { id: "9648", name: "Mistero" }, { id: "10749", name: "Romance" }, { id: "878", name: "Fantascienza" },
+    { id: "53", name: "Thriller" }, { id: "10752", name: "Guerra" }, { id: "37", name: "Western" }
+];
+
+const tvGenres = [
+    { id: "10759", name: "Action" }, { id: "16", name: "Animazione" }, { id: "35", name: "Commedia" },
+    { id: "80", name: "Crime" }, { id: "99", name: "Documentario" }, { id: "18", name: "Dramma" },
+    { id: "10751", name: "Famiglia" }, { id: "10762", name: "Kids" }, { id: "9648", name: "Mistero" },
+    { id: "10763", name: "News" }, { id: "10764", name: "Reality" }, { id: "10765", name: "Fantascienza" },
+    { id: "10766", name: "Soap" }, { id: "10767", name: "Talk" }, { id: "10768", name: "Guerra" },
+    { id: "37", name: "Western" }
+];
+
+// ===== FUNZIONE PER FORMARE LA DATA (FORMATO ITALIANO - SENZA ORARIO) =====
+function formatDate(dateString) {
+    if (!dateString) return 'N/D';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            const year = dateString.split("-")[0];
+            return year || 'N/D';
+        }
+        
+        const options = { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric'
+        };
+        return date.toLocaleDateString('it-IT', options);
+    } catch (e) {
+        const year = dateString.split("-")[0];
+        return year || 'N/D';
+    }
+}
+
+window.onload = function() {
+    renderGenres();
+    loadContent();
+    document.getElementById("searchInput").addEventListener("input", handleSearch);
+};
+
+
+function changeOrder(order) {
+    currentOrder = order;
+    currentPage = 1;
+    document.querySelectorAll(".order-btn").forEach(btn => btn.classList.remove("active"));
+    document.querySelector(`.order-btn[data-order="${order}"]`).classList.add("active");
+    loadContent();
+}
+
+function switchMediaType(type) {
+    currentMediaType = type;
+    currentPage = 1;
+    selectedGenres = [];
+    searchQuery = "";
+    document.getElementById("searchInput").value = "";
+    document.querySelectorAll(".media-btn").forEach(btn => btn.classList.remove("active"));
+    document.querySelector(`[data-type="${type}"]`).classList.add("active");
+    renderGenres();
+    loadContent();
+}
+
+function renderGenres() {
+    const genresContainer = document.getElementById("genresContainer");
+    const genresList = currentMediaType === "movie" ? movieGenres : tvGenres;
+    
+    genresContainer.innerHTML = genresList.map(genre => `
+        <button class="genre-btn" data-id="${genre.id}" onclick="toggleGenre('${genre.id}')">
+            ${genre.name}
+        </button>
+    `).join("");
+}
+
+function toggleGenre(genreId) {
+    const btn = document.querySelector(`.genre-btn[data-id="${genreId}"]`);
+    
+    if (selectedGenres.includes(genreId)) {
+        selectedGenres = selectedGenres.filter(id => id !== genreId);
+        btn.classList.remove("active");
+    } else {
+        selectedGenres.push(genreId);
+        btn.classList.add("active");
+    }
+    
+    currentPage = 1;
+    loadContent();
+}
+
+function handleSearch() {
+    searchQuery = document.getElementById("searchInput").value.trim();
+    currentPage = 1;
+    loadContent();
+}
+
+function clearSearch() {
+    document.getElementById("searchInput").value = "";
+    searchQuery = "";
+    currentPage = 1;
+    loadContent();
+}
+
+async function loadContent() {
+    showLoading();
+    
+    try {
+        let url = "";
+        
+        if (searchQuery) {
+            const searchType = currentMediaType === "movie" ? "movie" : "tv";
+            let sortParam = "";
+            if (currentOrder === 'latest') {
+                if (currentMediaType === 'movie') {
+                    sortParam = `&sort_by=release_date.desc`;
+                } else {
+                    sortParam = `&sort_by=first_air_date.desc`;
+                }
+            } else if (currentOrder === 'top_rated') {
+                sortParam = `&sort_by=vote_average.desc`;
+            } else {
+                sortParam = `&sort_by=popularity.desc`;
+            }
+            url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(searchQuery)}&language=it-IT&page=${currentPage}${sortParam}`;
+        } 
+        else if (selectedGenres.length > 0) {
+            const genreQuery = selectedGenres.join(",");
+            let sortBy = 'popularity.desc';
+            if (currentOrder === 'top_rated') {
+                sortBy = 'vote_average.desc';
+            } else if (currentOrder === 'latest') {
+                if (currentMediaType === 'movie') {
+                    sortBy = 'release_date.desc';
+                } else {
+                    sortBy = 'first_air_date.desc';
+                }
+            }
+            url = `https://api.themoviedb.org/3/discover/${currentMediaType}?api_key=${API_KEY}&with_genres=${genreQuery}&language=it-IT&page=${currentPage}&sort_by=${sortBy}&vote_count.gte=50`;
+        } 
+        else {
+            if (currentOrder === 'top_rated') {
+                url = `https://api.themoviedb.org/3/${currentMediaType}/top_rated?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
+            } else if (currentOrder === 'latest') {
+                if (currentMediaType === 'movie') {
+                    url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=release_date.desc&vote_count.gte=50`;
+                } else {
+                    url = `https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=it-IT&page=${currentPage}&sort_by=first_air_date.desc&vote_count.gte=50`;
+                }
+            } else {
+                url = `https://api.themoviedb.org/3/${currentMediaType}/popular?api_key=${API_KEY}&language=it-IT&page=${currentPage}`;
+            }
+        }
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        totalPages = Math.min(data.total_pages, 500);
+        displayItems(data.results);
+        updatePageNumber();
+    } catch (error) {
+        console.error("Errore:", error);
+        document.getElementById("results").innerHTML = '<div class="no-results">❌ Errore nel caricamento</div>';
+    }
+}
+function showLoading() {
+    document.getElementById("results").innerHTML = '<div class="loading">⏳ Caricamento in corso...</div>';
+}
+
+async function displayItems(items) {
+    // 🔥 RICARICA LA LISTA PER ESSERE SICURI
+    if (window.getCurrentUser && window.getCurrentUser()) {
+        userList = await window.getUserList();
+    }
+    
+    const resultsDiv = document.getElementById("results");
+    
+    if (!items || items.length === 0) {
+        resultsDiv.innerHTML = '<div class="no-results">😕 Nessun risultato trovato</div>';
+        return;
+    }
+    
+    const itemsHtml = [];
+    for (const item of items) {
+        const posterUrl = item.poster_path ? IMG_BASE + item.poster_path : "https://via.placeholder.com/500x750?text=No+Image";
+        const title = currentMediaType === "movie" ? item.title : item.name;
+        const date = currentMediaType === "movie" ? item.release_date : item.first_air_date;
+        
+        const releaseDate = formatDate(date);
+        
+        const rating = item.vote_average ? item.vote_average.toFixed(1) : "N/A";
+        
+        let inList = false;
+        if (window.getCurrentUser && window.getCurrentUser()) {
+            const list = await window.getUserList();
+            inList = list.some(i => i.id === item.id && i.type === currentMediaType);
+        }
+        
+        const releaseDateForSave = currentMediaType === "movie" ? item.release_date : item.first_air_date;
+        const year = date ? date.split("-")[0] : "N/D";
+        
+        itemsHtml.push(`
+            <div class="card">
+                <a href="${currentMediaType === "movie" ? "movie" : "tv"}.html?id=${item.id}">
+                    <img src="${posterUrl}" alt="${title}" loading="lazy">
+                </a>
+                <div class="card-content">
+                    <h4>${escapeHtml(title)}</h4>
+                    <div class="rating">⭐ ${rating}</div>
+                    <p>📅 ${releaseDate}</p>
+                    <button 
+                        id="btn-${item.id}"
+                        onclick="window.toggleListGlobal(${item.id}, '${escapeHtml(title)}', '${posterUrl}', ${item.vote_average || 0}, '${year}', '${currentMediaType}', '${currentMediaType === "movie" ? "Film" : "Serie TV"}', '${releaseDateForSave || ''}')"
+                        style="background:${inList ? '#ef4444' : '#7c3aed'}"
+                    >
+                        ${inList ? "❌ Rimuovi" : "❤️ Aggiungi"}
+                    </button>
+                </div>
+            </div>
+        `);
+    }
+    
+    resultsDiv.innerHTML = itemsHtml.join("");
+}
+
+window.toggleListGlobal = async function(id, title, poster, rating, year, type, mediaType, releaseDateForSave) {
+    const itemData = { 
+        id, 
+        title, 
+        poster, 
+        rating, 
+        year, 
+        type, 
+        mediaType 
+    };
+    
+    if (type === 'movie' && releaseDateForSave) {
+        itemData.release_date = releaseDateForSave;
+    } else if (type === 'tv' && releaseDateForSave) {
+        itemData.first_air_date = releaseDateForSave;
+    }
+    
+    const added = await window.toggleCloudList(itemData);
+    
+    const btn = document.getElementById(`btn-${id}`);
+    if (btn) {
+        btn.innerText = added ? "❌ Rimuovi" : "❤️ Aggiungi";
+        btn.style.background = added ? "#ef4444" : "#7c3aed";
+    }
+};
+
+function goHome() {
+    searchQuery = "";
+    selectedGenres = [];
+    currentPage = 1;
+    currentOrder = "popular";
+    document.getElementById("searchInput").value = "";
+    document.querySelectorAll(".genre-btn").forEach(btn => btn.classList.remove("active"));
+    document.querySelectorAll(".order-btn").forEach(btn => btn.classList.remove("active"));
+    document.querySelector(`.order-btn[data-order="popular"]`).classList.add("active");
+    loadContent();
+}
+
+function prevPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        loadContent();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+}
+
+function nextPage() {
+    if (currentPage < totalPages) {
+        currentPage++;
+        loadContent();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+}
+
+function updatePageNumber() {
+    document.getElementById("pageNumber").innerText = `${currentPage} / ${totalPages}`;
+}
+
+function escapeHtml(text) {
+    if (!text) return "";
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+    
 </body>
 </html>
