@@ -1037,6 +1037,15 @@ h1 {
         <div class="stats" id="stats"></div>
     </div>
 
+    <!-- SELECTION BAR -->
+    <div class="selection-bar" id="selectionBar">
+        <span class="selection-count" id="selectionCount">0 selezionati</span>
+        <div class="selection-actions">
+            <button class="selection-action-btn" onclick="moveSelectedToFolder()">📂 Sposta in cartella</button>
+            <button class="selection-action-btn cancel" onclick="cancelMultiSelect()">❌ Annulla</button>
+        </div>
+    </div>
+
     <div id="listContainer"></div>
 </div>
 
@@ -1349,7 +1358,6 @@ h1 {
             
             for (let i = 1; i < history.length; i++) {
                 const backup = history[i];
-                const isCurrent = i === 0;
                 html += `
                     <div class="backup-item">
                         <div class="backup-info">
