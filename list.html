@@ -1543,18 +1543,38 @@ h1 {
     }
     
     // Filtra per stato (completati / da guardare)
+    function filterItems(items) {
+    // 🔥 CONTROLLO DI SICUREZZA
+    if (!items || !Array.isArray(items)) {
+        return [];
+    }
+    
+    let filtered = [...items];
+    
+    // Filtra per tipo (movie, tv, all)
+    if (currentTypeFilter !== "all") {
+        filtered = filtered.filter(item => item.type === currentTypeFilter);
+    }
+    
+    // Filtra per stato (completati / da guardare)
     if (currentStatusFilter === "completed") {
         // Mostra SOLO i completati
         filtered = filtered.filter(item => item.completed === true);
         
         // 🔥 ORDINA PER DATA DI COMPLETAMENTO (completedDate) - IL PIÙ RECENTE IN CIMA
+        // 🔥 In caso di parità, usa addedAt (il più recente in cima)
         filtered.sort((a, b) => {
             const dateA = a.completedDate || '';
             const dateB = b.completedDate || '';
             
-            // Se entrambe hanno una data, confrontale
+            // Confronta le date di completamento
             if (dateA && dateB) {
-                return dateB.localeCompare(dateA);
+                const comparison = dateB.localeCompare(dateA);
+                if (comparison !== 0) {
+                    return comparison; // Date diverse
+                }
+                // 🔥 STESSA DATA: ordina per addedAt (più recente in cima)
+                return (b.addedAt || 0) - (a.addedAt || 0);
             }
             // Se solo A ha una data, va prima
             if (dateA) return -1;
