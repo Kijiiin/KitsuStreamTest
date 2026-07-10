@@ -1529,7 +1529,7 @@ h1 {
         return sorted;
     }
 
-    // 🔥 FUNZIONE MODIFICATA - I COMPLETATI VENGONO ORDINATI PER DATA DI AGGIUNTA (addedAt)
+    // 🔥 FUNZIONE MODIFICATA - I COMPLETATI VENGONO ORDINATI PER DATA DI COMPLETAMENTO (completedDate)
     function filterItems(items) {
         let filtered = [...items];
         
@@ -1539,13 +1539,51 @@ h1 {
         
         if (currentStatusFilter === "completed") {
             filtered = filtered.filter(item => item.completed === true);
-            // 🔥 ORDINA PER DATA DI AGGIUNTA (addedAt) - IL PIÙ RECENTE IN CIMA
-            filtered.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+            // 🔥 ORDINA PER DATA DI COMPLETAMENTO (completedDate) - IL PIÙ RECENTE IN CIMA
+            filtered.sort((a, b) => {
+                // Usa completedDate se disponibile, altrimenti addedAt, altrimenti 0
+                const dateA = a.completedDate ? new Date(a.completedDate).getTime() : (a.addedAt || 0);
+                const dateB = b.completedDate ? new Date(b.completedDate).getTime() : (b.addedAt || 0);
+                return dateB - dateA; // Decrescente (più recente prima)
+            });
         } else {
             filtered = filtered.filter(item => item.completed !== true);
         }
         
         return filtered;
+    }
+
+    // ============================================================
+    // 🔥 FUNZIONE DI MIGRAZIONE PER I COMPLETATI ESISTENTI
+    // ============================================================
+    async function migrateCompletedDates() {
+        if (!currentUser) return;
+        
+        let needsUpdate = false;
+        
+        // Controlla tutti gli elementi nella lista principale
+        for (const item of currentList) {
+            if (item.completed === true && !item.completedDate) {
+                // Se non ha completedDate, usa addedAt o la data corrente
+                item.completedDate = item.addedAt ? new Date(item.addedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+                needsUpdate = true;
+            }
+        }
+        
+        // Controlla tutti gli elementi nelle cartelle
+        for (const folderName in currentFolders) {
+            for (const item of currentFolders[folderName]) {
+                if (item.completed === true && !item.completedDate) {
+                    item.completedDate = item.addedAt ? new Date(item.addedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+                    needsUpdate = true;
+                }
+            }
+        }
+        
+        if (needsUpdate) {
+            await saveAllData();
+            console.log('✅ Migrazione completata: tutti gli elementi completati ora hanno completedDate');
+        }
     }
 
     function updateStats(filteredItems, totalItems) {
@@ -2523,6 +2561,9 @@ h1 {
         if (user) {
             const userData = await loadUserData();
             currentUsername = userData?.username || user.email.split('@')[0];
+            
+            // 🔥 MIGRAZIONE: assicura che tutti i completati abbiano completedDate
+            await migrateCompletedDates();
             
             authButtons.innerHTML = `
                 <div class="user-info">
