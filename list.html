@@ -1529,19 +1529,6 @@ h1 {
         return sorted;
     }
 
-    function filterItems(items) {
-    // 🔥 CONTROLLO DI SICUREZZA
-    if (!items || !Array.isArray(items)) {
-        return [];
-    }
-    
-    let filtered = [...items];
-    
-    // Filtra per tipo (movie, tv, all)
-    if (currentTypeFilter !== "all") {
-        filtered = filtered.filter(item => item.type === currentTypeFilter);
-    }
-    
     // Filtra per stato (completati / da guardare)
     function filterItems(items) {
     // 🔥 CONTROLLO DI SICUREZZA
