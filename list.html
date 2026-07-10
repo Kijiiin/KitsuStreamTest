@@ -1538,14 +1538,19 @@ h1 {
         }
         
         if (currentStatusFilter === "completed") {
-            filtered = filtered.filter(item => item.completed === true);
-            // 🔥 ORDINA PER DATA DI AGGIUNTA (addedAt) - IL PIÙ RECENTE IN CIMA
-            filtered.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-        } else {
-            filtered = filtered.filter(item => item.completed !== true);
+    filtered = filtered.filter(item => item.completed === true);
+    // 🔥 ORDINA PER DATA DI VISIONE (watched_at) - IL PIÙ RECENTE IN CIMA
+    filtered.sort((a, b) => {
+        const dateA = a.watched_at || a.completedDate || '';
+        const dateB = b.watched_at || b.completedDate || '';
+        if (dateA && dateB) {
+            return dateB.localeCompare(dateA);
         }
-        
-        return filtered;
+        if (dateA) return -1;
+        if (dateB) return 1;
+        return 0;
+    });
+}
     }
 
     function updateStats(filteredItems, totalItems) {
