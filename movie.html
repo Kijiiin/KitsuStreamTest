@@ -1240,11 +1240,18 @@ async function resetSavedSpot() {
 }
 
 async function openPlayer(url) {
-    // Chiudi il modal
+    // Chiudi il modal del player
     document.getElementById("playerModal").style.display = "none";
     
-    // Apri in una nuova scheda
-    window.open(url, '_blank');
+    // Crea un link invisibile con noreferrer e cliccalo
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 function closePlayer() {
