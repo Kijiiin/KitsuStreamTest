@@ -1384,14 +1384,18 @@ function resetSavedSpot() {
 }
 
 function openPlayer(url) {
-    const modal = document.getElementById("playerModal");
-    const frame = document.getElementById("videoFrame");
-    currentVideoUrl = url;
-    const savedTime = localStorage.getItem(`time_tv_${url}`);
-    let finalUrl = url;
-    if (savedTime && parseInt(savedTime) > 0) finalUrl += `&startAt=${parseInt(savedTime)}`;
-    frame.src = finalUrl;
-    modal.style.display = "flex";
+    // Chiudi il modal del player
+    document.getElementById("playerModal").style.display = "none";
+    
+    // Crea un link invisibile con noreferrer e cliccalo
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 function closePlayer() {
