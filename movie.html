@@ -1240,56 +1240,11 @@ async function resetSavedSpot() {
 }
 
 async function openPlayer(url) {
-    const modal = document.getElementById("playerModal");
-    const frame = document.getElementById("videoFrame");
+    // Chiudi il modal
+    document.getElementById("playerModal").style.display = "none";
     
-    // PULIZIA COMPLETA DEL FRAME
-    // 1. Rimuovi il src
-    frame.src = "";
-    
-    // 2. Ricarica il frame
-    frame.contentWindow.location.reload(true);
-    
-    // 3. Pulisci il DOM del frame
-    try {
-        frame.contentWindow.document.open();
-        frame.contentWindow.document.write('');
-        frame.contentWindow.document.close();
-    } catch(e) {
-        // Ignora errori di cross-origin
-    }
-    
-    // 4. Aspetta un attimo prima di caricare il nuovo URL
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    currentVideoUrl = url;
-    
-    let savedTime = null;
-    if (window.loadMovieProgressCloud) {
-        savedTime = await window.loadMovieProgressCloud();
-    }
-    
-    if (!savedTime) {
-        const localSaved = localStorage.getItem(`time_movie_${url}`);
-        if (localSaved) savedTime = parseInt(localSaved);
-    }
-    
-    let finalUrl = url;
-    let savedInfo = document.getElementById("savedInfo");
-    
-    if (savedTime && savedTime > 0) {
-        const timeString = formatTime(savedTime);
-        finalUrl += `&startAt=${savedTime}`;
-        savedInfo.innerHTML = `📌 Riprenderò da ${timeString}`;
-        savedInfo.style.color = "#f59e0b";
-    } else {
-        savedInfo.innerHTML = `🎬 Nessun salvataggio - riparto dall'inizio`;
-        savedInfo.style.color = "#888";
-    }
-    
-    // 5. Ora carica il nuovo URL
-    frame.src = finalUrl;
-    modal.style.display = "flex";
+    // Apri in una nuova scheda
+    window.open(url, '_blank');
 }
 
 function closePlayer() {
