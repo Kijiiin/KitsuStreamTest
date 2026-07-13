@@ -1243,31 +1243,15 @@ async function openPlayer(url) {
     // Chiudi il modal del player
     document.getElementById("playerModal").style.display = "none";
     
-    // 🔥 FEATURES: finestra senza barre
-    const features = [
-        'width=1200',
-        'height=800',
-        'menubar=no',        // ❌ Nasconde il menu "File, Modifica, Visualizza"
-        'toolbar=no',        // ❌ Nasconde i pulsanti avanti/indietro
-        'location=no',       // ❌ Nasconde la barra degli indirizzi
-        'status=no',         // ❌ Nasconde la barra di stato in basso
-        'scrollbars=yes',    // ✅ Lascia lo scroll se necessario
-        'resizable=yes'      // ✅ Permette di ridimensionare la finestra
-    ].join(',');  // Unisce tutto in una stringa: "width=1200,height=800,menubar=no,..."
-    
-    const newWindow = window.open(url, '_blank', features);
-    
-    // Se il popup viene bloccato, usa il metodo alternativo
-    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
+    // Crea un link invisibile con noreferrer e cliccalo
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 function closePlayer() {
